@@ -9,7 +9,7 @@ export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
 
     return (
-        <div className="w-full h-full">
+        <div style={{ width: "100%", height: "95%" }}>
             <Canvas
                 gl={{
                     antialias: true,
@@ -28,6 +28,25 @@ export const Scene: React.FC = () => {
                         {performance.showStats && <Stats />}
                         <AdaptiveDpr pixelated />
                         <AdaptiveEvents />
+                        <mesh
+                            position={[0, 0, 0]}
+                            rotation={[-Math.PI / 2, 0, 0]}
+                            visible={false}
+                            onClick={(e) => {
+                                if (
+                                    useSceneStore.getState().controlMode ===
+                                    "pointAndClick"
+                                ) {
+                                    e.stopPropagation();
+                                    useSceneStore
+                                        .getState()
+                                        .setCameraTarget(e.point);
+                                }
+                            }}
+                        >
+                            <planeGeometry args={[100, 100]} />
+                            <meshBasicMaterial />
+                        </mesh>
                     </Physics>
                 </Suspense>
             </Canvas>

@@ -3,7 +3,7 @@ import { Interface } from "./components/ui/Interface";
 
 export default function App() {
     return (
-        <main className="h-screen w-screen">
+        <main style={{ width: "100%", height: "100%" }}>
             <Scene />
             <Interface />
         </main>

@@ -13,25 +13,33 @@ export const useMouseControls = () => {
 
     const handleMouseMove = useCallback(
         (event: MouseEvent) => {
-            if (!isLocked || controlMode !== "firstPerson") return;
+            if (!isLocked || controlMode !== "firstPerson") {
+                setRotation({ x: 0, y: 0 });
+                return;
+            }
 
-            const sensitivity = 0.01;
+            const sensitivity = 0.2;
             setRotation({
-                x: event.movementX * sensitivity,
-                y: event.movementY * sensitivity,
+                x: -event.movementX * sensitivity,
+                y: -event.movementY * sensitivity,
             });
         },
         [isLocked, controlMode]
     );
 
     const requestPointerLock = useCallback(() => {
+        if (controlMode !== "firstPerson") return;
         const canvas = document.querySelector("canvas");
-        if (controlMode !== "firstPerson" || !canvas) return;
-        canvas.requestPointerLock();
+        if (canvas) {
+            canvas.requestPointerLock();
+        } else {
+            document.body.requestPointerLock();
+        }
     }, [controlMode]);
 
     const handlePointerLockChange = useCallback(() => {
-        setIsLocked(document.pointerLockElement === document.body);
+        const canvas = document.querySelector("canvas");
+        setIsLocked(document.pointerLockElement === canvas);
     }, []);
 
     useEffect(() => {
