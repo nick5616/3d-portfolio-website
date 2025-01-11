@@ -15,7 +15,7 @@ export const useMouseControls = () => {
         (event: MouseEvent) => {
             if (!isLocked || controlMode !== "firstPerson") return;
 
-            const sensitivity = 0.002;
+            const sensitivity = 0.01;
             setRotation({
                 x: event.movementX * sensitivity,
                 y: event.movementY * sensitivity,
@@ -25,8 +25,9 @@ export const useMouseControls = () => {
     );
 
     const requestPointerLock = useCallback(() => {
-        if (controlMode !== "firstPerson") return;
-        document.body.requestPointerLock();
+        const canvas = document.querySelector("canvas");
+        if (controlMode !== "firstPerson" || !canvas) return;
+        canvas.requestPointerLock();
     }, [controlMode]);
 
     const handlePointerLockChange = useCallback(() => {

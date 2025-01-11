@@ -169,7 +169,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             <RigidBody type="fixed" colliders="cuboid">
                 {/* Floor */}
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <planeGeometry args={[20, 20]} />
+                    <planeGeometry args={[50, 50]} /> // Increased from 20, 20
                     <meshStandardMaterial color="#444444" />
                 </mesh>
             </RigidBody>
