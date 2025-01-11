@@ -1,4 +1,3 @@
-// src/components/core/CameraController.tsx
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -12,13 +11,11 @@ export const CameraController: React.FC = () => {
     const { movement } = useKeyboardControls();
     const { rotation } = useMouseControls();
 
-    // Store the target position for smooth interpolation
     const targetPosition = useRef(new THREE.Vector3());
     targetPosition.current.copy(cameraTarget);
 
     useFrame((_, delta) => {
         if (controlMode === "firstPerson") {
-            // WASD + Mouse controls
             const speed = 5;
             const direction = new THREE.Vector3();
 
@@ -30,14 +27,17 @@ export const CameraController: React.FC = () => {
             direction.applyEuler(camera.rotation);
             camera.position.add(direction);
 
-            camera.rotation.y += rotation.x * delta;
-            camera.rotation.x = Math.max(
-                -Math.PI / 2,
-                Math.min(Math.PI / 2, camera.rotation.x + rotation.y * delta)
-            );
+            // Apply camera rotation immediately when mouse moves
+            if (rotation.x !== 0) camera.rotation.y -= rotation.x;
+            if (rotation.y !== 0) {
+                camera.rotation.x = Math.max(
+                    -Math.PI / 2,
+                    Math.min(Math.PI / 2, camera.rotation.x - rotation.y)
+                );
+            }
         } else {
             // Point-and-click smooth transitions
-            const lerpFactor = 0.05; // Adjust this value to change movement speed
+            const lerpFactor = 0.05;
             camera.position.lerp(targetPosition.current, lerpFactor);
         }
     });

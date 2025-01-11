@@ -18,28 +18,39 @@ export const useMouseControls = () => {
                 return;
             }
 
-            const sensitivity = 0.2;
+            const sensitivity = 0.002; // Reduced sensitivity for more precise control
             setRotation({
-                x: -event.movementX * sensitivity,
-                y: -event.movementY * sensitivity,
+                x: event.movementX * sensitivity,
+                y: event.movementY * sensitivity,
             });
         },
         [isLocked, controlMode]
     );
+
+    // Reset rotation when mouse stops moving
+    useEffect(() => {
+        if (rotation.x !== 0 || rotation.y !== 0) {
+            const timer = requestAnimationFrame(() => {
+                setRotation({ x: 0, y: 0 });
+            });
+            return () => cancelAnimationFrame(timer);
+        }
+    }, [rotation]);
 
     const requestPointerLock = useCallback(() => {
         if (controlMode !== "firstPerson") return;
         const canvas = document.querySelector("canvas");
         if (canvas) {
             canvas.requestPointerLock();
-        } else {
-            document.body.requestPointerLock();
         }
     }, [controlMode]);
 
     const handlePointerLockChange = useCallback(() => {
         const canvas = document.querySelector("canvas");
         setIsLocked(document.pointerLockElement === canvas);
+        if (!document.pointerLockElement) {
+            setRotation({ x: 0, y: 0 });
+        }
     }, []);
 
     useEffect(() => {
