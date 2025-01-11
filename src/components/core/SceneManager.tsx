@@ -1,10 +1,10 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Environment } from "@react-three/drei";
+import { Room } from "./Room";
 import { CameraController } from "./CameraController";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
-import { Room } from "./Room";
 
 export const SceneManager: React.FC = () => {
     const { scene } = useThree();
