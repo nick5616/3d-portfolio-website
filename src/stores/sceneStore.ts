@@ -17,7 +17,7 @@ interface SceneState {
 
 export const useSceneStore = create<SceneState>((set) => ({
     currentRoom: null,
-    controlMode: "pointAndClick",
+    controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     performance: {
         showStats: false,
