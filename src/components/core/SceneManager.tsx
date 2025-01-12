@@ -14,7 +14,7 @@ export const SceneManager: React.FC = () => {
     useEffect(() => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
-        loadRoom("initial");
+        loadRoom("atrium"); // Changed from "initial" to "atrium"
     }, []);
 
     useFrame(({ gl }) => {

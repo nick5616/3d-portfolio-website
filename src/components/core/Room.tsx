@@ -1,5 +1,5 @@
 // src/components/core/Room.tsx
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import {
     useGLTF,
@@ -9,8 +9,15 @@ import {
     Text,
 } from "@react-three/drei";
 import * as THREE from "three";
-import { RoomConfig, InteractiveElement } from "../../types/scene.types";
+import {
+    RoomConfig,
+    InteractiveElement,
+    Portal,
+} from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
+import { InteractiveObject } from "./InteractiveObject";
+import { roomConfigs } from "../../configs/rooms";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface RoomProps {
     config: RoomConfig;
@@ -25,106 +32,32 @@ interface RoomGeometry {
     };
 }
 
-const InteractiveObject: React.FC<{ element: InteractiveElement }> = ({
-    element,
-}) => {
-    const {
-        type,
-        position,
-        rotation = [0, 0, 0],
-        scale = [1, 1, 1],
-        content,
-    } = element;
-
-    switch (type) {
-        case "model":
-            const { nodes, materials } = useGLTF(
-                content
-            ) as unknown as RoomGeometry;
-            return (
-                <group
-                    position={position}
-                    rotation={rotation as [number, number, number]}
-                    scale={scale}
-                >
-                    {Object.entries(nodes).map(([key, mesh]) => {
-                        // Safely handle material name
-                        const materialName =
-                            mesh.material instanceof THREE.Material
-                                ? mesh.material.name
-                                : "";
-                        return (
-                            <mesh
-                                key={key}
-                                geometry={mesh.geometry}
-                                material={materials[materialName]}
-                            />
-                        );
-                    })}
-                </group>
-            );
-
-        case "image":
-            return (
-                <mesh
-                    position={position}
-                    rotation={rotation as [number, number, number]}
-                    scale={scale}
-                >
-                    <planeGeometry args={[1, 1]} />
-                    <meshBasicMaterial
-                        map={new THREE.TextureLoader().load(content)}
-                    />
-                </mesh>
-            );
-
-        case "text":
-            return (
-                <group
-                    position={position}
-                    rotation={rotation as [number, number, number]}
-                    scale={scale}
-                >
-                    <Text
-                        fontSize={1}
-                        color="white"
-                        anchorX="center"
-                        anchorY="middle"
-                        characters="abcdefghijklmnopqrstuvwxyz0123456789!"
-                    >
-                        {content}
-                    </Text>
-                </group>
-            );
-
-        default:
-            return null;
-    }
-};
-
 export const Room: React.FC<RoomProps> = ({ config }) => {
     const { scene } = useThree();
+    const { teleportToRoom } = useSceneStore();
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
     const spotLightRefs = useRef<(THREE.SpotLight | null)[]>([]);
 
-    // Debug helpers in development
-    if (process.env.NODE_ENV === "development") {
-        useHelper(
-            directionalLightRef as React.MutableRefObject<THREE.DirectionalLight>,
-            THREE.DirectionalLightHelper,
-            1,
-            "red"
-        );
-        spotLightRefs.current.forEach((ref) => {
-            if (ref) {
-                useHelper(
-                    ref as unknown as React.MutableRefObject<THREE.Object3D>,
-                    THREE.SpotLightHelper,
-                    "blue"
+    const handlePortalClick = useCallback(
+        (portal: Portal) => {
+            const targetRoom = roomConfigs[portal.targetRoomId];
+            const entryPortal = targetRoom.portals.find(
+                (p) => p.targetRoomId === config.id
+            );
+            if (entryPortal) {
+                const dir = new THREE.Vector3(0, 0, 2).applyEuler(
+                    new THREE.Euler(...entryPortal.rotation)
                 );
+                const pos: [number, number, number] = [
+                    entryPortal.position[0] + dir.x,
+                    entryPortal.position[1] + dir.y,
+                    entryPortal.position[2] + dir.z,
+                ];
+                teleportToRoom(portal.targetRoomId, pos);
             }
-        });
-    }
+        },
+        [config.id, teleportToRoom]
+    );
 
     useEffect(() => {
         // Update scene position based on room config
@@ -214,12 +147,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     key={portal.id}
                     position={portal.position}
                     rotation={portal.rotation}
-                    onClick={() => {
-                        // Handle portal navigation
-                    }}
+                    onClick={() => handlePortalClick(portal)}
                 >
                     <planeGeometry args={[2, 3]} />
-                    <meshBasicMaterial
+                    <meshStandardMaterial
                         color="#00ff00"
                         transparent
                         opacity={0.5}

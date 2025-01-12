@@ -1,6 +1,8 @@
+// src/stores/sceneStore.ts
 import { create } from "zustand";
 import * as THREE from "three";
 import { RoomConfig } from "../types/scene.types";
+import { roomConfigs } from "../configs/rooms";
 
 interface SceneState {
     currentRoom: RoomConfig | null;
@@ -13,6 +15,10 @@ interface SceneState {
     loadRoom: (roomId: string) => void;
     setControlMode: (mode: "firstPerson" | "pointAndClick") => void;
     setCameraTarget: (target: THREE.Vector3) => void;
+    teleportToRoom: (
+        roomId: string,
+        position: [number, number, number]
+    ) => void;
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -23,29 +29,23 @@ export const useSceneStore = create<SceneState>((set) => ({
         showStats: false,
         monitoring: true,
     },
-    loadRoom: async (roomId) => {
-        // This would typically load from an API or configuration file
-        // For now, we'll return a mock room configuration
-        const mockRoomConfig: RoomConfig = {
-            id: roomId,
-            name: `Room ${roomId}`,
-            position: [0, 0, 0],
-            lightPreset: {
-                ambient: {
-                    intensity: 0.5,
-                    color: "#ffffff",
-                },
-                directional: {
-                    position: [5, 5, 5],
-                    intensity: 0.8,
-                    color: "#ffffff",
-                },
-            },
-            interactiveElements: [],
-            portals: [],
-        };
-        set({ currentRoom: mockRoomConfig });
+    loadRoom: (roomId) => {
+        const config = roomConfigs[roomId];
+        if (config) {
+            set({ currentRoom: config });
+        } else {
+            console.error(`Room configuration not found for ID: ${roomId}`);
+        }
     },
     setControlMode: (mode) => set({ controlMode: mode }),
     setCameraTarget: (target) => set({ cameraTarget: target }),
+    teleportToRoom: (roomId: string, position: [number, number, number]) => {
+        const config = roomConfigs[roomId];
+        if (config) {
+            set({
+                currentRoom: config,
+                cameraTarget: new THREE.Vector3(...position),
+            });
+        }
+    },
 }));
