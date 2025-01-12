@@ -1,10 +1,13 @@
+// src/components/ui/Interface.tsx
 import { useSceneStore } from "../../stores/sceneStore";
+import { PerformanceOverlay } from "./PerformanceOverlay";
 
 export const Interface: React.FC = () => {
-    const { controlMode, setControlMode } = useSceneStore();
+    const { controlMode, setControlMode, performance } = useSceneStore();
 
     return (
         <div className="fixed inset-0 pointer-events-none">
+            {/* Control mode switcher */}
             <div className="absolute bottom-4 left-4 pointer-events-auto flex items-center gap-3">
                 <button
                     onClick={() =>
@@ -37,6 +40,9 @@ export const Interface: React.FC = () => {
                         : "Point & Click"}
                 </div>
             </div>
+
+            {/* Performance overlay */}
+            {performance.monitoring && <PerformanceOverlay />}
         </div>
     );
 };

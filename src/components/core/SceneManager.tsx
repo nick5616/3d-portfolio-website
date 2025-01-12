@@ -5,16 +5,17 @@ import { Room } from "./Room";
 import { CameraController } from "./CameraController";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
+import { roomConfigs } from "../../configs/rooms";
 
 export const SceneManager: React.FC = () => {
     const { scene } = useThree();
-    const { currentRoom, loadRoom, performance } = useSceneStore();
+    const { loadRoom, performance } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
     useEffect(() => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
-        loadRoom("atrium"); // Changed from "initial" to "atrium"
+        loadRoom("atrium");
     }, []);
 
     useFrame(({ gl }) => {
@@ -29,7 +30,10 @@ export const SceneManager: React.FC = () => {
         <>
             <Environment preset="city" />
             <CameraController />
-            {currentRoom && <Room config={currentRoom} />}
+            {/* Render all rooms */}
+            {Object.values(roomConfigs).map((roomConfig) => (
+                <Room key={roomConfig.id} config={roomConfig} />
+            ))}
         </>
     );
 };

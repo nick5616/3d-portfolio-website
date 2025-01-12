@@ -1,72 +1,82 @@
 // src/components/core/Room.tsx
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { useThree } from "@react-three/fiber";
-import {
-    useGLTF,
-    Preload,
-    SpotLight,
-    useHelper,
-    Text,
-} from "@react-three/drei";
+import { Preload, SpotLight } from "@react-three/drei";
 import * as THREE from "three";
-import {
-    RoomConfig,
-    InteractiveElement,
-    Portal,
-} from "../../types/scene.types";
+import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import { InteractiveObject } from "./InteractiveObject";
-import { roomConfigs } from "../../configs/rooms";
-import { useSceneStore } from "../../stores/sceneStore";
+import { RoomTransitionTrigger } from "./RoomTransitionTrigger";
 
 interface RoomProps {
     config: RoomConfig;
 }
 
-interface RoomGeometry {
-    nodes: {
-        [key: string]: THREE.Mesh;
-    };
-    materials: {
-        [key: string]: THREE.Material;
-    };
-}
-
 export const Room: React.FC<RoomProps> = ({ config }) => {
-    const { scene } = useThree();
-    const { teleportToRoom } = useSceneStore();
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
     const spotLightRefs = useRef<(THREE.SpotLight | null)[]>([]);
 
-    const handlePortalClick = useCallback(
-        (portal: Portal) => {
-            const targetRoom = roomConfigs[portal.targetRoomId];
-            const entryPortal = targetRoom.portals.find(
-                (p) => p.targetRoomId === config.id
+    // Helper function to create an archway mesh
+    const Archway = useCallback(
+        ({
+            position,
+            rotation,
+            width,
+            height,
+        }: {
+            position: [number, number, number];
+            rotation: [number, number, number];
+            width: number;
+            height: number;
+        }) => {
+            const archDepth = 1;
+            const archThickness = 0.3;
+
+            return (
+                <group position={position} rotation={rotation}>
+                    {/* Left pillar */}
+                    <mesh
+                        position={[-width / 2, height / 2, 0]}
+                        castShadow
+                        receiveShadow
+                    >
+                        <boxGeometry
+                            args={[archThickness, height, archDepth]}
+                        />
+                        <meshStandardMaterial color="#4a4a4a" />
+                    </mesh>
+
+                    {/* Right pillar */}
+                    <mesh
+                        position={[width / 2, height / 2, 0]}
+                        castShadow
+                        receiveShadow
+                    >
+                        <boxGeometry
+                            args={[archThickness, height, archDepth]}
+                        />
+                        <meshStandardMaterial color="#4a4a4a" />
+                    </mesh>
+
+                    {/* Top arch */}
+                    <mesh position={[0, height, 0]} castShadow receiveShadow>
+                        <boxGeometry
+                            args={[
+                                width + archThickness,
+                                archThickness,
+                                archDepth,
+                            ]}
+                        />
+                        <meshStandardMaterial color="#4a4a4a" />
+                    </mesh>
+                </group>
             );
-            if (entryPortal) {
-                const dir = new THREE.Vector3(0, 0, 2).applyEuler(
-                    new THREE.Euler(...entryPortal.rotation)
-                );
-                const pos: [number, number, number] = [
-                    entryPortal.position[0] + dir.x,
-                    entryPortal.position[1] + dir.y,
-                    entryPortal.position[2] + dir.z,
-                ];
-                teleportToRoom(portal.targetRoomId, pos);
-            }
         },
-        [config.id, teleportToRoom]
+        []
     );
 
-    useEffect(() => {
-        // Update scene position based on room config
-        scene.position.set(...config.position);
-        scene.updateMatrixWorld();
-    }, [config.position, scene]);
-
     return (
-        <group>
+        <group position={config.position}>
             {/* Room lighting setup */}
             <ambientLight
                 intensity={config.lightPreset.ambient.intensity}
@@ -102,35 +112,70 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             <RigidBody type="fixed" colliders="cuboid">
                 {/* Floor */}
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <planeGeometry args={[50, 50]} /> // Increased from 20, 20
+                    <planeGeometry
+                        args={[config.dimensions[0], config.dimensions[2]]}
+                    />
                     <meshStandardMaterial color="#444444" />
                 </mesh>
             </RigidBody>
 
-            {/* Walls - using RigidBody for collision */}
+            {/* Walls */}
             <RigidBody type="fixed" colliders="cuboid">
                 <group>
                     {/* Back wall */}
-                    <mesh position={[0, 5, -10]} receiveShadow>
-                        <boxGeometry args={[20, 10, 0.5]} />
+                    <mesh
+                        position={[
+                            0,
+                            config.dimensions[1] / 2,
+                            -config.dimensions[2] / 2,
+                        ]}
+                        receiveShadow
+                    >
+                        <boxGeometry
+                            args={[
+                                config.dimensions[0],
+                                config.dimensions[1],
+                                0.5,
+                            ]}
+                        />
                         <meshStandardMaterial color="#666666" />
                     </mesh>
                     {/* Left wall */}
                     <mesh
-                        position={[-10, 5, 0]}
+                        position={[
+                            -config.dimensions[0] / 2,
+                            config.dimensions[1] / 2,
+                            0,
+                        ]}
                         rotation={[0, Math.PI / 2, 0]}
                         receiveShadow
                     >
-                        <boxGeometry args={[20, 10, 0.5]} />
+                        <boxGeometry
+                            args={[
+                                config.dimensions[2],
+                                config.dimensions[1],
+                                0.5,
+                            ]}
+                        />
                         <meshStandardMaterial color="#666666" />
                     </mesh>
                     {/* Right wall */}
                     <mesh
-                        position={[10, 5, 0]}
+                        position={[
+                            config.dimensions[0] / 2,
+                            config.dimensions[1] / 2,
+                            0,
+                        ]}
                         rotation={[0, -Math.PI / 2, 0]}
                         receiveShadow
                     >
-                        <boxGeometry args={[20, 10, 0.5]} />
+                        <boxGeometry
+                            args={[
+                                config.dimensions[2],
+                                config.dimensions[1],
+                                0.5,
+                            ]}
+                        />
                         <meshStandardMaterial color="#666666" />
                     </mesh>
                 </group>
@@ -141,21 +186,19 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 <InteractiveObject key={element.id} element={element} />
             ))}
 
-            {/* Portals to other rooms */}
-            {config.portals.map((portal) => (
-                <mesh
-                    key={portal.id}
-                    position={portal.position}
-                    rotation={portal.rotation}
-                    onClick={() => handlePortalClick(portal)}
-                >
-                    <planeGeometry args={[2, 3]} />
-                    <meshStandardMaterial
-                        color="#00ff00"
-                        transparent
-                        opacity={0.5}
+            {/* Archways */}
+            {config.archways.map((archway) => (
+                <group key={archway.id}>
+                    {/* Visual archway */}
+                    <Archway
+                        position={archway.position}
+                        rotation={archway.rotation}
+                        width={archway.width}
+                        height={archway.height}
                     />
-                </mesh>
+                    {/* Transition trigger */}
+                    <RoomTransitionTrigger archway={archway} />
+                </group>
             ))}
 
             {/* Preload assets */}

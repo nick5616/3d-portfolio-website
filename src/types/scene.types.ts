@@ -1,10 +1,12 @@
+// src/types/scene.types.ts
 export interface RoomConfig {
     id: string;
     name: string;
     position: [number, number, number];
+    dimensions: [number, number, number]; // width, height, depth
     lightPreset: LightPreset;
     interactiveElements: InteractiveElement[];
-    portals: Portal[];
+    archways: Archway[];
 }
 
 export interface LightPreset {
@@ -36,9 +38,11 @@ export interface InteractiveElement {
     content: any;
 }
 
-export interface Portal {
+export interface Archway {
     id: string;
     targetRoomId: string;
     position: [number, number, number];
     rotation: [number, number, number];
+    width: number;
+    height: number;
 }
