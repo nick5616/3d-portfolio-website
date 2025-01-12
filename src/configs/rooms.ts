@@ -84,30 +84,44 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [-20, 0, 0] as [number, number, number],
         dimensions: [20, 10, 20],
         lightPreset: {
-            ambient: { intensity: 0.3, color: "#ffffff" },
+            ambient: { intensity: 0.4, color: "#ffffff" },
             directional: {
                 position: [5, 5, 0] as [number, number, number],
                 intensity: 0.5,
                 color: "#ffffff",
             },
-            spots: Array(5)
-                .fill(0)
-                .map((_, i) => ({
-                    position: [-5, 4, -4 + i * 2] as [number, number, number],
-                    target: [-5, 2, -4 + i * 2] as [number, number, number],
-                    intensity: 1,
+            // Reduced number of spot lights
+            spots: [
+                // One spot per wall
+                {
+                    position: [-5, 5, 0] as [number, number, number],
+                    target: [-8, 2, 0] as [number, number, number],
+                    intensity: 1.2,
                     color: "#ffffff",
-                })),
+                },
+                {
+                    position: [5, 5, 0] as [number, number, number],
+                    target: [8, 2, 0] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffffff",
+                },
+                {
+                    position: [0, 5, -5] as [number, number, number],
+                    target: [0, 2, -8] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffffff",
+                },
+            ],
         },
         interactiveElements: [
-            // Art frames along walls
-            ...Array(5)
+            // North wall art (left wall) - reduced to 2 pieces
+            ...Array(2)
                 .fill(0)
                 .map(
                     (_, i): InteractiveElement => ({
                         id: `art-frame-north-${i}`,
-                        type: "image",
-                        position: [-5, 2, -4 + i * 2] as [
+                        type: "model",
+                        position: [-9, 2, -4 + i * 8] as [
                             number,
                             number,
                             number
@@ -117,17 +131,21 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                             number,
                             number
                         ],
-                        scale: [1.5, 1.5, 1] as [number, number, number],
-                        content: `/images/art/piece-${i + 1}.jpg`,
+                        scale: [1, 1, 1] as [number, number, number],
+                        content: {
+                            type: "art-frame",
+                            imageUrl: `/images/art/tree-night.jpg`,
+                        },
                     })
                 ),
-            ...Array(5)
+            // South wall art (right wall) - reduced to 2 pieces
+            ...Array(2)
                 .fill(0)
                 .map(
                     (_, i): InteractiveElement => ({
                         id: `art-frame-south-${i}`,
-                        type: "image",
-                        position: [5, 2, -4 + i * 2] as [
+                        type: "model",
+                        position: [9, 2, -4 + i * 8] as [
                             number,
                             number,
                             number
@@ -137,16 +155,41 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                             number,
                             number
                         ],
-                        scale: [1.5, 1.5, 1] as [number, number, number],
-                        content: `/images/art/piece-${i + 6}.jpg`,
+                        scale: [1, 1, 1] as [number, number, number],
+                        content: {
+                            type: "art-frame",
+                            imageUrl: `/images/art/tree-night.jpg`,
+                        },
                     })
                 ),
+            // Back wall art - reduced to 2 pieces
+            ...Array(2)
+                .fill(0)
+                .map(
+                    (_, i): InteractiveElement => ({
+                        id: `art-frame-back-${i}`,
+                        type: "model",
+                        position: [-4 + i * 8, 2, -9] as [
+                            number,
+                            number,
+                            number
+                        ],
+                        rotation: [0, 0, 0] as [number, number, number],
+                        scale: [1, 1, 1] as [number, number, number],
+                        content: {
+                            type: "art-frame",
+                            imageUrl: `/images/art/tree-night.jpg`,
+                        },
+                    })
+                ),
+            // Gallery title
             {
                 id: "gallery-title",
                 type: "text",
-                position: [0, 4, -9] as [number, number, number],
+                position: [0, 4.5, -9] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
                 content: "Art Gallery",
-                scale: [1.5, 1.5, 1.5] as [number, number, number],
+                scale: [2, 2, 2] as [number, number, number],
             },
         ],
         archways: [
