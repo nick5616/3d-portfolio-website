@@ -47,7 +47,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 type: "text",
                 position: [0, 4, 0] as [number, number, number],
                 content: "Welcome to the Portfolio",
-                scale: [2, 2, 2] as [number, number, number],
+                scale: [1, 1, 1] as [number, number, number],
             },
         ],
         archways: [
@@ -72,8 +72,8 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 targetRoomId: "about",
                 position: [9.5, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                width: 3,
-                height: 4,
+                width: 2,
+                height: 3,
             },
         ],
     },
@@ -92,22 +92,42 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             // Reduced number of spot lights
             spots: [
-                // One spot per wall
+                // Left wall spotlights
                 {
-                    position: [-5, 5, 0] as [number, number, number],
-                    target: [-8, 2, 0] as [number, number, number],
+                    position: [-8, 6, -4] as [number, number, number],
+                    target: [-9, 2, -4] as [number, number, number],
                     intensity: 1.2,
                     color: "#ffffff",
                 },
                 {
-                    position: [5, 5, 0] as [number, number, number],
-                    target: [8, 2, 0] as [number, number, number],
+                    position: [-8, 6, 4] as [number, number, number],
+                    target: [-9, 2, 4] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffffff",
+                },
+                // Right wall spotlights
+                {
+                    position: [8, 6, -4] as [number, number, number],
+                    target: [9, 2, -4] as [number, number, number],
                     intensity: 1.2,
                     color: "#ffffff",
                 },
                 {
-                    position: [0, 5, -5] as [number, number, number],
-                    target: [0, 2, -8] as [number, number, number],
+                    position: [8, 6, 4] as [number, number, number],
+                    target: [9, 2, 4] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffffff",
+                },
+                // Back wall spotlights
+                {
+                    position: [-4, 6, -8] as [number, number, number],
+                    target: [-4, 2, -9] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffffff",
+                },
+                {
+                    position: [4, 6, -8] as [number, number, number],
+                    target: [4, 2, -9] as [number, number, number],
                     intensity: 1.2,
                     color: "#ffffff",
                 },
@@ -296,15 +316,15 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 id: "about-text",
                 type: "text",
                 position: [5, 3, 0] as [number, number, number],
-                scale: [1, 1, 1] as [number, number, number],
+                scale: [0.5, 0.5, 1] as [number, number, number],
                 content:
-                    "I'm a software developer passionate about creating immersive experiences...",
+                    "I eat dirt and turn it into mud, if you know what I mean",
             },
             {
                 id: "contact-info",
                 type: "text",
                 position: [5, 2, 0] as [number, number, number],
-                scale: [1, 1, 1] as [number, number, number],
+                scale: [0.25, 0.25, 1] as [number, number, number],
                 content:
                     "Contact: email@example.com\nGitHub: github.com/username",
             },

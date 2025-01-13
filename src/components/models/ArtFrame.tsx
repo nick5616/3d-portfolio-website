@@ -1,13 +1,20 @@
 // src/components/models/ArtFrame.tsx
-import { useLoader } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 interface ArtFrameProps {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
     imageUrl: string;
+    wallOffset?: number; // Distance from wall
+}
+
+interface ImageDimensions {
+    width: number;
+    height: number;
+    aspectRatio: number;
 }
 
 const Frame: React.FC<ArtFrameProps> = ({
@@ -15,41 +22,75 @@ const Frame: React.FC<ArtFrameProps> = ({
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     imageUrl,
+    wallOffset = 0.15, // Default wall offset
 }) => {
     const texture = useLoader(TextureLoader, imageUrl);
+    const [dimensions, setDimensions] = useState<ImageDimensions>({
+        width: 2,
+        height: 1.5,
+        aspectRatio: 4 / 3,
+    });
 
-    // Frame dimensions
-    const frameWidth = 2;
-    const frameHeight = 1.5;
+    // Calculate frame dimensions based on image aspect ratio
+    useEffect(() => {
+        if (texture) {
+            const aspectRatio = texture.image.width / texture.image.height;
+            let width = 2; // Base width
+            let height = width / aspectRatio;
+
+            // If height would be too tall, constrain by height instead
+            if (height > 2) {
+                height = 2;
+                width = height * aspectRatio;
+            }
+
+            setDimensions({
+                width,
+                height,
+                aspectRatio,
+            });
+        }
+    }, [texture]);
+
+    // Frame properties
     const frameDepth = 0.1;
     const frameThickness = 0.08;
 
+    // Adjust position to be closer to wall
+    const adjustedPosition: [number, number, number] = [
+        position[0],
+        position[1],
+        position[2] + wallOffset,
+    ];
+
     return (
-        <group position={position} rotation={rotation} scale={scale}>
+        <group position={adjustedPosition} rotation={rotation} scale={scale}>
             {/* Main frame box */}
             <mesh castShadow receiveShadow>
-                <boxGeometry args={[frameWidth, frameHeight, frameDepth]} />
+                <boxGeometry
+                    args={[dimensions.width, dimensions.height, frameDepth]}
+                />
                 <meshStandardMaterial color="#8b7355" roughness={0.8} />
             </mesh>
 
-            {/* Canvas backing (dark inner frame) - moved back */}
+            {/* Canvas backing (dark inner frame) */}
             <mesh position={[0, 0, frameDepth / 2 - 0.05]}>
                 <boxGeometry
                     args={[
-                        frameWidth - frameThickness * 2,
-                        frameHeight - frameThickness * 2,
+                        dimensions.width - frameThickness * 2,
+                        dimensions.height - frameThickness * 2,
                         0.02,
                     ]}
                 />
                 <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
             </mesh>
 
-            {/* Art canvas/image - moved forward */}
+            {/* Art canvas/image */}
             <mesh position={[0, 0, frameDepth / 2 + 0.01]}>
                 <planeGeometry
                     args={[
-                        frameWidth - frameThickness * 3,
-                        frameHeight - frameThickness * 3,
+                        dimensions.width - frameThickness * 3,
+                        dimensions.height - frameThickness * 3,
                     ]}
                 />
                 <meshBasicMaterial map={texture} toneMapped={false} />
@@ -65,8 +106,8 @@ const Frame: React.FC<ArtFrameProps> = ({
                 <mesh
                     key={i}
                     position={[
-                        x * (frameWidth / 2 - frameThickness / 2),
-                        y * (frameHeight / 2 - frameThickness / 2),
+                        x * (dimensions.width / 2 - frameThickness / 2),
+                        y * (dimensions.height / 2 - frameThickness / 2),
                         frameDepth / 2 + 0.02,
                     ]}
                 >
