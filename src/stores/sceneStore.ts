@@ -8,6 +8,7 @@ interface SceneState {
     currentRoom: RoomConfig | null;
     controlMode: "firstPerson" | "pointAndClick";
     cameraTarget: THREE.Vector3;
+    spotlightsEnabled: boolean;
     performance: {
         showStats: boolean;
         monitoring: boolean;
@@ -19,12 +20,14 @@ interface SceneState {
         roomId: string,
         position: [number, number, number]
     ) => void;
+    toggleSpotlights: () => void;
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
     currentRoom: null,
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
+    spotlightsEnabled: false,
     performance: {
         showStats: false,
         monitoring: true,
@@ -39,7 +42,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     setControlMode: (mode) => set({ controlMode: mode }),
     setCameraTarget: (target) => set({ cameraTarget: target }),
-    teleportToRoom: (roomId: string, position: [number, number, number]) => {
+    teleportToRoom: (roomId, position) => {
         const config = roomConfigs[roomId];
         if (config) {
             set({
@@ -48,4 +51,6 @@ export const useSceneStore = create<SceneState>((set) => ({
             });
         }
     },
+    toggleSpotlights: () =>
+        set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
 }));

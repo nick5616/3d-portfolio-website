@@ -1,5 +1,143 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
+import { getArtImageUrl } from "./artConfig";
+
+const createArtLayout = (): InteractiveElement[] => [
+    // North wall (left wall) - Centerpiece with surrounding works
+    {
+        id: "art-north-center",
+        type: "model",
+        position: [-9, 2.5, 0] as [number, number, number],
+        rotation: [0, Math.PI / 2, 0] as [number, number, number],
+        scale: [1.5, 1.5, 1] as [number, number, number],
+        content: {
+            type: "art-frame",
+            imageUrl: getArtImageUrl(0),
+        },
+    },
+
+    // Surrounding pieces higher
+    ...[-4, 4].map(
+        (zOffset, i): InteractiveElement => ({
+            id: `art-north-top-${i}`,
+            type: "model",
+            position: [-9, 3.2, zOffset] as [number, number, number],
+            rotation: [0, Math.PI / 2, 0] as [number, number, number],
+            scale: [0.8, 0.8, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 1),
+            },
+        })
+    ),
+
+    // Surrounding pieces lower
+    ...[-5, 5].map(
+        (zOffset, i): InteractiveElement => ({
+            id: `art-north-bottom-${i}`,
+            type: "model",
+            position: [-9, 1.8, zOffset] as [number, number, number],
+            rotation: [0, Math.PI / 2, 0] as [number, number, number],
+            scale: [0.9, 0.9, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 3),
+            },
+        })
+    ),
+
+    // South wall (right wall) - Triptych arrangement
+    ...(
+        [
+            [-3, 2.8],
+            [0, 3.2],
+            [3, 2.8],
+        ] as const
+    ).map(
+        ([zOffset, height], i): InteractiveElement => ({
+            id: `art-south-triptych-${i}`,
+            type: "model",
+            position: [9, height, zOffset] as [number, number, number],
+            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+            scale: [1.2, 1.2, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 5),
+            },
+        })
+    ),
+
+    // Lower pieces
+    ...(
+        [
+            [-5, 1.6],
+            [5, 1.6],
+        ] as const
+    ).map(
+        ([zOffset, height], i): InteractiveElement => ({
+            id: `art-south-lower-${i}`,
+            type: "model",
+            position: [9, height, zOffset] as [number, number, number],
+            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+            scale: [0.9, 0.9, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 8),
+            },
+        })
+    ),
+
+    // West wall (back) - Asymmetric grid
+    ...[-6, -2, 2, 6].map(
+        (xOffset, i): InteractiveElement => ({
+            id: `art-west-${i}`,
+            type: "model",
+            position: [xOffset, 2 + (i % 2) * 0.8, -9] as [
+                number,
+                number,
+                number
+            ],
+            rotation: [0, 0, 0] as [number, number, number],
+            scale: [1.1, 1.1, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 10),
+            },
+        })
+    ),
+
+    // East wall (entrance) - Minimal arrangement, away from door
+    ...(
+        [
+            [-6, 2.5],
+            [-3.5, 3],
+            [3.5, 3],
+            [6, 2.5],
+        ] as const
+    ).map(
+        ([xOffset, height], i): InteractiveElement => ({
+            id: `art-east-${i}`,
+            type: "model",
+            position: [xOffset, height, 9] as [number, number, number],
+            rotation: [0, Math.PI, 0] as [number, number, number],
+            scale: [1, 1, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 14),
+            },
+        })
+    ),
+
+    // Gallery title
+    {
+        id: "gallery-title",
+        type: "text",
+        position: [0, 8, -8.5] as [number, number, number],
+        rotation: [0, 0, 0] as [number, number, number],
+        content: "Art Gallery",
+        scale: [2, 2, 2] as [number, number, number],
+    },
+];
 
 export const roomConfigs: { [key: string]: RoomConfig } = {
     atrium: {
@@ -84,134 +222,68 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [-20, 0, 0] as [number, number, number],
         dimensions: [20, 10, 20],
         lightPreset: {
-            ambient: { intensity: 0.4, color: "#ffffff" },
+            ambient: { intensity: 1.0, color: "#ffffff" }, // Increased from 0.4
             directional: {
                 position: [5, 5, 0] as [number, number, number],
-                intensity: 0.5,
+                intensity: 1.0, // Increased from 0.5
                 color: "#ffffff",
             },
-            // Reduced number of spot lights
             spots: [
-                // Left wall spotlights
-                {
-                    position: [-8, 6, -4] as [number, number, number],
-                    target: [-9, 2, -4] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
-                {
-                    position: [-8, 6, 4] as [number, number, number],
-                    target: [-9, 2, 4] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
-                // Right wall spotlights
-                {
-                    position: [8, 6, -4] as [number, number, number],
-                    target: [9, 2, -4] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
-                {
-                    position: [8, 6, 4] as [number, number, number],
-                    target: [9, 2, 4] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
-                // Back wall spotlights
-                {
-                    position: [-4, 6, -8] as [number, number, number],
-                    target: [-4, 2, -9] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
-                {
-                    position: [4, 6, -8] as [number, number, number],
-                    target: [4, 2, -9] as [number, number, number],
-                    intensity: 1.2,
-                    color: "#ffffff",
-                },
+                // North wall (left) spotlights - 6 lights for 6 frames
+                ...Array(6)
+                    .fill(0)
+                    .map((_, i) => ({
+                        position: [-8, 6, -7 + i * 3] as [
+                            number,
+                            number,
+                            number
+                        ],
+                        target: [-9, 2, -7 + i * 3] as [number, number, number],
+                        intensity: 0.6, // Reduced from 1.2
+                        color: "#ffffff",
+                    })),
+                // South wall spotlights
+                ...Array(6)
+                    .fill(0)
+                    .map((_, i) => ({
+                        position: [8, 6, -7 + i * 3] as [
+                            number,
+                            number,
+                            number
+                        ],
+                        target: [9, 2, -7 + i * 3] as [number, number, number],
+                        intensity: 0.6,
+                        color: "#ffffff",
+                    })),
+                // West wall (back) spotlights
+                ...Array(6)
+                    .fill(0)
+                    .map((_, i) => ({
+                        position: [-7 + i * 3, 6, -8] as [
+                            number,
+                            number,
+                            number
+                        ],
+                        target: [-7 + i * 3, 2, -9] as [number, number, number],
+                        intensity: 0.6,
+                        color: "#ffffff",
+                    })),
+                // East wall (entrance) spotlights
+                ...Array(6)
+                    .fill(0)
+                    .map((_, i) => ({
+                        position: [-7 + i * 3, 6, 8] as [
+                            number,
+                            number,
+                            number
+                        ],
+                        target: [-7 + i * 3, 2, 9] as [number, number, number],
+                        intensity: 0.6,
+                        color: "#ffffff",
+                    })),
             ],
         },
-        interactiveElements: [
-            // North wall art (left wall) - reduced to 2 pieces
-            ...Array(2)
-                .fill(0)
-                .map(
-                    (_, i): InteractiveElement => ({
-                        id: `art-frame-north-${i}`,
-                        type: "model",
-                        position: [-9, 2, -4 + i * 8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        rotation: [0, Math.PI / 2, 0] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        scale: [1, 1, 1] as [number, number, number],
-                        content: {
-                            type: "art-frame",
-                            imageUrl: `/images/art/tree-night.jpg`,
-                        },
-                    })
-                ),
-            // South wall art (right wall) - reduced to 2 pieces
-            ...Array(2)
-                .fill(0)
-                .map(
-                    (_, i): InteractiveElement => ({
-                        id: `art-frame-south-${i}`,
-                        type: "model",
-                        position: [9, 2, -4 + i * 8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        rotation: [0, -Math.PI / 2, 0] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        scale: [1, 1, 1] as [number, number, number],
-                        content: {
-                            type: "art-frame",
-                            imageUrl: `/images/art/tree-night.jpg`,
-                        },
-                    })
-                ),
-            // Back wall art - reduced to 2 pieces
-            ...Array(2)
-                .fill(0)
-                .map(
-                    (_, i): InteractiveElement => ({
-                        id: `art-frame-back-${i}`,
-                        type: "model",
-                        position: [-4 + i * 8, 2, -9] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        rotation: [0, 0, 0] as [number, number, number],
-                        scale: [1, 1, 1] as [number, number, number],
-                        content: {
-                            type: "art-frame",
-                            imageUrl: `/images/art/tree-night.jpg`,
-                        },
-                    })
-                ),
-            // Gallery title
-            {
-                id: "gallery-title",
-                type: "text",
-                position: [0, 4.5, -9] as [number, number, number],
-                rotation: [0, 0, 0] as [number, number, number],
-                content: "Art Gallery",
-                scale: [2, 2, 2] as [number, number, number],
-            },
-        ],
+        interactiveElements: createArtLayout(),
         archways: [
             {
                 id: "to-atrium-from-gallery",

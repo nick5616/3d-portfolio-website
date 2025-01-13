@@ -3,7 +3,13 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { PerformanceOverlay } from "./PerformanceOverlay";
 
 export const Interface: React.FC = () => {
-    const { controlMode, setControlMode, performance } = useSceneStore();
+    const {
+        controlMode,
+        setControlMode,
+        performance,
+        spotlightsEnabled,
+        toggleSpotlights,
+    } = useSceneStore();
 
     return (
         <div className="fixed inset-0 pointer-events-none">
@@ -39,6 +45,22 @@ export const Interface: React.FC = () => {
                         ? "First Person"
                         : "Point & Click"}
                 </div>
+            </div>
+
+            {/* Spotlight toggle */}
+            <div className="absolute bottom-4 right-4 pointer-events-auto">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSpotlights();
+                    }}
+                    className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                >
+                    <span>Spotlights:</span>
+                    <span className="font-medium">
+                        {spotlightsEnabled ? "ON" : "OFF"}
+                    </span>
+                </button>
             </div>
 
             {/* Performance overlay */}

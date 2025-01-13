@@ -8,7 +8,6 @@ interface ArtFrameProps {
     rotation?: [number, number, number];
     scale?: [number, number, number];
     imageUrl: string;
-    wallOffset?: number; // Distance from wall
 }
 
 interface ImageDimensions {
@@ -22,7 +21,6 @@ const Frame: React.FC<ArtFrameProps> = ({
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     imageUrl,
-    wallOffset = 0.15, // Default wall offset
 }) => {
     const texture = useLoader(TextureLoader, imageUrl);
     const [dimensions, setDimensions] = useState<ImageDimensions>({
@@ -39,9 +37,15 @@ const Frame: React.FC<ArtFrameProps> = ({
             let height = width / aspectRatio;
 
             // If height would be too tall, constrain by height instead
-            if (height > 2) {
-                height = 2;
+            if (height > 2.5) {
+                height = 2.5;
                 width = height * aspectRatio;
+            }
+
+            // If width would be too wide, constrain it
+            if (width > 3) {
+                width = 3;
+                height = width / aspectRatio;
             }
 
             setDimensions({
@@ -56,15 +60,8 @@ const Frame: React.FC<ArtFrameProps> = ({
     const frameDepth = 0.1;
     const frameThickness = 0.08;
 
-    // Adjust position to be closer to wall
-    const adjustedPosition: [number, number, number] = [
-        position[0],
-        position[1],
-        position[2] + wallOffset,
-    ];
-
     return (
-        <group position={adjustedPosition} rotation={rotation} scale={scale}>
+        <group position={position} rotation={rotation} scale={scale}>
             {/* Main frame box */}
             <mesh castShadow receiveShadow>
                 <boxGeometry
@@ -74,7 +71,7 @@ const Frame: React.FC<ArtFrameProps> = ({
             </mesh>
 
             {/* Canvas backing (dark inner frame) */}
-            <mesh position={[0, 0, frameDepth / 2 - 0.05]}>
+            <mesh position={[0, 0, frameDepth / 2 - 0.04]}>
                 <boxGeometry
                     args={[
                         dimensions.width - frameThickness * 2,
@@ -108,7 +105,7 @@ const Frame: React.FC<ArtFrameProps> = ({
                     position={[
                         x * (dimensions.width / 2 - frameThickness / 2),
                         y * (dimensions.height / 2 - frameThickness / 2),
-                        frameDepth / 2 + 0.02,
+                        frameDepth / 2 + 0.01,
                     ]}
                 >
                     <boxGeometry
