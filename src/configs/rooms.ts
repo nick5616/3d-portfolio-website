@@ -17,7 +17,7 @@ const createArtLayout = (): InteractiveElement[] => [
     },
 
     // Surrounding pieces higher
-    ...[-4, 4].map(
+    ...[-5.5, 5.5].map(
         (zOffset, i): InteractiveElement => ({
             id: `art-north-top-${i}`,
             type: "model",
@@ -32,7 +32,7 @@ const createArtLayout = (): InteractiveElement[] => [
     ),
 
     // Surrounding pieces lower
-    ...[-5, 5].map(
+    ...[-6.5, 6.5].map(
         (zOffset, i): InteractiveElement => ({
             id: `art-north-bottom-${i}`,
             type: "model",
@@ -49,9 +49,9 @@ const createArtLayout = (): InteractiveElement[] => [
     // South wall (right wall) - Triptych arrangement
     ...(
         [
-            [-3, 2.8],
+            [-4, 2.8],
             [0, 3.2],
-            [3, 2.8],
+            [4, 2.8],
         ] as const
     ).map(
         ([zOffset, height], i): InteractiveElement => ({
@@ -70,8 +70,8 @@ const createArtLayout = (): InteractiveElement[] => [
     // Lower pieces
     ...(
         [
-            [-5, 1.6],
-            [5, 1.6],
+            [-6.5, 1.6],
+            [6.5, 1.6],
         ] as const
     ).map(
         ([zOffset, height], i): InteractiveElement => ({
@@ -87,8 +87,8 @@ const createArtLayout = (): InteractiveElement[] => [
         })
     ),
 
-    // West wall (back) - Asymmetric grid
-    ...[-6, -2, 2, 6].map(
+    // West wall (back) - Asymmetric grid with more spacing
+    ...[-7, -2.5, 2.5, 7].map(
         (xOffset, i): InteractiveElement => ({
             id: `art-west-${i}`,
             type: "model",
@@ -106,13 +106,13 @@ const createArtLayout = (): InteractiveElement[] => [
         })
     ),
 
-    // East wall (entrance) - Minimal arrangement, away from door
+    // East wall (entrance) - Minimal arrangement, away from door area
     ...(
         [
-            [-6, 2.5],
-            [-3.5, 3],
-            [3.5, 3],
-            [6, 2.5],
+            [-7, 2.5],
+            [-4, 3],
+            [4, 3],
+            [7, 2.5],
         ] as const
     ).map(
         ([xOffset, height], i): InteractiveElement => ({
