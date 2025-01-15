@@ -7,7 +7,7 @@ export const artPieces = [
     "brushed-sunset",
     "chaos-bird",
     "far-east",
-    "first-drawing",
+    "teemo",
 
     // South wall pieces (indices 6-11)
 
@@ -21,10 +21,10 @@ export const artPieces = [
     // West wall pieces (indices 12-17)
     "okay-blue-heron",
     "san-bernardino",
-    "seal",
+    "teemo",
     "smoke-man",
     "snow-white-night",
-    "teemo",
+    "seal",
 
     // East wall pieces (indices 18-23)
     "homunculus",

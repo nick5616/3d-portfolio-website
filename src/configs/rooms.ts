@@ -3,7 +3,7 @@ import { RoomConfig, InteractiveElement } from "../types/scene.types";
 import { getArtImageUrl } from "./artConfig";
 
 const createArtLayout = (): InteractiveElement[] => [
-    // North wall (left wall) - Centerpiece with surrounding works
+    // Left wall (-x) (indices 0-5)
     {
         id: "art-north-center",
         type: "model",
@@ -16,7 +16,7 @@ const createArtLayout = (): InteractiveElement[] => [
         },
     },
 
-    // Surrounding pieces higher
+    // Higher surrounding pieces
     ...[-5.5, 5.5].map(
         (zOffset, i): InteractiveElement => ({
             id: `art-north-top-${i}`,
@@ -31,7 +31,7 @@ const createArtLayout = (): InteractiveElement[] => [
         })
     ),
 
-    // Surrounding pieces lower
+    // Lower surrounding pieces
     ...[-6.5, 6.5].map(
         (zOffset, i): InteractiveElement => ({
             id: `art-north-bottom-${i}`,
@@ -45,7 +45,6 @@ const createArtLayout = (): InteractiveElement[] => [
             },
         })
     ),
-
     // South wall (right wall) - Triptych arrangement
     ...(
         [
@@ -87,10 +86,10 @@ const createArtLayout = (): InteractiveElement[] => [
         })
     ),
 
-    // West wall (back) - Asymmetric grid with more spacing
+    // Back wall (-z) (indices 12-17)
     ...[-7, -2.5, 2.5, 7].map(
         (xOffset, i): InteractiveElement => ({
-            id: `art-west-${i}`,
+            id: `art-back-${i}`,
             type: "model",
             position: [xOffset, 2 + (i % 2) * 0.8, -9] as [
                 number,
@@ -101,12 +100,12 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1.1, 1.1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 10),
+                imageUrl: getArtImageUrl(i + 12),
             },
         })
     ),
 
-    // East wall (entrance) - Minimal arrangement, away from door area
+    // Front wall (+z) artwork - keep original layout and position
     ...(
         [
             [-7, 2.5],
@@ -116,14 +115,36 @@ const createArtLayout = (): InteractiveElement[] => [
         ] as const
     ).map(
         ([xOffset, height], i): InteractiveElement => ({
-            id: `art-east-${i}`,
+            id: `art-front-${i}`,
             type: "model",
             position: [xOffset, height, 9] as [number, number, number],
             rotation: [0, Math.PI, 0] as [number, number, number],
             scale: [1, 1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 14),
+                imageUrl: getArtImageUrl(i + 18),
+            },
+        })
+    ),
+
+    // Entrance/Right wall (+x) using the same layout as front wall
+    ...(
+        [
+            [-7, 2.5],
+            [-4, 3],
+            [4, 3],
+            [7, 2.5],
+        ] as const
+    ).map(
+        ([zOffset, height], i): InteractiveElement => ({
+            id: `art-entrance-${i}`,
+            type: "model",
+            position: [9, height, zOffset] as [number, number, number],
+            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+            scale: [1, 1, 1] as [number, number, number],
+            content: {
+                type: "art-frame",
+                imageUrl: getArtImageUrl(i + 22),
             },
         })
     ),
