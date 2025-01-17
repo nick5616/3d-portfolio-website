@@ -1,6 +1,7 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
 import { getArtImageUrl } from "./artConfig";
+import { createProjectsLayout } from "./createProjectsLayout";
 
 const createArtLayout = (): InteractiveElement[] => [
     // North wall (-x)
@@ -320,32 +321,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     color: "#ffffff",
                 })),
         },
-        interactiveElements: [
-            // Project displays in a grid formation
-            ...Array(6)
-                .fill(0)
-                .map(
-                    (_, i): InteractiveElement => ({
-                        id: `project-${i}`,
-                        type: "model",
-                        position: [
-                            -7.5 + (i % 3) * 7.5,
-                            2,
-                            -5 + Math.floor(i / 3) * 5,
-                        ] as [number, number, number],
-                        rotation: [0, 0, 0] as [number, number, number],
-                        scale: [3, 2, 0.2] as [number, number, number],
-                        content: "project-display",
-                    })
-                ),
-            {
-                id: "projects-title",
-                type: "text",
-                position: [0, 4, -5] as [number, number, number],
-                content: "Software Projects",
-                scale: [1.5, 1.5, 1.5] as [number, number, number],
-            },
-        ],
+        interactiveElements: createProjectsLayout(),
         archways: [
             {
                 id: "to-atrium-from-projects",

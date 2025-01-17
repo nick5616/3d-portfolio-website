@@ -33,7 +33,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     <ProjectDisplay
                         position={position}
                         scale={scale}
-                        previewUrl="/images/projects/preview.jpg"
+                        rotation={rotation}
                     />
                 );
             } else if (content.type === "art-frame") {
