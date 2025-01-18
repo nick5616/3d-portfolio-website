@@ -6,6 +6,8 @@ interface MovementState {
     left: boolean;
     right: boolean;
     running: boolean;
+    up: boolean; // For flying
+    down: boolean; // For flying
 }
 
 export const useKeyboardControls = () => {
@@ -15,11 +17,20 @@ export const useKeyboardControls = () => {
         left: false,
         right: false,
         running: false,
+        up: false,
+        down: false,
     });
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             switch (event.code) {
+                case "Space":
+                    setMovement((prev) => ({ ...prev, up: true }));
+                    break;
+                case "KeyC":
+                case "ControlLeft":
+                    setMovement((prev) => ({ ...prev, down: true }));
+                    break;
                 case "KeyW":
                 case "ArrowUp":
                     setMovement((prev) => ({ ...prev, forward: true }));
@@ -45,6 +56,13 @@ export const useKeyboardControls = () => {
 
         const handleKeyUp = (event: KeyboardEvent) => {
             switch (event.code) {
+                case "Space":
+                    setMovement((prev) => ({ ...prev, up: false }));
+                    break;
+                case "KeyC":
+                case "ControlLeft":
+                    setMovement((prev) => ({ ...prev, down: false }));
+                    break;
                 case "KeyW":
                 case "ArrowUp":
                     setMovement((prev) => ({ ...prev, forward: false }));

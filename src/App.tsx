@@ -1,5 +1,5 @@
 import { Scene } from "./components/core/Scene";
-import { Interface } from "./components/ui/Interface";
+import Interface from "./components/ui/Interface";
 
 export default function App() {
     return (

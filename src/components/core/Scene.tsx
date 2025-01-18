@@ -4,6 +4,7 @@ import { Stats, AdaptiveDpr, AdaptiveEvents } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { useSceneStore } from "../../stores/sceneStore";
+import { PlayerBody } from "./PlayerBody";
 
 export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
@@ -24,6 +25,7 @@ export const Scene: React.FC = () => {
             >
                 <Suspense fallback={null}>
                     <Physics>
+                        <PlayerBody />
                         <SceneManager />
                         {performance.showStats && <Stats />}
                         <AdaptiveDpr pixelated />

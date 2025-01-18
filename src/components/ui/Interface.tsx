@@ -1,20 +1,22 @@
-// src/components/ui/Interface.tsx
 import { useSceneStore } from "../../stores/sceneStore";
 import { PerformanceOverlay } from "./PerformanceOverlay";
 
-export const Interface: React.FC = () => {
+export default function Interface() {
     const {
         controlMode,
         setControlMode,
         performance,
         spotlightsEnabled,
         toggleSpotlights,
+        flyMode,
+        toggleFlyMode,
     } = useSceneStore();
 
     return (
         <div className="fixed inset-0 pointer-events-none">
-            {/* Control mode switcher */}
-            <div className="absolute bottom-4 left-4 pointer-events-auto flex items-center gap-3">
+            {/* Left controls group */}
+            <div className="absolute bottom-4 left-4 pointer-events-auto flex flex-col gap-2">
+                {/* Control mode switcher */}
                 <button
                     onClick={() =>
                         setControlMode(
@@ -25,7 +27,7 @@ export const Interface: React.FC = () => {
                     }
                     className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
                 >
-                    <span>Control Mode:</span>
+                    <span>Mode:</span>
                     <span className="font-medium">
                         {controlMode === "firstPerson"
                             ? "WASD + Mouse"
@@ -33,27 +35,24 @@ export const Interface: React.FC = () => {
                     </span>
                 </button>
 
-                {/* Mode indicator pill */}
-                <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        controlMode === "firstPerson"
-                            ? "bg-green-500/20 text-green-300"
-                            : "bg-blue-500/20 text-blue-300"
-                    }`}
-                >
-                    {controlMode === "firstPerson"
-                        ? "First Person"
-                        : "Point & Click"}
-                </div>
+                {/* Fly mode toggle (only in first person) */}
+                {controlMode === "firstPerson" && (
+                    <button
+                        onClick={toggleFlyMode}
+                        className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
+                    >
+                        <span>Movement:</span>
+                        <span className="font-medium">
+                            {flyMode ? "Flying" : "Walking"}
+                        </span>
+                    </button>
+                )}
             </div>
 
-            {/* Spotlight toggle */}
+            {/* Right controls */}
             <div className="absolute bottom-4 right-4 pointer-events-auto">
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSpotlights();
-                    }}
+                    onClick={toggleSpotlights}
                     className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
                 >
                     <span>Spotlights:</span>
@@ -63,8 +62,39 @@ export const Interface: React.FC = () => {
                 </button>
             </div>
 
+            {/* Mode indicator pill */}
+            <div className="absolute top-4 left-4">
+                <div
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        controlMode === "firstPerson"
+                            ? "bg-green-500/20 text-green-300"
+                            : "bg-blue-500/20 text-blue-300"
+                    }`}
+                >
+                    {controlMode === "firstPerson"
+                        ? `${flyMode ? "Flying" : "Walking"} Mode`
+                        : "Point & Click"}
+                </div>
+            </div>
+
+            {/* Controls help */}
+            <div className="absolute top-4 right-4 text-right text-white/50 text-sm">
+                {controlMode === "firstPerson" && (
+                    <div className="space-y-1">
+                        <p>WASD - Move</p>
+                        <p>Shift - Sprint</p>
+                        {flyMode && (
+                            <>
+                                <p>Space - Fly Up</p>
+                                <p>C - Fly Down</p>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Performance overlay */}
             {performance.monitoring && <PerformanceOverlay />}
         </div>
     );
-};
+}
