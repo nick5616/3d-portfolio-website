@@ -80,7 +80,6 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 color={config.lightPreset.directional.color}
                 castShadow
             />
-
             {/* Floor */}
             <RigidBody type="fixed">
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -88,149 +87,153 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     <meshStandardMaterial color="#444444" />
                 </mesh>
             </RigidBody>
-
-            {/* Walls */}
             {[
                 {
                     id: "north",
-                    position: [0, height / 2, -depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
+                    position: new THREE.Vector3(0, height / 2, -depth / 2),
                     rotation: [0, 0, 0] as [number, number, number],
                     isVertical: false,
                 },
                 {
                     id: "south",
-                    position: [0, height / 2, depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
+                    position: new THREE.Vector3(0, height / 2, depth / 2),
                     rotation: [0, 0, 0] as [number, number, number],
                     isVertical: false,
                 },
                 {
                     id: "east",
-                    position: [width / 2, height / 2, 0] as [
-                        number,
-                        number,
-                        number
-                    ],
+                    position: new THREE.Vector3(width / 2, height / 2, 0),
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                     isVertical: true,
                 },
                 {
                     id: "west",
-                    position: [-width / 2, height / 2, 0] as [
-                        number,
-                        number,
-                        number
-                    ],
+                    position: new THREE.Vector3(-width / 2, height / 2, 0),
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                     isVertical: true,
                 },
             ].map((wall) => {
                 // Skip this wall if it connects to the atrium
-                if (shouldSkipWall(wall.position)) {
-                    console.log(
-                        `Skipping wall in ${config.id} at position:`,
-                        wall.position
-                    );
+                if (
+                    shouldSkipWall(
+                        wall.position.toArray() as [number, number, number]
+                    )
+                ) {
                     return null;
                 }
 
                 // Check if this wall should be segmented (only in atrium)
-                if (isAtrium && shouldSegmentWall(wall.position)) {
-                    console.log(`Segmenting wall in atrium:`, wall.id);
+                if (
+                    isAtrium &&
+                    shouldSegmentWall(
+                        wall.position.toArray() as [number, number, number]
+                    )
+                ) {
+                    const sideWidth =
+                        (wall.isVertical ? depth : width - doorWidth) / 2;
+                    const leftPosition = new THREE.Vector3(
+                        -width / 4 - doorWidth / 4,
+                        0,
+                        0
+                    );
+                    const rightPosition = new THREE.Vector3(
+                        width / 4 + doorWidth / 4,
+                        0,
+                        0
+                    );
+                    const topPosition = new THREE.Vector3(
+                        0,
+                        height / 2 - doorHeight / 2,
+                        0
+                    );
+
                     return (
                         <group
                             key={wall.id}
                             position={wall.position}
                             rotation={wall.rotation}
                         >
-                            {/* Left segment */}
-                            <mesh position={[-width / 4 - doorWidth / 4, 0, 0]}>
-                                <boxGeometry
-                                    args={[
-                                        (wall.isVertical
-                                            ? depth
-                                            : width - doorWidth) / 2,
-                                        height,
-                                        wallThickness,
-                                    ]}
-                                />
-                                <meshStandardMaterial
-                                    color="#ff0000"
-                                    side={THREE.DoubleSide}
-                                />
-                            </mesh>
+                            {/* Left segment with collider */}
+                            <RigidBody type="fixed" colliders="cuboid">
+                                <mesh position={leftPosition}>
+                                    <boxGeometry
+                                        args={[
+                                            sideWidth,
+                                            height,
+                                            wallThickness,
+                                        ]}
+                                    />
+                                    <meshStandardMaterial
+                                        color="#ff0000"
+                                        side={THREE.DoubleSide}
+                                    />
+                                </mesh>
+                            </RigidBody>
 
-                            {/* Right segment */}
-                            <mesh position={[width / 4 + doorWidth / 4, 0, 0]}>
-                                <boxGeometry
-                                    args={[
-                                        (wall.isVertical
-                                            ? depth
-                                            : width - doorWidth) / 2,
-                                        height,
-                                        wallThickness,
-                                    ]}
-                                />
-                                <meshStandardMaterial
-                                    color="#00ff00"
-                                    side={THREE.DoubleSide}
-                                />
-                            </mesh>
+                            {/* Right segment with collider */}
+                            <RigidBody type="fixed" colliders="cuboid">
+                                <mesh position={rightPosition}>
+                                    <boxGeometry
+                                        args={[
+                                            sideWidth,
+                                            height,
+                                            wallThickness,
+                                        ]}
+                                    />
+                                    <meshStandardMaterial
+                                        color="#00ff00"
+                                        side={THREE.DoubleSide}
+                                    />
+                                </mesh>
+                            </RigidBody>
 
-                            {/* Top segment */}
-                            <mesh
-                                position={[0, height / 2 - doorHeight / 2, 0]}
-                            >
-                                <boxGeometry
-                                    args={[
-                                        doorWidth,
-                                        height - doorHeight,
-                                        wallThickness,
-                                    ]}
-                                />
-                                <meshStandardMaterial
-                                    color="#0000ff"
-                                    side={THREE.DoubleSide}
-                                />
-                            </mesh>
+                            {/* Top segment with collider */}
+                            <RigidBody type="fixed" colliders="cuboid">
+                                <mesh position={topPosition}>
+                                    <boxGeometry
+                                        args={[
+                                            doorWidth,
+                                            height - doorHeight,
+                                            wallThickness,
+                                        ]}
+                                    />
+                                    <meshStandardMaterial
+                                        color="#0000ff"
+                                        side={THREE.DoubleSide}
+                                    />
+                                </mesh>
+                            </RigidBody>
                         </group>
                     );
                 } else {
-                    // Regular wall
+                    // Regular wall with collider
                     return (
-                        <mesh
-                            key={wall.id}
-                            position={wall.position}
-                            rotation={wall.rotation}
-                        >
-                            <boxGeometry
-                                args={[
-                                    wall.isVertical ? depth : width,
-                                    height,
-                                    wallThickness,
-                                ]}
-                            />
-                            <meshStandardMaterial
-                                color="#666666"
-                                side={THREE.DoubleSide}
-                            />
-                        </mesh>
+                        <RigidBody type="fixed" colliders="cuboid">
+                            <mesh
+                                key={wall.id}
+                                position={wall.position}
+                                rotation={wall.rotation}
+                            >
+                                <boxGeometry
+                                    args={[
+                                        wall.isVertical ? depth : width,
+                                        height,
+                                        wallThickness,
+                                    ]}
+                                />
+                                <meshStandardMaterial
+                                    color="#666666"
+                                    side={THREE.DoubleSide}
+                                />
+                            </mesh>
+                        </RigidBody>
                     );
                 }
             })}
-
             {/* Interactive elements */}
             {config.interactiveElements.map((element) => (
                 <InteractiveObject key={element.id} element={element} />
             ))}
-
             <Preload all />
         </group>
     );
