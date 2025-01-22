@@ -1,7 +1,11 @@
 // src/components/core/PlayerBody.tsx
 import { useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { CapsuleCollider, RigidBody } from "@react-three/rapier";
+import {
+    RigidBody,
+    CapsuleCollider,
+    interactionGroups,
+} from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useKeyboardControls } from "../../hooks/useKeyboardControls";
@@ -112,6 +116,8 @@ export const PlayerBody: React.FC = () => {
             position={[0, 2, 5]}
             friction={20}
             restitution={0}
+            // Add collision groups
+            collisionGroups={interactionGroups(0, [0, 1])} // Group 0 collides with groups 0 and 1
         >
             <CapsuleCollider
                 args={[0.5, 0.3]}
