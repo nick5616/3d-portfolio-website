@@ -1,4 +1,5 @@
-import { useRef, useMemo } from "react";
+// src/components/core/Room.tsx
+import { useRef } from "react";
 import { Preload } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomConfig } from "../../types/scene.types";
@@ -12,99 +13,22 @@ interface RoomProps {
 }
 
 export const Room: React.FC<RoomProps> = ({ config }) => {
+  const directionalLightRef = useRef<THREE.DirectionalLight>(null);
   const [width, height, depth] = config.dimensions;
   const wallThickness = 0.1;
   const doorWidth = 3;
   const doorHeight = 4;
-  const isGallery = config.id === "gallery";
+  const materials = getRoomMaterials(config.id);
 
-  // Get materials based on room type
-  const materials = useMemo(() => getRoomMaterials(config.id), [config.id]);
-
-  const renderWallWithArch = (
-    basePos: THREE.Vector3,
-    rotation: [number, number, number],
-    size: [number, number, number],
-    archway = false
-  ) => {
-    if (!archway) {
-      return (
-        <RigidBody type="fixed" colliders="cuboid">
-          <mesh position={basePos} rotation={rotation}>
-            <boxGeometry args={size} />
-            <primitive object={materials.walls} attach="material" />
-          </mesh>
-        </RigidBody>
-      );
-    }
-
-    const segments = [];
-    const [wallWidth, wallHeight, wallDepth] = size;
-
-    // Left section
-    segments.push({
-      position: new THREE.Vector3(
-        basePos.x - (wallWidth / 4 + doorWidth / 4),
-        basePos.y,
-        basePos.z
-      ),
-      size: [(wallWidth - doorWidth) / 2, wallHeight, wallDepth],
-    });
-
-    // Right section
-    segments.push({
-      position: new THREE.Vector3(
-        basePos.x + (wallWidth / 4 + doorWidth / 4),
-        basePos.y,
-        basePos.z
-      ),
-      size: [(wallWidth - doorWidth) / 2, wallHeight, wallDepth],
-    });
-
-    // Top section
-    segments.push({
-      position: new THREE.Vector3(
-        basePos.x,
-        basePos.y + (wallHeight - doorHeight) / 2,
-        basePos.z
-      ),
-      size: [doorWidth, wallHeight - doorHeight, wallDepth],
-    });
-
-    return segments.map((segment, idx) => (
-      <RigidBody key={`segment-${idx}`} type="fixed" colliders="cuboid">
-        <mesh position={segment.position} rotation={rotation}>
-          <boxGeometry args={segment.size} />
-          <primitive object={materials.walls} attach="material" />
-        </mesh>
-      </RigidBody>
-    ));
+  const hasArchwayAtPosition = (pos: THREE.Vector3) => {
+    return (
+      config.archways?.some((arch) => {
+        const archPos = new THREE.Vector2(arch.position[0], arch.position[2]);
+        const wallPos = new THREE.Vector2(pos.x, pos.z);
+        return archPos.distanceTo(wallPos) < 1;
+      }) ?? false
+    );
   };
-
-  // Gallery divider configuration
-  const galleryDividers = useMemo(() => {
-    if (!isGallery) return [];
-
-    return [
-      // Vertical dividers
-      {
-        position: new THREE.Vector3(-width / 4, height / 2, 0),
-        size: [wallThickness, height, depth * 0.6] as [number, number, number],
-        rotation: [0, 0, 0] as [number, number, number],
-      },
-      {
-        position: new THREE.Vector3(width / 4, height / 2, 0),
-        size: [wallThickness, height, depth * 0.6] as [number, number, number],
-        rotation: [0, 0, 0] as [number, number, number],
-      },
-      // Horizontal connector
-      {
-        position: new THREE.Vector3(0, height / 2, 0),
-        size: [width / 2, height, wallThickness] as [number, number, number],
-        rotation: [0, 0, 0] as [number, number, number],
-      },
-    ];
-  }, [isGallery, width, height, depth, wallThickness]);
 
   return (
     <group position={config.position}>
@@ -114,62 +38,135 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
         color={config.lightPreset.ambient.color}
       />
       <directionalLight
+        ref={directionalLightRef}
         position={config.lightPreset.directional.position}
         intensity={config.lightPreset.directional.intensity}
         color={config.lightPreset.directional.color}
         castShadow
       />
-
       {/* Floor */}
       <RigidBody type="fixed">
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[width, depth]} />
-          <primitive object={materials.floor} attach="material" />
+          <meshStandardMaterial color="#444444" />
         </mesh>
       </RigidBody>
+      {[
+        {
+          id: "north",
+          position: new THREE.Vector3(0, height / 2, -depth / 2),
+          rotation: new THREE.Euler(0, 0, 0),
+          isVertical: false,
+        },
+        {
+          id: "south",
+          position: new THREE.Vector3(0, height / 2, depth / 2),
+          rotation: new THREE.Euler(0, 0, 0),
+          isVertical: false,
+        },
+        {
+          id: "east",
+          position: new THREE.Vector3(width / 2, height / 2, 0),
+          rotation: new THREE.Euler(0, Math.PI / 2, 0),
+          isVertical: true,
+        },
+        {
+          id: "west",
+          position: new THREE.Vector3(-width / 2, height / 2, 0),
+          rotation: new THREE.Euler(0, Math.PI / 2, 0),
+          isVertical: true,
+        },
+      ].map((wall) => {
+        if (hasArchwayAtPosition(wall.position as THREE.Vector3)) {
+          const sideWidth = (wall.isVertical ? depth : width - doorWidth) / 2;
+          return (
+            <group
+              key={wall.id}
+              position={wall.position}
+              rotation={wall.rotation}
+            >
+              {/* Left segment */}
+              <RigidBody type="fixed" colliders="cuboid">
+                <mesh position={[-sideWidth / 2 - doorWidth / 2, 0, 0]}>
+                  <boxGeometry args={[sideWidth, height, wallThickness]} />
+                  <primitive object={materials.walls} attach="material" />
+                </mesh>
+              </RigidBody>
 
-      {/* Main walls */}
-      {renderWallWithArch(
-        new THREE.Vector3(0, height / 2, -depth / 2),
-        [0, 0, 0],
-        [width, height, wallThickness],
-        config.archways?.some((arch) => arch.position[2] === -depth / 2)
-      )}
-      {renderWallWithArch(
-        new THREE.Vector3(0, height / 2, depth / 2),
-        [0, 0, 0],
-        [width, height, wallThickness],
-        config.archways?.some((arch) => arch.position[2] === depth / 2)
-      )}
-      {renderWallWithArch(
-        new THREE.Vector3(-width / 2, height / 2, 0),
-        [0, Math.PI / 2, 0],
-        [depth, height, wallThickness],
-        config.archways?.some((arch) => arch.position[0] === -width / 2)
-      )}
-      {renderWallWithArch(
-        new THREE.Vector3(width / 2, height / 2, 0),
-        [0, Math.PI / 2, 0],
-        [depth, height, wallThickness],
-        config.archways?.some((arch) => arch.position[0] === width / 2)
-      )}
+              {/* Right segment */}
+              <RigidBody type="fixed" colliders="cuboid">
+                <mesh position={[sideWidth / 2 + doorWidth / 2, 0, 0]}>
+                  <boxGeometry args={[sideWidth, height, wallThickness]} />
+                  <primitive object={materials.walls} attach="material" />
+                </mesh>
+              </RigidBody>
 
-      {/* Gallery dividers */}
-      {isGallery &&
-        galleryDividers.map((divider, index) => (
-          <RigidBody key={`divider-${index}`} type="fixed" colliders="cuboid">
-            <mesh position={divider.position} rotation={divider.rotation}>
-              <boxGeometry args={divider.size} />
-              <primitive object={materials.dividers} attach="material" />
+              {/* Top segment */}
+              <RigidBody type="fixed" colliders="cuboid">
+                <mesh position={[0, height / 2 - doorHeight / 2, 0]}>
+                  <boxGeometry
+                    args={[doorWidth, height - doorHeight, wallThickness]}
+                  />
+                  <primitive object={materials.walls} attach="material" />
+                </mesh>
+              </RigidBody>
+            </group>
+          );
+        } else {
+          return (
+            <RigidBody type="fixed" colliders="cuboid" key={wall.id}>
+              <mesh position={wall.position} rotation={wall.rotation}>
+                <boxGeometry
+                  args={[
+                    wall.isVertical ? depth : width,
+                    height,
+                    wallThickness,
+                  ]}
+                />
+                <primitive object={materials.walls} attach="material" />
+              </mesh>
+            </RigidBody>
+          );
+        }
+      })}
+      {config.id === "gallery" && (
+        <>
+          {/* Vertical dividers */}
+          <RigidBody type="fixed" colliders="cuboid">
+            <mesh position={new THREE.Vector3(-width / 4, height / 2, 0)}>
+              <boxGeometry args={[wallThickness, height, depth * 0.6]} />
+              <primitive
+                object={materials.dividers || materials.walls}
+                attach="material"
+              />
             </mesh>
           </RigidBody>
-        ))}
-
+          <RigidBody type="fixed" colliders="cuboid">
+            <mesh position={new THREE.Vector3(width / 4, height / 2, 0)}>
+              <boxGeometry args={[wallThickness, height, depth * 0.6]} />
+              <primitive
+                object={materials.dividers || materials.walls}
+                attach="material"
+              />
+            </mesh>
+          </RigidBody>
+          {/* Horizontal connector */}
+          <RigidBody type="fixed" colliders="cuboid">
+            <mesh position={new THREE.Vector3(0, height / 2, 0)}>
+              <boxGeometry args={[width / 2, height, wallThickness]} />
+              <primitive
+                object={materials.dividers || materials.walls}
+                attach="material"
+              />
+            </mesh>
+          </RigidBody>
+        </>
+      )}
+      ```
       {/* Interactive elements */}
       {config.interactiveElements.map((element) => (
         <InteractiveObject key={element.id} element={element} />
       ))}
-
       <Preload all />
     </group>
   );

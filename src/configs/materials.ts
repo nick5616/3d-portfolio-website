@@ -1,82 +1,74 @@
 // src/configs/materials.ts
 import * as THREE from "three";
+import { RoomMaterials } from "../types/material.types";
 
-export const createMaterialWithDebug = (params: {
-  color: string;
-  roughness: number;
-  metalness: number;
-  name: string;
-}) => {
-  const material = new THREE.MeshStandardMaterial({
-    color: params.color,
-    roughness: params.roughness,
-    metalness: params.metalness,
-    side: THREE.DoubleSide,
-  });
-  console.log(`Created material ${params.name}:`, {
-    color: material.color,
-    roughness: material.roughness,
-    metalness: material.metalness,
-  });
-  return material;
-};
-
-// Atrium materials - marble white
+// Atrium - marble white
 export const atriumMaterials = {
-  walls: createMaterialWithDebug({
+  walls: new THREE.MeshStandardMaterial({
     color: "#f5f5f5",
     roughness: 0.2,
     metalness: 0.1,
-    name: "atrium-walls",
+    side: THREE.DoubleSide,
   }),
-  floor: createMaterialWithDebug({
+  floor: new THREE.MeshStandardMaterial({
     color: "#e0e0e0",
     roughness: 0.3,
     metalness: 0.1,
-    name: "atrium-floor",
   }),
 };
 
-// Gallery materials - pure gallery white
+// Gallery - flat white
 export const galleryMaterials = {
-  walls: createMaterialWithDebug({
+  walls: new THREE.MeshStandardMaterial({
     color: "#ffffff",
-    roughness: 0.1,
-    metalness: 0.0,
-    name: "gallery-walls",
+    roughness: 0.9, // Very rough for flat appearance
+    metalness: 0.0, // No metallic quality
+    side: THREE.DoubleSide,
   }),
-  dividers: createMaterialWithDebug({
-    color: "#f8f8f8",
-    roughness: 0.15,
-    metalness: 0.0,
-    name: "gallery-dividers",
-  }),
-  floor: createMaterialWithDebug({
-    color: "#e8e8e8",
-    roughness: 0.2,
-    metalness: 0.05,
-    name: "gallery-floor",
-  }),
-};
-
-// Projects room materials - concrete
-export const projectsMaterials = {
-  walls: createMaterialWithDebug({
-    color: "#808080",
+  dividers: new THREE.MeshStandardMaterial({
+    color: "#ffffff",
     roughness: 0.9,
     metalness: 0.0,
-    name: "projects-walls",
+    side: THREE.DoubleSide,
   }),
-  floor: createMaterialWithDebug({
-    color: "#686868",
-    roughness: 0.8,
+  floor: new THREE.MeshStandardMaterial({
+    color: "#f0f0f0",
+    roughness: 0.7,
     metalness: 0.0,
-    name: "projects-floor",
   }),
 };
 
-export const getRoomMaterials = (roomId: string) => {
-  console.log("Getting materials for room:", roomId);
+// Projects - concrete
+export const projectsMaterials = {
+  walls: new THREE.MeshStandardMaterial({
+    color: "#808080",
+    roughness: 0.95,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
+  }),
+  floor: new THREE.MeshStandardMaterial({
+    color: "#686868",
+    roughness: 0.9,
+    metalness: 0.0,
+  }),
+};
+
+// About - dark theme
+export const aboutMaterials = {
+  walls: new THREE.MeshStandardMaterial({
+    color: "#2c2c2c",
+    roughness: 0.8,
+    metalness: 0.1,
+    side: THREE.DoubleSide,
+  }),
+  floor: new THREE.MeshStandardMaterial({
+    color: "#1a1a1a",
+    roughness: 0.7,
+    metalness: 0.1,
+  }),
+};
+
+export const getRoomMaterials = (roomId: string): RoomMaterials => {
   switch (roomId) {
     case "atrium":
       return atriumMaterials;
@@ -84,11 +76,9 @@ export const getRoomMaterials = (roomId: string) => {
       return galleryMaterials;
     case "projects":
       return projectsMaterials;
+    case "about":
+      return aboutMaterials;
     default:
-      console.warn(
-        "Unknown room ID, falling back to atrium materials:",
-        roomId
-      );
       return atriumMaterials;
   }
 };

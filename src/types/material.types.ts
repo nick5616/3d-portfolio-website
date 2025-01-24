@@ -1,5 +1,18 @@
-// src/configs/materials.ts
 import * as THREE from "three";
+
+import { MeshStandardMaterial } from "three";
+
+export interface RoomMaterials {
+  walls: MeshStandardMaterial;
+  floor: MeshStandardMaterial;
+  dividers?: MeshStandardMaterial;
+}
+
+export interface WallSegment {
+  position: THREE.Vector3;
+  rotation: THREE.Euler;
+  size: THREE.Vector3;
+}
 
 export const createMaterialWithDebug = (params: {
   color: string;
