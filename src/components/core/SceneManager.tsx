@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Environment } from "@react-three/drei";
 import { Room } from "./Room";
 import { CameraController } from "./CameraController";
+import { RoomTransitionTrigger } from "./RoomTransitionTrigger";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
@@ -34,6 +35,12 @@ export const SceneManager: React.FC = () => {
             {Object.values(roomConfigs).map((roomConfig) => (
                 <Room key={roomConfig.id} config={roomConfig} />
             ))}
+            {/* Render transition triggers for all archways */}
+            {Object.values(roomConfigs).map((roomConfig) =>
+                roomConfig.archways.map((archway) => (
+                    <RoomTransitionTrigger key={archway.id} archway={archway} />
+                ))
+            )}
         </>
     );
 };

@@ -61,7 +61,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                         arch.position[2]
                     );
                     const wallPos = new THREE.Vector2(pos.x, pos.z);
-                    return archPos.distanceTo(wallPos) < 1;
+                    return archPos.distanceTo(wallPos) < 1.5; // Increased detection radius
                 }) ?? false
             );
         };
@@ -155,6 +155,54 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 wallPosition.x = width / 2 - wallWidth / 2 - 0.01;
             }
 
+            // If this is the atrium room and the wall is the north wall (back wall)
+            if (config.id === "atrium" && wall.id === "north") {
+                // Create a recessed area by moving the wall closer
+                wallWidth = width * 0.7; // Make the wall 70% of the room width
+                wallPosition.z = -depth / 2 + 5; // Move it 5 units forward from the back wall
+                return (
+                    <group
+                        key={wall.id}
+                        position={wallPosition}
+                        rotation={wall.rotation}
+                    >
+                        {/* Light wall */}
+                        <RigidBody type="fixed" colliders="cuboid">
+                            <mesh>
+                                <boxGeometry
+                                    args={[wallWidth, height, wallThickness]}
+                                />
+                                <meshStandardMaterial
+                                    color="#ffffff"
+                                    emissive="#ffffff"
+                                    emissiveIntensity={0.5}
+                                    transparent
+                                    opacity={0.8}
+                                />
+                            </mesh>
+                        </RigidBody>
+                        {/* Water plane */}
+                        <mesh position={[0, 0.1, 0.02]}>
+                            <planeGeometry args={[wallWidth, 2]} />
+                            <meshStandardMaterial
+                                color="#0077ff"
+                                transparent
+                                opacity={0.6}
+                                metalness={0.8}
+                                roughness={0.2}
+                            />
+                        </mesh>
+                    </group>
+                );
+            }
+
+            // If this is the atrium room and the wall is the south wall (facing projects room)
+            if (config.id === "atrium" && wall.id === "south") {
+                // Adjust the wall to not overlap with the projects room
+                wallWidth = width / 2;
+                wallPosition.z = depth / 2 - wallWidth / 2 - 0.01;
+            }
+
             return (
                 <RigidBody type="fixed" colliders="cuboid" key={wall.id}>
                     <mesh position={wallPosition} rotation={wall.rotation}>
@@ -207,6 +255,17 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                     <planeGeometry args={[width, depth]} />
                     <meshStandardMaterial color="#444444" />
+                </mesh>
+            </RigidBody>
+            {/* Ceiling */}
+            <RigidBody type="fixed" colliders="cuboid">
+                <mesh
+                    position={[0, height, 0]}
+                    rotation={[0, 0, 0]}
+                    receiveShadow
+                >
+                    <boxGeometry args={[width, wallThickness, depth]} />
+                    <primitive object={materials.ceiling} attach="material" />
                 </mesh>
             </RigidBody>
             {/* Walls */}

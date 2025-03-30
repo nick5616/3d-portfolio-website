@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { RoomMaterials } from "../types/material.types";
 
-// Atrium - marble white
+// Atrium - marble white with ethereal glow
 export const atriumMaterials = {
     walls: new THREE.MeshStandardMaterial({
         color: "#f5f5f5",
@@ -16,16 +16,23 @@ export const atriumMaterials = {
         roughness: 0.3,
         metalness: 0.1,
     }),
+    ceiling: new THREE.MeshStandardMaterial({
+        color: "#ffffff",
+        roughness: 0.2,
+        metalness: 0.05,
+        emissive: "#ffffff",
+        emissiveIntensity: 0.1,
+        side: THREE.DoubleSide,
+    }),
 };
 
-// Gallery - flat white
+// Gallery - elegant white with subtle gold accents
 export const galleryMaterials = {
     walls: new THREE.MeshStandardMaterial({
         color: "#ffffff",
-        roughness: 0.7,
-        metalness: 0.0,
+        roughness: 0.4,
+        metalness: 0.1,
         side: THREE.DoubleSide,
-        envMapIntensity: 0.3,
     }),
     dividers: new THREE.MeshStandardMaterial({
         color: "#ffffff",
@@ -35,41 +42,63 @@ export const galleryMaterials = {
         envMapIntensity: 0.3,
     }),
     floor: new THREE.MeshStandardMaterial({
-        color: "#f0f0f0",
-        roughness: 0.7,
-        metalness: 0.0,
+        color: "#e8e8e8",
+        roughness: 0.5,
+        metalness: 0.1,
+    }),
+    ceiling: new THREE.MeshStandardMaterial({
+        color: "#ffffff",
+        roughness: 0.3,
+        metalness: 0.2,
+        emissive: "#ffd700",
+        emissiveIntensity: 0.05,
+        side: THREE.DoubleSide,
     }),
 };
 
-// Projects - concrete
+// Projects - futuristic dark with tech patterns
 export const projectsMaterials = {
     walls: new THREE.MeshStandardMaterial({
-        color: "#808080",
-        roughness: 0.8,
-        metalness: 0.0,
+        color: "#1a1a1a",
+        roughness: 0.7,
+        metalness: 0.3,
         side: THREE.DoubleSide,
-        envMapIntensity: 0.4,
     }),
     floor: new THREE.MeshStandardMaterial({
-        color: "#686868",
-        roughness: 0.9,
-        metalness: 0.0,
+        color: "#2a2a2a",
+        roughness: 0.6,
+        metalness: 0.2,
+    }),
+    ceiling: new THREE.MeshStandardMaterial({
+        color: "#0a0a0a",
+        roughness: 0.8,
+        metalness: 0.4,
+        emissive: "#00ffff",
+        emissiveIntensity: 0.1,
+        side: THREE.DoubleSide,
     }),
 };
 
-// About - dark theme
+// About - warm and inviting with natural tones
 export const aboutMaterials = {
     walls: new THREE.MeshStandardMaterial({
-        color: "#2c2c2c",
+        color: "#f0e6d3",
         roughness: 0.6,
         metalness: 0.1,
         side: THREE.DoubleSide,
-        envMapIntensity: 0.6,
     }),
     floor: new THREE.MeshStandardMaterial({
-        color: "#1a1a1a",
-        roughness: 0.7,
+        color: "#e6d5c3",
+        roughness: 0.5,
         metalness: 0.1,
+    }),
+    ceiling: new THREE.MeshStandardMaterial({
+        color: "#f5e6d3",
+        roughness: 0.4,
+        metalness: 0.05,
+        emissive: "#ffa500",
+        emissiveIntensity: 0.05,
+        side: THREE.DoubleSide,
     }),
 };
 
