@@ -2,6 +2,7 @@ import React from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
+import { RoomComments } from "./RoomComments";
 
 interface AtriumRoomProps {
     config: RoomConfig;
@@ -22,6 +23,9 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
 }) => {
     return (
         <>
+            {/* Room annotation comments */}
+            <RoomComments roomId={config.id} />
+
             {/* Water feature for atrium - positioned at the back wall */}
             <RigidBody type="fixed" colliders="cuboid">
                 <mesh

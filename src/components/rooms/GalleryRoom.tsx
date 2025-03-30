@@ -2,6 +2,7 @@ import React from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
+import { RoomComments } from "./RoomComments";
 
 interface GalleryRoomProps {
     config: RoomConfig;
@@ -22,6 +23,9 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 }) => {
     return (
         <>
+            {/* Room annotation comments */}
+            <RoomComments roomId={config.id} />
+
             {/* Vertical dividers */}
             <RigidBody type="fixed" colliders="cuboid">
                 <mesh position={new THREE.Vector3(-width / 4, height / 2, 0)}>

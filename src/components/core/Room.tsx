@@ -7,6 +7,8 @@ import { getRoomMaterials } from "../../configs/materials";
 import { BaseRoom } from "../rooms/BaseRoom";
 import { AtriumRoom } from "../rooms/AtriumRoom";
 import { GalleryRoom } from "../rooms/GalleryRoom";
+import { ProjectsRoom } from "../rooms/ProjectsRoom";
+import { AboutRoom } from "../rooms/AboutRoom";
 import { DefaultRoom } from "../rooms/DefaultRoom";
 
 interface RoomProps {
@@ -178,6 +180,28 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             case "gallery":
                 return (
                     <GalleryRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+            case "projects":
+                return (
+                    <ProjectsRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+            case "about":
+                return (
+                    <AboutRoom
                         config={config}
                         materials={materials}
                         wallThickness={wallThickness}
