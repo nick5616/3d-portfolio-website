@@ -3,9 +3,11 @@ import { Preload } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
-import { InteractiveObject } from "./InteractiveObject";
-import { useSceneStore } from "../../stores/sceneStore";
 import { getRoomMaterials } from "../../configs/materials";
+import { BaseRoom } from "../rooms/BaseRoom";
+import { AtriumRoom } from "../rooms/AtriumRoom";
+import { GalleryRoom } from "../rooms/GalleryRoom";
+import { DefaultRoom } from "../rooms/DefaultRoom";
 
 interface RoomProps {
     config: RoomConfig;
@@ -18,37 +20,6 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
     const doorWidth = 3;
     const doorHeight = 4;
     const materials = getRoomMaterials(config.id);
-
-    // Memoize wall configurations
-    const wallConfigs = useMemo(
-        () => [
-            {
-                id: "north",
-                position: new THREE.Vector3(0, height / 2, -depth / 2 + 0.01),
-                rotation: new THREE.Euler(0, 0, 0),
-                isVertical: false,
-            },
-            {
-                id: "south",
-                position: new THREE.Vector3(0, height / 2, depth / 2 - 0.01),
-                rotation: new THREE.Euler(0, 0, 0),
-                isVertical: false,
-            },
-            {
-                id: "east",
-                position: new THREE.Vector3(width / 2 - 0.01, height / 2, 0),
-                rotation: new THREE.Euler(0, Math.PI / 2, 0),
-                isVertical: true,
-            },
-            {
-                id: "west",
-                position: new THREE.Vector3(-width / 2 + 0.01, height / 2, 0),
-                rotation: new THREE.Euler(0, Math.PI / 2, 0),
-                isVertical: true,
-            },
-        ],
-        [width, height, depth]
-    );
 
     // Memoize archway check function
     const hasArchwayAtPosition = useMemo(() => {
@@ -68,7 +39,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
 
     // Memoize wall rendering function
     const renderWall = useMemo(
-        () => (wall: (typeof wallConfigs)[0]) => {
+        () => (wall: any) => {
             if (hasArchwayAtPosition(wall.position)) {
                 const sideWidth =
                     (wall.isVertical ? depth : width - doorWidth) / 2;
@@ -190,6 +161,46 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
         ]
     );
 
+    // Determine which room component to render based on room type
+    const renderRoomComponent = () => {
+        switch (config.id) {
+            case "atrium":
+                return (
+                    <AtriumRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+            case "gallery":
+                return (
+                    <GalleryRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+            default:
+                return (
+                    <DefaultRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+        }
+    };
+
+    // Render room based on room type
     return (
         <group position={config.position}>
             {/* Lighting */}
@@ -232,96 +243,17 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 </mesh>
             </RigidBody>
             {/* Walls */}
-            {wallConfigs.map(renderWall)}
-            {/* Water feature for atrium - positioned at the back wall */}
-            {config.id === "atrium" && (
-                <>
-                    {/* Light wall */}
-                    <RigidBody type="fixed" colliders="cuboid">
-                        <mesh
-                            position={[0, height / 2, depth / 2 - 0.5]}
-                            rotation={[0, 0, 0]}
-                        >
-                            <boxGeometry
-                                args={[width, height, wallThickness]}
-                            />
-                            <meshStandardMaterial
-                                color="#ffffff"
-                                emissive="#ffffff"
-                                emissiveIntensity={0.5}
-                                transparent
-                                opacity={0.8}
-                            />
-                        </mesh>
-                    </RigidBody>
-                    {/* Water plane */}
-                    <mesh
-                        position={[0, 0.1, depth / 2 - 0.48]}
-                        rotation={[0, 0, 0]}
-                    >
-                        <planeGeometry args={[width, 2]} />
-                        <meshStandardMaterial
-                            color="#0077ff"
-                            transparent
-                            opacity={0.6}
-                            metalness={0.8}
-                            roughness={0.2}
-                        />
-                    </mesh>
-                </>
-            )}
-            {/* Gallery dividers */}
-            {config.id === "gallery" && (
-                <>
-                    {/* Vertical dividers */}
-                    <RigidBody type="fixed" colliders="cuboid">
-                        <mesh
-                            position={
-                                new THREE.Vector3(-width / 4, height / 2, 0)
-                            }
-                        >
-                            <boxGeometry
-                                args={[wallThickness, height, depth * 0.6]}
-                            />
-                            <primitive
-                                object={materials.dividers || materials.walls}
-                                attach="material"
-                            />
-                        </mesh>
-                    </RigidBody>
-                    <RigidBody type="fixed" colliders="cuboid">
-                        <mesh
-                            position={
-                                new THREE.Vector3(width / 4, height / 2, 0)
-                            }
-                        >
-                            <boxGeometry
-                                args={[wallThickness, height, depth * 0.6]}
-                            />
-                            <primitive
-                                object={materials.dividers || materials.walls}
-                                attach="material"
-                            />
-                        </mesh>
-                    </RigidBody>
-                    {/* Horizontal connector */}
-                    <RigidBody type="fixed" colliders="cuboid">
-                        <mesh position={new THREE.Vector3(0, height / 2, 0)}>
-                            <boxGeometry
-                                args={[width / 2, height, wallThickness]}
-                            />
-                            <primitive
-                                object={materials.dividers || materials.walls}
-                                attach="material"
-                            />
-                        </mesh>
-                    </RigidBody>
-                </>
-            )}
-            {/* Interactive elements */}
-            {config.interactiveElements.map((element) => (
-                <InteractiveObject key={element.id} element={element} />
-            ))}
+            <BaseRoom
+                config={config}
+                materials={materials}
+                wallThickness={wallThickness}
+                renderWall={renderWall}
+                width={width}
+                height={height}
+                depth={depth}
+            >
+                {renderRoomComponent()}
+            </BaseRoom>
             <Preload all />
         </group>
     );
