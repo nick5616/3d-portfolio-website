@@ -143,15 +143,23 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 );
             }
 
+            // Adjust wall dimensions to prevent overlap with adjacent rooms
+            let wallWidth = wall.isVertical ? depth : width;
+            let wallPosition = wall.position.clone();
+
+            // If this is the atrium room and the wall is the east wall (facing about room)
+            if (config.id === "atrium" && wall.id === "east") {
+                // Adjust the wall to start after the projects room
+                const projectsRoomDepth = 20; // From roomConfigs
+                wallWidth = (width - projectsRoomDepth) / 2;
+                wallPosition.x = width / 2 - wallWidth / 2 - 0.01;
+            }
+
             return (
                 <RigidBody type="fixed" colliders="cuboid" key={wall.id}>
-                    <mesh position={wall.position} rotation={wall.rotation}>
+                    <mesh position={wallPosition} rotation={wall.rotation}>
                         <boxGeometry
-                            args={[
-                                wall.isVertical ? depth : width,
-                                height,
-                                wallThickness,
-                            ]}
+                            args={[wallWidth, height, wallThickness]}
                         />
                         <primitive object={materials.walls} attach="material" />
                     </mesh>
@@ -167,6 +175,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             wallThickness,
             materials.walls,
             hasArchwayAtPosition,
+            config.id,
         ]
     );
 
