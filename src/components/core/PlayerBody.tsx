@@ -113,7 +113,7 @@ export const PlayerBody: React.FC = () => {
             type="dynamic"
             enabledRotations={[false, false, false]}
             lockRotations
-            position={[0, 2, 5]}
+            position={[0, 2, 8]}
             friction={20}
             restitution={0}
             // Add collision groups

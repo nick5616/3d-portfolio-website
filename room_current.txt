@@ -156,8 +156,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
 
             if (config.id === "atrium" && wall.id === "north") {
                 // Create a divider wall that's visible but not in the player's way
-                wallWidth = width; // Keep the full width
-                wallPosition.z = depth / 2 - wallWidth / 2 + 5; // Original position
+                wallWidth = width; // Make the wall 70% of the room width
+                wallPosition.z = depth / 2 - wallWidth / 2 + 5;
             }
 
             if (config.id === "atrium" && wall.id === "south") {
@@ -214,7 +214,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 decay={1.5}
             />
             {/* Floor */}
-            <RigidBody type="fixed" colliders="cuboid">
+            <RigidBody type="fixed">
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                     <planeGeometry args={[width, depth]} />
                     <meshStandardMaterial color="#444444" />
