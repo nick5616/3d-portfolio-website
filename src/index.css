@@ -44,3 +44,38 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+canvas {
+    touch-action: none;
+}
+
+/* Mobile landscape orientation styles */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* Lock height to ensure UI is visible */
+    html,
+    body,
+    #root {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Ensure the canvas fits properly in landscape */
+    canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Fix for iOS Safari full height issues */
+    .h-screen {
+        height: 100%;
+    }
+
+    /* Fix for iOS address bar issues */
+    body {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+}

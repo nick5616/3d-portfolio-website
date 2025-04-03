@@ -6,7 +6,8 @@ import { useMouseControls } from "../../hooks/useMouseControls";
 import * as THREE from "three";
 
 export const CameraController: React.FC = () => {
-    const { controlMode, cameraTarget } = useSceneStore();
+    const { controlMode, cameraTarget, virtualMovement, virtualRotation } =
+        useSceneStore();
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
     const { rotation } = useMouseControls();
@@ -18,11 +19,15 @@ export const CameraController: React.FC = () => {
 
     useFrame((_, delta) => {
         if (controlMode === "firstPerson") {
-            // Update euler angles
-            euler.current.y -= rotation.x;
+            // Combine keyboard/mouse and virtual controls
+            // Update euler angles from both mouse and virtual joystick
+            const combinedRotationX = rotation.x + virtualRotation.x;
+            const combinedRotationY = rotation.y + virtualRotation.y;
+
+            euler.current.y -= combinedRotationX;
             euler.current.x = Math.max(
                 -Math.PI / 2,
-                Math.min(Math.PI / 2, euler.current.x - rotation.y)
+                Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
             );
 
             // Apply rotation
@@ -32,10 +37,16 @@ export const CameraController: React.FC = () => {
             const speed = 5;
             const direction = new THREE.Vector3();
 
-            if (movement.forward) direction.z -= speed * delta;
-            if (movement.backward) direction.z += speed * delta;
-            if (movement.left) direction.x -= speed * delta;
-            if (movement.right) direction.x += speed * delta;
+            // Combine keyboard and virtual controls
+            const moveForward = movement.forward || virtualMovement.forward;
+            const moveBackward = movement.backward || virtualMovement.backward;
+            const moveLeft = movement.left || virtualMovement.left;
+            const moveRight = movement.right || virtualMovement.right;
+
+            if (moveForward) direction.z -= speed * delta;
+            if (moveBackward) direction.z += speed * delta;
+            if (moveLeft) direction.x -= speed * delta;
+            if (moveRight) direction.x += speed * delta;
 
             direction.applyEuler(euler.current);
             camera.position.add(direction);

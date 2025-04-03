@@ -4,6 +4,18 @@ import * as THREE from "three";
 import { RoomConfig } from "../types/scene.types";
 import { roomConfigs } from "../configs/rooms";
 
+interface MovementState {
+    forward: boolean;
+    backward: boolean;
+    left: boolean;
+    right: boolean;
+}
+
+interface RotationState {
+    x: number;
+    y: number;
+}
+
 interface SceneState {
     currentRoom: RoomConfig | null;
     controlMode: "firstPerson" | "pointAndClick";
@@ -14,6 +26,11 @@ interface SceneState {
         showStats: boolean;
         monitoring: boolean;
     };
+    // Virtual controls for mobile
+    virtualMovement: MovementState;
+    virtualRotation: RotationState;
+    setVirtualMovement: (movement: MovementState) => void;
+    setVirtualRotation: (rotation: RotationState) => void;
     toggleFlyMode: () => void;
     loadRoom: (roomId: string) => void;
     setControlMode: (mode: "firstPerson" | "pointAndClick") => void;
@@ -36,6 +53,19 @@ export const useSceneStore = create<SceneState>((set) => ({
         monitoring: true,
     },
     flyMode: false,
+    // Virtual controls state
+    virtualMovement: {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+    },
+    virtualRotation: {
+        x: 0,
+        y: 0,
+    },
+    setVirtualMovement: (movement) => set({ virtualMovement: movement }),
+    setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
     toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
     loadRoom: (roomId) => {
         const config = roomConfigs[roomId];
