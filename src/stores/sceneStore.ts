@@ -27,6 +27,7 @@ interface SceneState {
     performance: {
         showStats: boolean;
         monitoring: boolean;
+        quality: "low" | "medium" | "high";
     };
     // Virtual controls for mobile
     virtualMovement: MovementState;
@@ -42,6 +43,9 @@ interface SceneState {
         position: [number, number, number]
     ) => void;
     toggleSpotlights: () => void;
+    setPerformanceQuality: (quality: "low" | "medium" | "high") => void;
+    toggleStats: () => void;
+    togglePerformanceMonitoring: () => void;
 }
 
 // Helper to detect mobile devices
@@ -64,6 +68,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     performance: {
         showStats: false,
         monitoring: true,
+        quality: "high",
     },
     flyMode: false,
     // Virtual controls state
@@ -105,4 +110,22 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     toggleSpotlights: () =>
         set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
+    setPerformanceQuality: (quality) =>
+        set((state) => ({
+            performance: { ...state.performance, quality },
+        })),
+    toggleStats: () =>
+        set((state) => ({
+            performance: {
+                ...state.performance,
+                showStats: !state.performance.showStats,
+            },
+        })),
+    togglePerformanceMonitoring: () =>
+        set((state) => ({
+            performance: {
+                ...state.performance,
+                monitoring: !state.performance.monitoring,
+            },
+        })),
 }));

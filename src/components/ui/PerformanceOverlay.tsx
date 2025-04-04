@@ -1,18 +1,23 @@
 // src/components/ui/PerformanceOverlay.tsx
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
+import { useSceneStore } from "../../stores/sceneStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const PerformanceOverlay: React.FC = () => {
+    const { performance: performanceSettings } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const fpsHistory = useRef<number[]>([]);
-    const lastTimeRef = useRef<number>(performance.now());
+    const lastTimeRef = useRef<number>(window.performance.now());
     const frameCountRef = useRef<number>(0);
     const rafRef = useRef<number>();
+    const [currentFps, setCurrentFps] = useState(0);
 
     useEffect(() => {
         const resizeCanvas = () => {
             if (canvasRef.current) {
-                canvasRef.current.width = 200;
-                canvasRef.current.height = 100;
+                // Keep the canvas small and consistent
+                canvasRef.current.width = 50;
+                canvasRef.current.height = 25;
             }
         };
 
@@ -22,54 +27,33 @@ export const PerformanceOverlay: React.FC = () => {
         // Animation frame loop
         const animate = () => {
             frameCountRef.current++;
-            const currentTime = performance.now();
+            const currentTime = window.performance.now();
             const elapsed = currentTime - lastTimeRef.current;
 
             if (elapsed >= 1000) {
                 const fps = (frameCountRef.current * 1000) / elapsed;
-                fpsHistory.current.push(fps);
-                if (fpsHistory.current.length > 100) {
-                    fpsHistory.current.shift();
-                }
+                setCurrentFps(Math.round(fps));
 
                 frameCountRef.current = 0;
                 lastTimeRef.current = currentTime;
 
-                // Draw the graph
+                // Draw simple FPS counter
                 const canvas = canvasRef.current;
                 if (canvas) {
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                        ctx.strokeStyle = "#00ff00";
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-
-                        const maxFPS = 120;
-                        fpsHistory.current.forEach((fps, i) => {
-                            const x = (i / 100) * canvas.width;
-                            const y =
-                                canvas.height - (fps / maxFPS) * canvas.height;
-                            if (i === 0) {
-                                ctx.moveTo(x, y);
-                            } else {
-                                ctx.lineTo(x, y);
-                            }
-                        });
-
-                        ctx.stroke();
-
-                        // Draw current FPS
-                        const currentFPS =
-                            fpsHistory.current[fpsHistory.current.length - 1];
-                        ctx.fillStyle = "#00ff00";
-                        ctx.font = "12px monospace";
+                        // Use the appropriate color based on FPS
+                        ctx.fillStyle = getFpsColor(Math.round(fps));
+                        ctx.font = "10px monospace";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
                         ctx.fillText(
-                            `FPS: ${Math.round(currentFPS || 0)}`,
-                            10,
-                            20
+                            `${Math.round(fps)} FPS`,
+                            canvas.width / 2,
+                            canvas.height / 2
                         );
                     }
                 }
@@ -88,12 +72,24 @@ export const PerformanceOverlay: React.FC = () => {
         };
     }, []);
 
+    // Determine FPS color based on performance
+    const getFpsColor = (fps: number) => {
+        if (fps >= 50) return "#00ff00"; // Green for good FPS
+        if (fps >= 30) return "#ffff00"; // Yellow for ok FPS
+        return "#ff0000"; // Red for poor FPS
+    };
+
     return (
-        <div className="absolute top-4 right-4 pointer-events-auto">
+        <div className="fixed top-2 right-2 z-50">
             <canvas
                 ref={canvasRef}
-                className="bg-black bg-opacity-80 rounded-lg"
-                style={{ width: "200px", height: "100px" }}
+                className="rounded-sm shadow-sm"
+                style={{
+                    width: "50px",
+                    height: "25px",
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                    border: `1px solid ${getFpsColor(currentFps)}`,
+                }}
             />
         </div>
     );

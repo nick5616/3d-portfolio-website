@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, memo } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { MdGamepad, MdHideSource } from "react-icons/md";
 
@@ -16,11 +16,19 @@ interface TouchPosition {
     };
 }
 
-export const VirtualControls: React.FC = () => {
-    const { isMobile, setVirtualMovement, setVirtualRotation } =
-        useSceneStore();
+export const VirtualControls: React.FC = memo(() => {
+    const {
+        isMobile,
+        setVirtualMovement,
+        setVirtualRotation,
+        performance,
+        controlMode,
+    } = useSceneStore();
 
-    // Keep track of controlled touches to prevent cross-interference
+    // Only check if mobile - don't check for first person mode to ensure the controls always appear on mobile
+    if (!isMobile) return null;
+
+    // Track active touch ids
     const [activeTouchIds, setActiveTouchIds] = useState<{
         [key: number]: "dpad" | "joystick";
     }>({});
@@ -37,8 +45,8 @@ export const VirtualControls: React.FC = () => {
     const dpadTouch = useRef<TouchPosition | null>(null);
     const joystickTouch = useRef<TouchPosition | null>(null);
 
-    // Joystick configuration
-    const maxJoystickDistance = 40;
+    // Configure joystick based on performance
+    const maxJoystickDistance = performance.quality === "low" ? 30 : 40;
 
     // Track active directions
     const [activeDirections, setActiveDirections] = useState({
@@ -48,8 +56,32 @@ export const VirtualControls: React.FC = () => {
         right: false,
     });
 
-    // Helper to simulate keyboard events
-    const simulateKeyEvent = (key: string, isDown: boolean) => {
+    // Helper to simulate keyboard events with debounce to reduce jitter
+    const lastKeyState = useRef<{ [key: string]: boolean }>({
+        w: false,
+        a: false,
+        s: false,
+        d: false,
+    });
+
+    // Last movement timestamp for throttling
+    const lastMovementTime = useRef<number>(0);
+
+    // Minimum time between movement updates in ms (throttling)
+    const movementThrottle =
+        performance.quality === "low"
+            ? 50
+            : performance.quality === "medium"
+            ? 30
+            : 16;
+
+    const simulateKeyEvent = useCallback((key: string, isDown: boolean) => {
+        // Skip if key state hasn't changed to avoid jitter
+        if (lastKeyState.current[key] === isDown) return;
+
+        // Update the last key state
+        lastKeyState.current[key] = isDown;
+
         // Create a new keyboard event
         const eventType = isDown ? "keydown" : "keyup";
         const event = new KeyboardEvent(eventType, {
@@ -61,11 +93,17 @@ export const VirtualControls: React.FC = () => {
 
         // Dispatch the event to the document
         document.dispatchEvent(event);
-    };
+    }, []);
 
-    // Update movement based on d-pad touch - trigger keyboard events
+    // Update movement based on d-pad touch - with throttling
     const updateDpadMovement = useCallback(() => {
         if (!dpadTouch.current) return;
+
+        const now = window.performance.now();
+        if (now - lastMovementTime.current < movementThrottle) {
+            return; // Skip this update if we're throttling
+        }
+        lastMovementTime.current = now;
 
         const dx = dpadTouch.current.currentX - dpadTouch.current.startX;
         const dy = dpadTouch.current.currentY - dpadTouch.current.startY;
@@ -74,8 +112,8 @@ export const VirtualControls: React.FC = () => {
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
 
-        // Use a super small deadzone
-        const deadzone = 5;
+        // Use a slightly larger deadzone to reduce jitter
+        const deadzone = 10; // Increased from 8 to 10 for better stability
 
         // Reset active directions
         const newActiveDirections = {
@@ -119,8 +157,6 @@ export const VirtualControls: React.FC = () => {
                 }
             }
 
-            console.log("D-pad movement:", keysToPress);
-
             // Show ripple effect when direction changes
             if (!showRipple) {
                 setShowRipple(true);
@@ -146,9 +182,9 @@ export const VirtualControls: React.FC = () => {
 
         // Also store the current key state for cleaning up later
         dpadTouch.current.activeKeys = keysToPress;
-    }, [showRipple]);
+    }, [showRipple, simulateKeyEvent, movementThrottle]);
 
-    // Continuous movement with animation frame
+    // Continuous movement with animation frame - optimized for performance
     const startContinuousMovement = useCallback(() => {
         // Cancel any existing animation first
         if (animationFrameIdRef.current) {
@@ -176,22 +212,31 @@ export const VirtualControls: React.FC = () => {
     }, []);
 
     // Check if a touch is within a certain element
-    const isTouchInElement = (
-        touch: Touch,
-        element: HTMLElement | null
-    ): boolean => {
-        if (!element) return false;
+    const isTouchInElement = useCallback(
+        (touch: Touch, element: HTMLElement | null): boolean => {
+            if (!element) return false;
 
-        const rect = element.getBoundingClientRect();
-        return (
-            touch.clientX >= rect.left &&
-            touch.clientX <= rect.right &&
-            touch.clientY >= rect.top &&
-            touch.clientY <= rect.bottom
-        );
-    };
+            const rect = element.getBoundingClientRect();
+            return (
+                touch.clientX >= rect.left &&
+                touch.clientX <= rect.right &&
+                touch.clientY >= rect.top &&
+                touch.clientY <= rect.bottom
+            );
+        },
+        []
+    );
 
-    // Update joystick position and rotation
+    // Joystick smoothing factor based on performance quality
+    const smoothFactor =
+        performance.quality === "low"
+            ? 0.8
+            : performance.quality === "medium"
+            ? 0.7
+            : 0.6;
+
+    // Update joystick position and rotation - with smoothing
+    const lastRotation = useRef({ x: 0, y: 0 });
     const updateJoystickPosition = useCallback(() => {
         if (
             !joystickTouch.current ||
@@ -226,16 +271,29 @@ export const VirtualControls: React.FC = () => {
         const glowIntensity = Math.floor(normalizedDistance * 10);
         joystickKnobRef.current.style.boxShadow = `0 0 ${glowIntensity}px ${glowIntensity}px rgba(255, 255, 255, 0.3)`;
 
-        // Calculate rotation values - much less sensitive for better control
-        const sensitivity = 0.0015;
-        const rotationX = deltaX * sensitivity;
-        const rotationY = deltaY * sensitivity;
+        // Calculate rotation values - less sensitive for better control
+        const sensitivity = 0.001;
+
+        // Apply smoothing to rotation
+        let rotationX = deltaX * sensitivity;
+        let rotationY = deltaY * sensitivity;
+
+        // Smooth the values
+        rotationX =
+            rotationX * (1 - smoothFactor) +
+            lastRotation.current.x * smoothFactor;
+        rotationY =
+            rotationY * (1 - smoothFactor) +
+            lastRotation.current.y * smoothFactor;
+
+        // Store for next frame
+        lastRotation.current = { x: rotationX, y: rotationY };
 
         // Apply rotation to the camera via the store
         setVirtualRotation({ x: rotationX, y: rotationY });
-    }, [setVirtualRotation]);
+    }, [setVirtualRotation, maxJoystickDistance, smoothFactor]);
 
-    // Handle touch move - with improved multi-touch handling
+    // Handle touch move - with improved multi-touch handling and performance optimization
     const handleTouchMove = useCallback(
         (e: TouchEvent) => {
             e.preventDefault();
@@ -297,6 +355,14 @@ export const VirtualControls: React.FC = () => {
                 activeKeys: { w: false, a: false, s: false, d: false },
             };
 
+            // Reset last key states
+            lastKeyState.current = {
+                w: false,
+                a: false,
+                s: false,
+                d: false,
+            };
+
             // Start continuous movement with animation frames
             startContinuousMovement();
         },
@@ -337,6 +403,9 @@ export const VirtualControls: React.FC = () => {
                 currentY: touch.clientY,
             };
 
+            // Reset rotation smoothing
+            lastRotation.current = { x: 0, y: 0 };
+
             updateJoystickPosition();
         },
         [updateJoystickPosition, activeTouchIds, isTouchInElement]
@@ -361,7 +430,7 @@ export const VirtualControls: React.FC = () => {
         [handleDpadTouchStart, handleJoystickTouchStart, isTouchInElement]
     );
 
-    // Handle touch end
+    // Handle touch end - with complete cleanup
     const handleTouchEnd = useCallback(
         (e: TouchEvent) => {
             e.preventDefault();
@@ -417,6 +486,14 @@ export const VirtualControls: React.FC = () => {
                         right: false,
                     });
 
+                    // Reset all key states
+                    lastKeyState.current = {
+                        w: false,
+                        a: false,
+                        s: false,
+                        d: false,
+                    };
+
                     // Hide ripple effect
                     setShowRipple(false);
                     if (rippleTimeoutRef.current) {
@@ -430,6 +507,9 @@ export const VirtualControls: React.FC = () => {
                     touch.identifier === joystickTouch.current.identifier
                 ) {
                     joystickTouch.current = null;
+
+                    // Smoothly reset rotation
+                    lastRotation.current = { x: 0, y: 0 };
                     setVirtualRotation({ x: 0, y: 0 });
 
                     // Reset joystick knob position with animation
@@ -448,11 +528,26 @@ export const VirtualControls: React.FC = () => {
             setVirtualRotation,
             stopContinuousMovement,
             activeTouchIds,
+            simulateKeyEvent,
         ]
     );
 
     // Clean up animation frames and key events on unmount
     useEffect(() => {
+        // Global event listeners
+        document.addEventListener("touchstart", handleGlobalTouchStart, {
+            passive: false,
+        });
+        document.addEventListener("touchmove", handleTouchMove, {
+            passive: false,
+        });
+        document.addEventListener("touchend", handleTouchEnd, {
+            passive: false,
+        });
+        document.addEventListener("touchcancel", handleTouchEnd, {
+            passive: false,
+        });
+
         return () => {
             // Cancel any animation frames
             if (animationFrameIdRef.current) {
@@ -475,44 +570,29 @@ export const VirtualControls: React.FC = () => {
             if (rippleTimeoutRef.current) {
                 clearTimeout(rippleTimeoutRef.current);
             }
-        };
-    }, []);
 
-    // Set up event listeners
-    useEffect(() => {
-        if (!isMobile) return;
-
-        // Set up touch event listeners on the specific elements
-        const dpadElement = dpadRef.current;
-        const joystickElement = joystickRef.current;
-
-        // Global event listeners
-        document.addEventListener("touchstart", handleGlobalTouchStart, {
-            passive: false,
-        });
-        document.addEventListener("touchmove", handleTouchMove, {
-            passive: false,
-        });
-        document.addEventListener("touchend", handleTouchEnd, {
-            passive: false,
-        });
-        document.addEventListener("touchcancel", handleTouchEnd, {
-            passive: false,
-        });
-
-        return () => {
             // Remove all event listeners
             document.removeEventListener("touchstart", handleGlobalTouchStart);
             document.removeEventListener("touchmove", handleTouchMove);
             document.removeEventListener("touchend", handleTouchEnd);
             document.removeEventListener("touchcancel", handleTouchEnd);
         };
-    }, [isMobile, handleGlobalTouchStart, handleTouchMove, handleTouchEnd]);
+    }, [
+        handleGlobalTouchStart,
+        handleTouchMove,
+        handleTouchEnd,
+        simulateKeyEvent,
+    ]);
 
-    if (!isMobile) return null;
+    // Dynamic styles based on performance settings
+    const controlAlpha = performance.quality === "low" ? 0.2 : 0.3;
+    const controlSize = performance.quality === "low" ? 100 : 120;
 
     return (
-        <div className="virtual-controls">
+        <div
+            className="virtual-controls"
+            style={{ zIndex: 10000, pointerEvents: "all" }}
+        >
             {/* D-Pad */}
             <div
                 ref={dpadRef}
@@ -521,10 +601,10 @@ export const VirtualControls: React.FC = () => {
                     position: "absolute",
                     left: "20px",
                     bottom: "20px",
-                    width: "120px",
-                    height: "120px",
-                    borderRadius: "60px",
-                    backgroundColor: "rgba(0, 0, 0, 0.3)",
+                    width: `${controlSize}px`,
+                    height: `${controlSize}px`,
+                    borderRadius: "50%",
+                    backgroundColor: `rgba(0, 0, 0, ${controlAlpha})`,
                     border: "2px solid rgba(255, 255, 255, 0.2)",
                     boxShadow: "0 0 10px rgba(0, 0, 0, 0.3)",
                     display: "flex",
@@ -536,14 +616,16 @@ export const VirtualControls: React.FC = () => {
                         : "scale(1)",
                     overflow: "hidden",
                     touchAction: "none", // Prevent browser handling of touch events
+                    zIndex: 10000, // Ensure higher than other elements
+                    pointerEvents: "auto", // Make sure touch events are received
                 }}
             >
                 {/* Center button */}
                 <div
                     style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "20px",
+                        width: `${controlSize * 0.33}px`,
+                        height: `${controlSize * 0.33}px`,
+                        borderRadius: "50%",
                         transition: "background-color 0.2s",
                         backgroundColor: Object.values(activeDirections).some(
                             (v) => v
@@ -567,97 +649,99 @@ export const VirtualControls: React.FC = () => {
                     />
                 )}
 
-                {/* Visual indicators for directions */}
-                <div
-                    className="d-pad-arrows"
-                    style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                    }}
-                >
-                    {/* Up arrow */}
+                {/* Visual indicators for directions - simplified for performance */}
+                {performance.quality !== "low" && (
                     <div
+                        className="d-pad-arrows"
                         style={{
                             position: "absolute",
-                            top: "5px",
-                            left: "50%",
-                            transform: activeDirections.up
-                                ? "translateX(-50%) translateY(-2px)"
-                                : "translateX(-50%)",
-                            borderLeft: "10px solid transparent",
-                            borderRight: "10px solid transparent",
-                            borderBottom:
-                                "10px solid" +
-                                (activeDirections.up
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition:
-                                "border-bottom-color 0.1s ease, transform 0.1s ease",
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
                         }}
-                    ></div>
-                    {/* Down arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            bottom: "5px",
-                            left: "50%",
-                            transform: activeDirections.down
-                                ? "translateX(-50%) translateY(2px)"
-                                : "translateX(-50%)",
-                            borderLeft: "10px solid transparent",
-                            borderRight: "10px solid transparent",
-                            borderTop:
-                                "10px solid" +
-                                (activeDirections.down
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition:
-                                "border-top-color 0.1s ease, transform 0.1s ease",
-                        }}
-                    ></div>
-                    {/* Left arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: "5px",
-                            top: "50%",
-                            transform: activeDirections.left
-                                ? "translateY(-50%) translateX(-2px)"
-                                : "translateY(-50%)",
-                            borderTop: "10px solid transparent",
-                            borderBottom: "10px solid transparent",
-                            borderRight:
-                                "10px solid" +
-                                (activeDirections.left
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition:
-                                "border-right-color 0.1s ease, transform 0.1s ease",
-                        }}
-                    ></div>
-                    {/* Right arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            right: "5px",
-                            top: "50%",
-                            transform: activeDirections.right
-                                ? "translateY(-50%) translateX(2px)"
-                                : "translateY(-50%)",
-                            borderTop: "10px solid transparent",
-                            borderBottom: "10px solid transparent",
-                            borderLeft:
-                                "10px solid" +
-                                (activeDirections.right
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition:
-                                "border-left-color 0.1s ease, transform 0.1s ease",
-                        }}
-                    ></div>
-                </div>
+                    >
+                        {/* Up arrow */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "5px",
+                                left: "50%",
+                                transform: activeDirections.up
+                                    ? "translateX(-50%) translateY(-2px)"
+                                    : "translateX(-50%)",
+                                borderLeft: "10px solid transparent",
+                                borderRight: "10px solid transparent",
+                                borderBottom:
+                                    "10px solid" +
+                                    (activeDirections.up
+                                        ? "rgba(255, 255, 255, 0.9)"
+                                        : "rgba(255, 255, 255, 0.5)"),
+                                transition:
+                                    "border-bottom-color 0.1s ease, transform 0.1s ease",
+                            }}
+                        ></div>
+                        {/* Down arrow */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                bottom: "5px",
+                                left: "50%",
+                                transform: activeDirections.down
+                                    ? "translateX(-50%) translateY(2px)"
+                                    : "translateX(-50%)",
+                                borderLeft: "10px solid transparent",
+                                borderRight: "10px solid transparent",
+                                borderTop:
+                                    "10px solid" +
+                                    (activeDirections.down
+                                        ? "rgba(255, 255, 255, 0.9)"
+                                        : "rgba(255, 255, 255, 0.5)"),
+                                transition:
+                                    "border-top-color 0.1s ease, transform 0.1s ease",
+                            }}
+                        ></div>
+                        {/* Left arrow */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                left: "5px",
+                                top: "50%",
+                                transform: activeDirections.left
+                                    ? "translateY(-50%) translateX(-2px)"
+                                    : "translateY(-50%)",
+                                borderTop: "10px solid transparent",
+                                borderBottom: "10px solid transparent",
+                                borderRight:
+                                    "10px solid" +
+                                    (activeDirections.left
+                                        ? "rgba(255, 255, 255, 0.9)"
+                                        : "rgba(255, 255, 255, 0.5)"),
+                                transition:
+                                    "border-right-color 0.1s ease, transform 0.1s ease",
+                            }}
+                        ></div>
+                        {/* Right arrow */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: "5px",
+                                top: "50%",
+                                transform: activeDirections.right
+                                    ? "translateY(-50%) translateX(2px)"
+                                    : "translateY(-50%)",
+                                borderTop: "10px solid transparent",
+                                borderBottom: "10px solid transparent",
+                                borderLeft:
+                                    "10px solid" +
+                                    (activeDirections.right
+                                        ? "rgba(255, 255, 255, 0.9)"
+                                        : "rgba(255, 255, 255, 0.5)"),
+                                transition:
+                                    "border-left-color 0.1s ease, transform 0.1s ease",
+                            }}
+                        ></div>
+                    </div>
+                )}
             </div>
 
             {/* Joystick */}
@@ -668,41 +752,45 @@ export const VirtualControls: React.FC = () => {
                     position: "absolute",
                     right: "20px",
                     bottom: "20px",
-                    width: "120px",
-                    height: "120px",
-                    borderRadius: "60px",
-                    backgroundColor: "rgba(0, 0, 0, 0.3)",
+                    width: `${controlSize}px`,
+                    height: `${controlSize}px`,
+                    borderRadius: "50%",
+                    backgroundColor: `rgba(0, 0, 0, ${controlAlpha})`,
                     border: "2px solid rgba(255, 255, 255, 0.2)",
                     boxShadow: "0 0 10px rgba(0, 0, 0, 0.3)",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
                     touchAction: "none", // Prevent browser handling of touch events
+                    zIndex: 10000, // Ensure higher than other elements
+                    pointerEvents: "auto", // Make sure touch events are received
                 }}
             >
                 <div
                     ref={joystickKnobRef}
                     style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "20px",
+                        width: `${controlSize * 0.33}px`,
+                        height: `${controlSize * 0.33}px`,
+                        borderRadius: "50%",
                         backgroundColor: "rgba(255, 255, 255, 0.3)",
                         transition:
                             "transform 0.2s ease-out, box-shadow 0.2s ease-out",
                         boxShadow: "0 0 5px rgba(255, 255, 255, 0.2)",
                     }}
                 />
-                <div
-                    style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: "50%",
-                        backgroundImage:
-                            "radial-gradient(circle, transparent 60%, rgba(255, 255, 255, 0.1) 70%, transparent 75%)",
-                        pointerEvents: "none",
-                    }}
-                />
+                {performance.quality !== "low" && (
+                    <div
+                        style={{
+                            position: "absolute",
+                            width: "100%",
+                            height: "100%",
+                            borderRadius: "50%",
+                            backgroundImage:
+                                "radial-gradient(circle, transparent 60%, rgba(255, 255, 255, 0.1) 70%, transparent 75%)",
+                            pointerEvents: "none",
+                        }}
+                    />
+                )}
             </div>
 
             {/* CSS for animations */}
@@ -722,4 +810,4 @@ export const VirtualControls: React.FC = () => {
             </style>
         </div>
     );
-};
+});
