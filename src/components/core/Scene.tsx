@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo } from "react";
-import { AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
+import { Suspense, useMemo } from "react";
+import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -36,52 +36,6 @@ export const Scene: React.FC = () => {
         }
     }, [performance.quality]);
 
-    // Add the classic Stats panel using vanilla JS
-    useEffect(() => {
-        // Check if Stats script already exists
-        if (document.getElementById("stats-script")) return;
-
-        // Create script element for stats.js
-        const script = document.createElement("script");
-        script.id = "stats-script";
-        script.src = "https://mrdoob.github.io/stats.js/build/stats.min.js";
-        script.async = true;
-
-        // When the script loads, initialize Stats
-        script.onload = () => {
-            // @ts-ignore - Stats is loaded from the script
-            const stats = new window.Stats();
-            stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-
-            // Style the stats container
-            stats.dom.style.cssText =
-                "position:fixed;top:0;right:0;cursor:pointer;opacity:0.9;z-index:10000;transform:scale(0.8);transform-origin:top right;";
-            document.body.appendChild(stats.dom);
-
-            // Create animation loop
-            function animate() {
-                stats.update();
-                requestAnimationFrame(animate);
-            }
-
-            requestAnimationFrame(animate);
-        };
-
-        // Add script to document
-        document.body.appendChild(script);
-
-        // Cleanup
-        return () => {
-            // Remove stats panel if it exists
-            const statsPanel = document.querySelector(".stats-js-dom");
-            if (statsPanel) document.body.removeChild(statsPanel);
-
-            // Remove script
-            const scriptEl = document.getElementById("stats-script");
-            if (scriptEl) document.body.removeChild(scriptEl);
-        };
-    }, []);
-
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <Canvas
@@ -93,6 +47,13 @@ export const Scene: React.FC = () => {
                 flat={performance.quality === "low"}
                 performance={{ min: 0.5 }}
             >
+                {/* Stats panel in top-right corner */}
+                <Stats
+                    className="fps-stats"
+                    showPanel={0} /* 0: FPS, 1: MS, 2: MB */
+                    data-testid="stats-panel" /* For CSS targeting */
+                />
+
                 <Suspense fallback={null}>
                     <Physics interpolate={performance.quality !== "low"}>
                         <PlayerBody />

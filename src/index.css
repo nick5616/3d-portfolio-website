@@ -59,32 +59,6 @@ canvas {
     z-index: 0;
 }
 
-/* Style the Stats panel from @react-three/drei properly */
-/* Target the specific container div that drei Stats creates */
-div[data-testid="fps-counter"],
-.stats {
-    position: absolute !important;
-    top: 0 !important;
-    right: 0 !important;
-    left: auto !important;
-    z-index: 2000 !important;
-    transform: scale(0.6) !important;
-    transform-origin: top right !important;
-    background-color: rgba(0, 0, 0, 0.65) !important;
-    border-radius: 0 0 0 3px !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-/* Ensure any canvas child div (including Stats) is visible */
-canvas > div,
-canvas > * {
-    z-index: 2000 !important;
-    pointer-events: none !important;
-    overflow: visible !important;
-}
-
 /* Fix for iOS Safari to prevent elastic scrolling/bouncing */
 body {
     position: fixed;
@@ -135,7 +109,22 @@ body {
     }
 }
 
-/* Simple Stats styling that won't interfere with the component */
-canvas + div > div {
-    z-index: 2000 !important;
+/* Simple Stats styling - target specific elements */
+#root canvas + * {
+    z-index: 99999 !important;
+}
+
+/* Make the Stats panel smaller - using attribute selector */
+[data-testid="stats-panel"],
+.fps-stats {
+    transform: scale(0.125) !important;
+    transform-origin: top right !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+}
+
+/* Make stats panel background slightly transparent */
+div.stats-box-bg {
+    opacity: 0.8 !important;
 }
