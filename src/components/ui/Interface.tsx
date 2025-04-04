@@ -1,137 +1,93 @@
 import { useSceneStore } from "../../stores/sceneStore";
-import { PerformanceOverlay } from "./PerformanceOverlay";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import VirtualControls from "./VirtualControls";
+import { useState, useEffect } from "react";
+
+// Simple FPS counter component
+function FpsCounter() {
+    const [fps, setFps] = useState(0);
+
+    useEffect(() => {
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let animationFrameId: number;
+
+        const countFrames = () => {
+            frameCount++;
+            const now = performance.now();
+            const delta = now - lastTime;
+
+            if (delta >= 1000) {
+                setFps(Math.round((frameCount * 1000) / delta));
+                frameCount = 0;
+                lastTime = now;
+            }
+
+            animationFrameId = requestAnimationFrame(countFrames);
+        };
+
+        animationFrameId = requestAnimationFrame(countFrames);
+
+        return () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+        };
+    }, []);
+
+    return <>{fps} FPS</>;
+}
 
 export default function Interface() {
-    const {
-        controlMode,
-        setControlMode,
-        performance,
-        spotlightsEnabled,
-        toggleSpotlights,
-        flyMode,
-        toggleFlyMode,
-    } = useSceneStore();
-
+    const { controlMode, performance } = useSceneStore();
     const { isMobile } = useDeviceDetection();
+    const [showFps, setShowFps] = useState(false);
+
+    // Toggle FPS counter visibility
+    const toggleFps = () => {
+        setShowFps((prev) => !prev);
+    };
 
     return (
-        <div
-            className={`fixed inset-0 pointer-events-none ${
-                isMobile
-                    ? "landscape:rotate-90 landscape:w-screen landscape:h-screen landscape:origin-top-left landscape:fixed landscape:top-0 landscape:left-0"
-                    : ""
-            }`}
-        >
-            {/* Left controls group */}
-            <div
-                className={`absolute bottom-4 left-4 pointer-events-auto flex flex-col gap-2 ${
-                    isMobile
-                        ? "landscape:bottom-auto landscape:left-auto landscape:top-4 landscape:right-4"
-                        : ""
-                }`}
-            >
-                {/* Control mode switcher */}
-                <button
-                    onClick={() =>
-                        setControlMode(
-                            controlMode === "firstPerson"
-                                ? "pointAndClick"
-                                : "firstPerson"
-                        )
-                    }
-                    className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                >
-                    <span>Mode:</span>
-                    <span className="font-medium">
-                        {controlMode === "firstPerson"
-                            ? "WASD + Mouse"
-                            : "Point & Click"}
-                    </span>
-                </button>
-
-                {/* Fly mode toggle (only in first person) */}
-                {controlMode === "firstPerson" && (
-                    <button
-                        onClick={toggleFlyMode}
-                        className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                    >
-                        <span>Movement:</span>
-                        <span className="font-medium">
-                            {flyMode ? "Flying" : "Walking"}
-                        </span>
-                    </button>
-                )}
-            </div>
-
-            {/* Right controls */}
-            <div
-                className={`absolute bottom-4 right-4 pointer-events-auto ${
-                    isMobile
-                        ? "landscape:bottom-auto landscape:right-auto landscape:top-4 landscape:left-4"
-                        : ""
-                }`}
-            >
-                <button
-                    onClick={toggleSpotlights}
-                    className="bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm px-4 py-2 rounded-lg text-white flex items-center gap-2"
-                >
-                    <span>Spotlights:</span>
-                    <span className="font-medium">
-                        {spotlightsEnabled ? "ON" : "OFF"}
-                    </span>
-                </button>
-            </div>
-
-            {/* Mode indicator pill */}
-            <div
-                className={`absolute top-4 left-4 ${
-                    isMobile
-                        ? "landscape:top-auto landscape:left-auto landscape:bottom-4 landscape:right-4"
-                        : ""
-                }`}
-            >
-                <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        controlMode === "firstPerson"
-                            ? "bg-green-500/20 text-green-300"
-                            : "bg-blue-500/20 text-blue-300"
-                    }`}
-                >
-                    {controlMode === "firstPerson"
-                        ? `${flyMode ? "Flying" : "Walking"} Mode`
-                        : "Point & Click"}
-                </div>
-            </div>
-
-            {/* Controls help */}
-            <div
-                className={`absolute top-4 right-4 text-right text-white/50 text-sm ${
-                    isMobile
-                        ? "landscape:top-auto landscape:right-auto landscape:bottom-4 landscape:left-4 landscape:hidden"
-                        : ""
-                }`}
-            >
-                {controlMode === "firstPerson" && (
-                    <div className="space-y-1">
-                        <p>WASD - Move</p>
-                        <p>Shift - Sprint</p>
-                        {flyMode && (
-                            <>
-                                <p>Space - Fly Up</p>
-                                <p>C - Fly Down</p>
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Virtual controls for mobile */}
+        <div className="fixed inset-0 pointer-events-none">
+            {/* Always show virtual controls on mobile */}
             {isMobile && controlMode === "firstPerson" && <VirtualControls />}
 
-            {/* Performance overlay */}
-            {performance.monitoring && <PerformanceOverlay />}
+            {/* FPS counter toggle button */}
+            {performance.monitoring && (
+                <div className="absolute top-4 right-4 z-50 pointer-events-auto">
+                    {/* Toggle button */}
+                    <button
+                        onClick={toggleFps}
+                        className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm text-white transition-all hover:bg-black/30"
+                        aria-label="Toggle FPS Counter"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M3 3v18h18" />
+                            <path d="M18 17V9" />
+                            <path d="M13 17V5" />
+                            <path d="M8 17v-3" />
+                        </svg>
+                    </button>
+
+                    {/* FPS counter (only shown when toggled) */}
+                    {showFps && (
+                        <div className="absolute top-12 right-0 bg-black/30 backdrop-blur-sm text-white px-3 py-1.5 rounded text-sm font-mono">
+                            <FpsCounter />
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
