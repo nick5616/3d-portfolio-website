@@ -1,6 +1,6 @@
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
-import VirtualControls from "./VirtualControls";
+import { VirtualControls } from "./VirtualControls";
 import { useState, useEffect } from "react";
 
 // Simple FPS counter component

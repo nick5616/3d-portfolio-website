@@ -13,6 +13,10 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    overscroll-behavior: none; /* Prevent pull-to-refresh */
+    -webkit-touch-callout: none; /* Disable selection popup on touch */
+    -webkit-user-select: none; /* Disable text selection */
+    user-select: none; /* Disable text selection */
 }
 
 html,
@@ -46,7 +50,7 @@ body,
 
 /* Canvas should take full viewport */
 canvas {
-    touch-action: none;
+    touch-action: none !important; /* Disable browser handling of all touch gestures */
     position: absolute !important;
     top: 0;
     left: 0;
@@ -74,6 +78,12 @@ body {
         height: 150px;
         display: flex;
         z-index: 9999;
+        touch-action: none !important; /* Ensure no browser default touch actions */
+    }
+
+    /* Make control buttons explicitly prevent default touch actions */
+    .virtual-controls div {
+        touch-action: none !important;
     }
 
     /* Landscape-specific styles */

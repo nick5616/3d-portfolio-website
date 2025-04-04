@@ -1,5 +1,6 @@
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
+import { VirtualControls } from "./components/ui/VirtualControls";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useEffect, useState } from "react";
 
@@ -133,6 +134,9 @@ export default function App() {
 
             {/* Interface overlaid on top */}
             <Interface />
+
+            {/* Virtual controls for mobile devices */}
+            <VirtualControls />
         </main>
     );
 }

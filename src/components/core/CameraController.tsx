@@ -6,8 +6,14 @@ import { useMouseControls } from "../../hooks/useMouseControls";
 import * as THREE from "three";
 
 export const CameraController: React.FC = () => {
-    const { controlMode, cameraTarget, virtualMovement, virtualRotation } =
-        useSceneStore();
+    const {
+        controlMode,
+        cameraTarget,
+        virtualMovement,
+        virtualRotation,
+        isMobile,
+    } = useSceneStore();
+
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
     const { rotation } = useMouseControls();
@@ -15,20 +21,17 @@ export const CameraController: React.FC = () => {
     const targetPosition = useRef(new THREE.Vector3());
     const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
 
-    // Previous position for smoothing
-    const prevPosition = useRef(new THREE.Vector3());
-
-    // Initialize previous position on first render
+    // Store camera's current position when mounted
     useEffect(() => {
-        prevPosition.current.copy(camera.position);
+        targetPosition.current.copy(camera.position);
     }, [camera]);
 
-    targetPosition.current.copy(cameraTarget);
-
     useFrame((_, delta) => {
+        // Limit delta time to avoid large jumps
+        const clampedDelta = Math.min(delta, 0.1);
+
         if (controlMode === "firstPerson") {
-            // Combine keyboard/mouse and virtual controls
-            // Update euler angles from both mouse and virtual joystick
+            // Handle rotation
             const combinedRotationX = rotation.x + virtualRotation.x;
             const combinedRotationY = rotation.y + virtualRotation.y;
 
@@ -37,59 +40,67 @@ export const CameraController: React.FC = () => {
                 -Math.PI / 2,
                 Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
             );
-
-            // Apply rotation
             camera.quaternion.setFromEuler(euler.current);
 
-            // Handle movement in camera's local space
-            const speed = 5;
-            const direction = new THREE.Vector3();
+            // Base vectors for movement
+            const forward = new THREE.Vector3(0, 0, -1);
+            const right = new THREE.Vector3(1, 0, 0);
 
-            // Prioritize virtual movement on mobile, otherwise use keyboard
-            // This prevents conflicting inputs
-            let moveForward = false;
-            let moveBackward = false;
-            let moveLeft = false;
-            let moveRight = false;
+            // Apply camera rotation to get proper directions
+            forward.applyQuaternion(camera.quaternion);
+            right.applyQuaternion(camera.quaternion);
 
-            // Check if any virtual movement is active
-            const hasVirtualInput =
-                virtualMovement.forward ||
-                virtualMovement.backward ||
-                virtualMovement.left ||
-                virtualMovement.right;
+            // Keep movement on horizontal plane
+            forward.y = 0;
+            right.y = 0;
 
-            // If we have virtual input, use only that to prevent conflicts
-            if (hasVirtualInput) {
-                moveForward = virtualMovement.forward;
-                moveBackward = virtualMovement.backward;
-                moveLeft = virtualMovement.left;
-                moveRight = virtualMovement.right;
-            } else {
-                // Otherwise use keyboard
-                moveForward = movement.forward;
-                moveBackward = movement.backward;
-                moveLeft = movement.left;
-                moveRight = movement.right;
+            // Normalize after removing y component
+            forward.normalize();
+            right.normalize();
+
+            // Create direction vector from combined keyboard and virtual inputs
+            const direction = new THREE.Vector3(0, 0, 0);
+
+            // Movement speed - use the same speed for keyboard and virtual
+            const moveSpeed = 0.15;
+
+            // Combine keyboard and virtual inputs (virtual takes precedence on mobile)
+            const useVirtual =
+                isMobile &&
+                (virtualMovement.forward ||
+                    virtualMovement.backward ||
+                    virtualMovement.left ||
+                    virtualMovement.right);
+
+            // Choose which control source to use
+            const activeMovement = useVirtual ? virtualMovement : movement;
+
+            if (activeMovement.forward) direction.add(forward.clone());
+            if (activeMovement.backward)
+                direction.add(forward.clone().negate());
+            if (activeMovement.left) direction.add(right.clone().negate());
+            if (activeMovement.right) direction.add(right.clone());
+
+            // Apply movement if we have any direction
+            if (direction.length() > 0) {
+                // Normalize for consistent speed in diagonals
+                direction.normalize();
+
+                // Apply speed and delta for frame-rate independence
+                direction.multiplyScalar(moveSpeed * clampedDelta * 60);
+
+                // Apply to camera position
+                camera.position.add(direction);
+
+                console.log(
+                    `Moving camera: ${direction.x.toFixed(
+                        3
+                    )}, ${direction.z.toFixed(3)}`
+                );
             }
-
-            if (moveForward) direction.z -= speed * delta;
-            if (moveBackward) direction.z += speed * delta;
-            if (moveLeft) direction.x -= speed * delta;
-            if (moveRight) direction.x += speed * delta;
-
-            // Apply movement in world space
-            direction.applyEuler(euler.current);
-
-            // Calculate new position
-            const newPosition = camera.position.clone().add(direction);
-
-            // Set the camera position
-            camera.position.copy(newPosition);
-
-            // Update previous position
-            prevPosition.current.copy(camera.position);
         } else {
+            // Point and click mode
+            targetPosition.current.copy(cameraTarget);
             const lerpFactor = 0.05;
             camera.position.lerp(targetPosition.current, lerpFactor);
         }

@@ -22,6 +22,8 @@ interface SceneState {
     cameraTarget: THREE.Vector3;
     spotlightsEnabled: boolean;
     flyMode: boolean;
+    isFirstPerson: boolean;
+    isMobile: boolean;
     performance: {
         showStats: boolean;
         monitoring: boolean;
@@ -42,11 +44,22 @@ interface SceneState {
     toggleSpotlights: () => void;
 }
 
+// Helper to detect mobile devices
+const isMobileDevice = () => {
+    return (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+        ) || window.innerWidth <= 768
+    );
+};
+
 export const useSceneStore = create<SceneState>((set) => ({
     currentRoom: null,
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     spotlightsEnabled: false,
+    isFirstPerson: true,
+    isMobile: isMobileDevice(),
 
     performance: {
         showStats: false,
@@ -75,7 +88,11 @@ export const useSceneStore = create<SceneState>((set) => ({
             console.error(`Room configuration not found for ID: ${roomId}`);
         }
     },
-    setControlMode: (mode) => set({ controlMode: mode }),
+    setControlMode: (mode) =>
+        set({
+            controlMode: mode,
+            isFirstPerson: mode === "firstPerson",
+        }),
     setCameraTarget: (target) => set({ cameraTarget: target }),
     teleportToRoom: (roomId, position) => {
         const config = roomConfigs[roomId];
