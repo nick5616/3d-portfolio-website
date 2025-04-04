@@ -488,33 +488,6 @@ export const VirtualControls: React.FC = () => {
 
     return (
         <div className="virtual-controls">
-            {/* Toggle button for controls visibility */}
-            <button
-                onClick={toggleControlsVisibility}
-                style={{
-                    position: "absolute",
-                    top: "20px",
-                    right: "20px",
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "40px",
-                    height: "40px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    zIndex: 1000,
-                    cursor: "pointer",
-                }}
-            >
-                {controlsVisible ? (
-                    <MdHideSource size={24} />
-                ) : (
-                    <MdGamepad size={24} />
-                )}
-            </button>
-
             {controlsVisible && (
                 <>
                     {/* D-Pad */}
