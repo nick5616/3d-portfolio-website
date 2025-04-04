@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
-import { MdGamepad } from "react-icons/md";
+import { MdGamepad, MdHideSource } from "react-icons/md";
 
 interface TouchPosition {
     identifier: number;
@@ -19,6 +19,11 @@ interface TouchPosition {
 export const VirtualControls: React.FC = () => {
     const { isMobile, setVirtualMovement, setVirtualRotation } =
         useSceneStore();
+
+    // Track if controls are visible
+    const [controlsVisible, setControlsVisible] = useState(true);
+    const [showRipple, setShowRipple] = useState(false);
+    const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Create refs for touch controls
     const dpadRef = useRef<HTMLDivElement>(null);
@@ -113,6 +118,19 @@ export const VirtualControls: React.FC = () => {
             }
 
             console.log("D-pad movement:", keysToPress);
+
+            // Show ripple effect when direction changes
+            if (!showRipple) {
+                setShowRipple(true);
+                // Clear any existing timeout
+                if (rippleTimeoutRef.current) {
+                    clearTimeout(rippleTimeoutRef.current);
+                }
+                // Set timeout to hide ripple
+                rippleTimeoutRef.current = setTimeout(() => {
+                    setShowRipple(false);
+                }, 300);
+            }
         }
 
         // Update active directions for visual feedback
@@ -126,7 +144,7 @@ export const VirtualControls: React.FC = () => {
 
         // Also store the current key state for cleaning up later
         dpadTouch.current.activeKeys = keysToPress;
-    }, []);
+    }, [showRipple]);
 
     // Continuous movement with animation frame
     const startContinuousMovement = useCallback(() => {
@@ -185,6 +203,11 @@ export const VirtualControls: React.FC = () => {
         joystickKnobRef.current.style.transition = "none";
         joystickKnobRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
+        // Add a light glow effect based on displacement
+        const normalizedDistance = Math.min(distance / maxJoystickDistance, 1);
+        const glowIntensity = Math.floor(normalizedDistance * 10);
+        joystickKnobRef.current.style.boxShadow = `0 0 ${glowIntensity}px ${glowIntensity}px rgba(255, 255, 255, 0.3)`;
+
         // Calculate rotation values - much less sensitive for better control
         const sensitivity = 0.0015;
         const rotationX = deltaX * sensitivity;
@@ -197,6 +220,8 @@ export const VirtualControls: React.FC = () => {
     // Handle touch move
     const handleTouchMove = useCallback(
         (e: TouchEvent) => {
+            if (!controlsVisible) return;
+
             e.preventDefault();
             e.stopPropagation();
 
@@ -227,7 +252,7 @@ export const VirtualControls: React.FC = () => {
                 }
             }
         },
-        [updateJoystickPosition]
+        [updateJoystickPosition, controlsVisible]
     );
 
     // Handle D-pad touch start
@@ -285,6 +310,8 @@ export const VirtualControls: React.FC = () => {
     // Handle touch end
     const handleTouchEnd = useCallback(
         (e: TouchEvent) => {
+            if (!controlsVisible) return;
+
             e.preventDefault();
             e.stopPropagation();
 
@@ -325,6 +352,12 @@ export const VirtualControls: React.FC = () => {
                             left: false,
                             right: false,
                         });
+
+                        // Hide ripple effect
+                        setShowRipple(false);
+                        if (rippleTimeoutRef.current) {
+                            clearTimeout(rippleTimeoutRef.current);
+                        }
                         break;
                     }
                 }
@@ -341,17 +374,28 @@ export const VirtualControls: React.FC = () => {
                         // Reset joystick knob position with animation
                         if (joystickKnobRef.current) {
                             joystickKnobRef.current.style.transition =
-                                "transform 0.2s ease-out";
+                                "transform 0.2s ease-out, box-shadow 0.2s ease-out";
                             joystickKnobRef.current.style.transform =
                                 "translate(0px, 0px)";
+                            joystickKnobRef.current.style.boxShadow = "none";
                         }
                         break;
                     }
                 }
             }
         },
-        [setVirtualMovement, setVirtualRotation, stopContinuousMovement]
+        [
+            setVirtualMovement,
+            setVirtualRotation,
+            stopContinuousMovement,
+            controlsVisible,
+        ]
     );
+
+    // Toggle controls visibility
+    const toggleControlsVisibility = useCallback(() => {
+        setControlsVisible((prev) => !prev);
+    }, []);
 
     // Clean up animation frames and key events on unmount
     useEffect(() => {
@@ -372,12 +416,17 @@ export const VirtualControls: React.FC = () => {
                 if (dpadTouch.current.activeKeys.d)
                     simulateKeyEvent("d", false);
             }
+
+            // Clear any pending ripple timeouts
+            if (rippleTimeoutRef.current) {
+                clearTimeout(rippleTimeoutRef.current);
+            }
         };
     }, []);
 
     // Set up event listeners
     useEffect(() => {
-        if (!isMobile) return;
+        if (!isMobile || !controlsVisible) return;
 
         const dpadElement = dpadRef.current;
         const joystickElement = joystickRef.current;
@@ -432,146 +481,251 @@ export const VirtualControls: React.FC = () => {
         handleJoystickTouchStart,
         handleTouchMove,
         handleTouchEnd,
+        controlsVisible,
     ]);
 
     if (!isMobile) return null;
 
     return (
         <div className="virtual-controls">
-            {/* D-Pad */}
-            <div
-                ref={dpadRef}
-                className="dpad-container"
+            {/* Toggle button for controls visibility */}
+            <button
+                onClick={toggleControlsVisibility}
                 style={{
                     position: "absolute",
-                    left: "20px",
-                    bottom: "20px",
-                    width: "120px",
-                    height: "120px",
-                    borderRadius: "60px",
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <div
-                    style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "20px",
-                        backgroundColor: "rgba(255, 255, 255, 0.3)",
-                    }}
-                />
-                {/* Visual indicators for directions */}
-                <div
-                    className="d-pad-arrows"
-                    style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                    }}
-                >
-                    {/* Up arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            top: "5px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            borderLeft: "10px solid transparent",
-                            borderRight: "10px solid transparent",
-                            borderBottom:
-                                "10px solid" +
-                                (activeDirections.up
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition: "border-bottom-color 0.1s ease",
-                        }}
-                    ></div>
-                    {/* Down arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            bottom: "5px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            borderLeft: "10px solid transparent",
-                            borderRight: "10px solid transparent",
-                            borderTop:
-                                "10px solid" +
-                                (activeDirections.down
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition: "border-top-color 0.1s ease",
-                        }}
-                    ></div>
-                    {/* Left arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: "5px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            borderTop: "10px solid transparent",
-                            borderBottom: "10px solid transparent",
-                            borderRight:
-                                "10px solid" +
-                                (activeDirections.left
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition: "border-right-color 0.1s ease",
-                        }}
-                    ></div>
-                    {/* Right arrow */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            right: "5px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            borderTop: "10px solid transparent",
-                            borderBottom: "10px solid transparent",
-                            borderLeft:
-                                "10px solid" +
-                                (activeDirections.right
-                                    ? "rgba(255, 255, 255, 0.9)"
-                                    : "rgba(255, 255, 255, 0.5)"),
-                            transition: "border-left-color 0.1s ease",
-                        }}
-                    ></div>
-                </div>
-            </div>
-
-            {/* Joystick */}
-            <div
-                ref={joystickRef}
-                className="joystick-container"
-                style={{
-                    position: "absolute",
+                    top: "20px",
                     right: "20px",
-                    bottom: "20px",
-                    width: "120px",
-                    height: "120px",
-                    borderRadius: "60px",
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
+                    zIndex: 1000,
+                    cursor: "pointer",
                 }}
             >
-                <div
-                    ref={joystickKnobRef}
-                    style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "20px",
-                        backgroundColor: "rgba(255, 255, 255, 0.3)",
-                        transition: "transform 0.2s ease-out",
-                    }}
-                />
-            </div>
+                {controlsVisible ? (
+                    <MdHideSource size={24} />
+                ) : (
+                    <MdGamepad size={24} />
+                )}
+            </button>
+
+            {controlsVisible && (
+                <>
+                    {/* D-Pad */}
+                    <div
+                        ref={dpadRef}
+                        className="dpad-container"
+                        style={{
+                            position: "absolute",
+                            left: "20px",
+                            bottom: "20px",
+                            width: "120px",
+                            height: "120px",
+                            borderRadius: "60px",
+                            backgroundColor: "rgba(0, 0, 0, 0.3)",
+                            border: "2px solid rgba(255, 255, 255, 0.2)",
+                            boxShadow: "0 0 10px rgba(0, 0, 0, 0.3)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            transition: "transform 0.2s, background-color 0.2s",
+                            transform: Object.values(activeDirections).some(
+                                (v) => v
+                            )
+                                ? "scale(1.05)"
+                                : "scale(1)",
+                            overflow: "hidden",
+                        }}
+                    >
+                        {/* Center button */}
+                        <div
+                            style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "20px",
+                                transition: "background-color 0.2s",
+                                backgroundColor: Object.values(
+                                    activeDirections
+                                ).some((v) => v)
+                                    ? "rgba(255, 255, 255, 0.5)"
+                                    : "rgba(255, 255, 255, 0.3)",
+                            }}
+                        />
+
+                        {/* Ripple effect */}
+                        {showRipple && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: "50%",
+                                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                    animation: "ripple 0.6s linear",
+                                }}
+                            />
+                        )}
+
+                        {/* Visual indicators for directions */}
+                        <div
+                            className="d-pad-arrows"
+                            style={{
+                                position: "absolute",
+                                width: "100%",
+                                height: "100%",
+                                pointerEvents: "none",
+                            }}
+                        >
+                            {/* Up arrow */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: "5px",
+                                    left: "50%",
+                                    transform: activeDirections.up
+                                        ? "translateX(-50%) translateY(-2px)"
+                                        : "translateX(-50%)",
+                                    borderLeft: "10px solid transparent",
+                                    borderRight: "10px solid transparent",
+                                    borderBottom:
+                                        "10px solid" +
+                                        (activeDirections.up
+                                            ? "rgba(255, 255, 255, 0.9)"
+                                            : "rgba(255, 255, 255, 0.5)"),
+                                    transition:
+                                        "border-bottom-color 0.1s ease, transform 0.1s ease",
+                                }}
+                            ></div>
+                            {/* Down arrow */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    bottom: "5px",
+                                    left: "50%",
+                                    transform: activeDirections.down
+                                        ? "translateX(-50%) translateY(2px)"
+                                        : "translateX(-50%)",
+                                    borderLeft: "10px solid transparent",
+                                    borderRight: "10px solid transparent",
+                                    borderTop:
+                                        "10px solid" +
+                                        (activeDirections.down
+                                            ? "rgba(255, 255, 255, 0.9)"
+                                            : "rgba(255, 255, 255, 0.5)"),
+                                    transition:
+                                        "border-top-color 0.1s ease, transform 0.1s ease",
+                                }}
+                            ></div>
+                            {/* Left arrow */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    left: "5px",
+                                    top: "50%",
+                                    transform: activeDirections.left
+                                        ? "translateY(-50%) translateX(-2px)"
+                                        : "translateY(-50%)",
+                                    borderTop: "10px solid transparent",
+                                    borderBottom: "10px solid transparent",
+                                    borderRight:
+                                        "10px solid" +
+                                        (activeDirections.left
+                                            ? "rgba(255, 255, 255, 0.9)"
+                                            : "rgba(255, 255, 255, 0.5)"),
+                                    transition:
+                                        "border-right-color 0.1s ease, transform 0.1s ease",
+                                }}
+                            ></div>
+                            {/* Right arrow */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    right: "5px",
+                                    top: "50%",
+                                    transform: activeDirections.right
+                                        ? "translateY(-50%) translateX(2px)"
+                                        : "translateY(-50%)",
+                                    borderTop: "10px solid transparent",
+                                    borderBottom: "10px solid transparent",
+                                    borderLeft:
+                                        "10px solid" +
+                                        (activeDirections.right
+                                            ? "rgba(255, 255, 255, 0.9)"
+                                            : "rgba(255, 255, 255, 0.5)"),
+                                    transition:
+                                        "border-left-color 0.1s ease, transform 0.1s ease",
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    {/* Joystick */}
+                    <div
+                        ref={joystickRef}
+                        className="joystick-container"
+                        style={{
+                            position: "absolute",
+                            right: "20px",
+                            bottom: "20px",
+                            width: "120px",
+                            height: "120px",
+                            borderRadius: "60px",
+                            backgroundColor: "rgba(0, 0, 0, 0.3)",
+                            border: "2px solid rgba(255, 255, 255, 0.2)",
+                            boxShadow: "0 0 10px rgba(0, 0, 0, 0.3)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <div
+                            ref={joystickKnobRef}
+                            style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "20px",
+                                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                                transition:
+                                    "transform 0.2s ease-out, box-shadow 0.2s ease-out",
+                                boxShadow: "0 0 5px rgba(255, 255, 255, 0.2)",
+                            }}
+                        />
+                        <div
+                            style={{
+                                position: "absolute",
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                                backgroundImage:
+                                    "radial-gradient(circle, transparent 60%, rgba(255, 255, 255, 0.1) 70%, transparent 75%)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+
+                    {/* CSS for animations */}
+                    <style>
+                        {`
+                        @keyframes ripple {
+                            0% {
+                                transform: scale(0.3);
+                                opacity: 0.5;
+                            }
+                            100% {
+                                transform: scale(1);
+                                opacity: 0;
+                            }
+                        }
+                        `}
+                    </style>
+                </>
+            )}
         </div>
     );
 };
