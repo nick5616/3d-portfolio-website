@@ -192,7 +192,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 id: "atrium-label",
                 type: "text",
                 position: [0, 4, 0] as [number, number, number],
-                content: "Welcome to the Portfolio",
+                content: "✨",
                 scale: [1, 1, 1] as [number, number, number],
             },
         ],
@@ -417,26 +417,24 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         },
         interactiveElements: [
             {
-                id: "about-title",
-                type: "text",
-                position: [5, 4, 0] as [number, number, number],
-                scale: [1.5, 1.5, 1.5] as [number, number, number],
-                content: "About Me",
-            },
-            {
                 id: "about-text",
                 type: "text",
-                position: [5, 3, 0] as [number, number, number],
+                position: [7.99, 1, -2] as [number, number, number],
+                rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 scale: [0.5, 0.5, 1] as [number, number, number],
                 content: "I like to make things.",
             },
             {
                 id: "contact-info",
                 type: "text",
-                position: [5, 2, 0] as [number, number, number],
+                position: [7.99, 2, 4] as [number, number, number],
+                rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 scale: [0.25, 0.25, 1] as [number, number, number],
-                content:
-                    "Contact: email@example.com\nGitHub: github.com/username",
+                content: `
+                    Drop a line, as they say\n
+                    Contact: nicolasbelovoskey@gmail.com\n
+                    Here's my GitHub: github.com/nick5616
+                `,
             },
             // Decorative pillars
             ...Array(4)

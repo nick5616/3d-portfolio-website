@@ -396,72 +396,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     />
                 </mesh>
 
-                {/* Media timeline floating elements */}
-                {[
-                    {
-                        pos: [-3, 1, 0],
-                        label: "Photography",
-                        icon: "📷",
-                        color: "#00CED1",
-                    },
-                    {
-                        pos: [-1, -0.5, 0],
-                        label: "Tattooing",
-                        icon: "🖋️",
-                        color: "#9932CC",
-                    },
-                    {
-                        pos: [1, 1, 0],
-                        label: "Unreal Engine",
-                        icon: "🎮",
-                        color: "#1E90FF",
-                    },
-                    {
-                        pos: [3, -0.5, 0],
-                        label: "Markers & Art",
-                        icon: "🖌️",
-                        color: "#FF6347",
-                    },
-                ].map((item, index) => (
-                    <group key={index} position={[0, item.pos[1], item.pos[0]]}>
-                        {/* Icon background */}
-                        <mesh rotation={[0, -Math.PI / 2, 0]}>
-                            <circleGeometry args={[0.8, 32]} />
-                            <meshStandardMaterial
-                                color={item.color}
-                                roughness={0.3}
-                                metalness={0.3}
-                                emissive={item.color}
-                                emissiveIntensity={0.2}
-                            />
-                        </mesh>
-
-                        {/* Icon text */}
-                        <Text
-                            position={[-0.1, 0, 0]}
-                            rotation={[0, -Math.PI / 2, 0]}
-                            fontSize={0.5}
-                            color="#FFFFFF"
-                            anchorX="center"
-                            anchorY="middle"
-                        >
-                            {item.icon}
-                        </Text>
-
-                        {/* Label */}
-                        <Text
-                            position={[-0.15, -1, 0]}
-                            rotation={[0, -Math.PI / 2, 0]}
-                            fontSize={0.2}
-                            color="#FFFFFF"
-                            anchorX="center"
-                            anchorY="middle"
-                        >
-                            {item.label}
-                        </Text>
-                    </group>
-                ))}
-
                 {/* Dynamic accent lighting */}
                 <spotLight
                     position={[2, 0, -1]}
@@ -471,7 +405,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     intensity={0.8}
                     color="#48D1CC"
                 />
-
                 <spotLight
                     position={[2, 0, 3]}
                     target-position={[0, 0, 0]}
@@ -485,47 +418,36 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             {/* "About Me" section with creative typography on wall */}
             <group position={[0, 4, -8]}>
                 <Text
-                    position={[0, 1, 0]}
+                    position={[0, 1, -1.9]}
                     rotation={[0, 0, 0]}
                     fontSize={1}
                     color="#8A2BE2"
                     anchorX="center"
                     anchorY="middle"
                 >
-                    Creator
+                    🧚🏼
                 </Text>
 
                 <Text
-                    position={[-3, 0, 0]}
+                    position={[-3, 0, -1.9]}
                     rotation={[0, 0, 0]}
                     fontSize={0.8}
                     color="#20B2AA"
                     anchorX="center"
                     anchorY="middle"
                 >
-                    Programmer
+                    🧑‍💻
                 </Text>
 
                 <Text
-                    position={[3, 0, 0]}
+                    position={[3, 0, -1.9]}
                     rotation={[0, 0, 0]}
                     fontSize={0.8}
                     color="#FF8C00"
                     anchorX="center"
                     anchorY="middle"
                 >
-                    Artist
-                </Text>
-
-                <Text
-                    position={[0, -1, 0]}
-                    rotation={[0, 0, 0]}
-                    fontSize={0.6}
-                    color="#B22222"
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    Dreamer & Builder
+                    👨‍🎨
                 </Text>
 
                 <spotLight

@@ -43,7 +43,7 @@ export const createProjectsLayout = (): InteractiveElement[] => [
         id: "projects-title",
         type: "text",
         position: [0, 4, -5] as [number, number, number],
-        content: "Software Projects",
+        content: "🚧",
         scale: [1.5, 1.5, 1.5] as [number, number, number],
     },
 ];
