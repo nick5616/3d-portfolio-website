@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export interface Web3DDisplayProps {
     position: [number, number, number];
@@ -10,8 +11,12 @@ export interface Web3DDisplayProps {
     title?: string;
     width?: number;
     height?: number;
-    fallbackImage?: string;
+    screenshotUrl?: string;
     description?: string;
+    responsive?: {
+        desktop: { width: number; height: number };
+        mobile: { width: number; height: number };
+    };
 }
 
 export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
@@ -22,14 +27,28 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     title = "Web Display",
     width = 900,
     height = 700,
-    fallbackImage,
+    screenshotUrl,
     description,
+    responsive,
 }) => {
     const displayRef = useRef<THREE.Group>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { isMobile } = useDeviceDetection();
+    
+    // States for loading and display management
+    const [isLiveMode, setIsLiveMode] = useState(false); // Start with screenshot
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [showFallback, setShowFallback] = useState(false);
+    const [screenshotLoaded, setScreenshotLoaded] = useState(false);
 
+    // Calculate responsive dimensions
+    const dimensions = responsive 
+        ? (isMobile ? responsive.mobile : responsive.desktop)
+        : { width, height };
+
+    const displayWidth = dimensions.width;
+    const displayHeight = dimensions.height;
+
+    // Handle iframe load
     const handleIframeLoad = () => {
         setIsLoading(false);
         setError(null);
@@ -38,25 +57,34 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const handleIframeError = () => {
         setIsLoading(false);
         setError("Failed to load website");
-        setShowFallback(true);
     };
 
-    // Check for iframe blocking after a timeout
+    // Handle screenshot click to load live website
+    const handleScreenshotClick = () => {
+        if (!isLiveMode) {
+            setIsLiveMode(true);
+            setIsLoading(true);
+        }
+    };
+
+    // Handle opening in new tab
+    const openInNewTab = () => {
+        window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    // Timeout for iframe loading
     useEffect(() => {
+        if (!isLiveMode) return;
+
         const timer = setTimeout(() => {
             if (isLoading) {
                 setError("Website may not allow embedding");
-                setShowFallback(true);
                 setIsLoading(false);
             }
         }, 10000); // 10 second timeout
 
         return () => clearTimeout(timer);
-    }, [isLoading]);
-
-    const openInNewTab = () => {
-        window.open(url, "_blank", "noopener,noreferrer");
-    };
+    }, [isLoading, isLiveMode]);
 
     return (
         <group
@@ -65,10 +93,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             rotation={rotation}
             scale={scale}
         >
-            {/* Physical display frame */}
+            {/* Physical display frame - responsive sizing */}
             <mesh>
-                {/* Frame backing */}
-                <boxGeometry args={[2.2, 1.7, 0.1]} />
+                <boxGeometry args={[
+                    (displayWidth / 400) + 0.4, // Scale frame based on content width
+                    (displayHeight / 400) + 0.3, // Scale frame based on content height
+                    0.1
+                ]} />
                 <meshStandardMaterial
                     color="#1a1a1a"
                     metalness={0.5}
@@ -76,9 +107,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 />
             </mesh>
 
-            {/* Screen bezel */}
+            {/* Screen bezel - responsive sizing */}
             <mesh position={[0, 0, 0.05]}>
-                <boxGeometry args={[2.1, 1.6, 0.02]} />
+                <boxGeometry args={[
+                    (displayWidth / 400) + 0.3,
+                    (displayHeight / 400) + 0.2,
+                    0.02
+                ]} />
                 <meshStandardMaterial
                     color="#000000"
                     metalness={0.8}
@@ -86,14 +121,14 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 />
             </mesh>
 
-            {/* Stand */}
-            <mesh position={[0, -0.9, 0.2]} rotation={[-Math.PI / 6, 0, 0]}>
+            {/* Stand - responsive sizing */}
+            <mesh position={[0, -((displayHeight / 400) + 0.3) / 2 - 0.4, 0.2]} rotation={[-Math.PI / 6, 0, 0]}>
                 <boxGeometry args={[0.4, 0.8, 0.05]} />
                 <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
             </mesh>
 
-            {/* Base */}
-            <mesh position={[0, -1.2, 0.4]}>
+            {/* Base - responsive sizing */}
+            <mesh position={[0, -((displayHeight / 400) + 0.3) / 2 - 0.7, 0.4]}>
                 <boxGeometry args={[0.6, 0.1, 0.4]} />
                 <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
             </mesh>
@@ -105,8 +140,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 position={[0, 0, 0.07]}
                 distanceFactor={1}
                 style={{
-                    width: `${width}px`,
-                    height: `${height}px`,
+                    width: `${displayWidth}px`,
+                    height: `${displayHeight}px`,
                     borderRadius: "8px",
                     overflow: "hidden",
                     backgroundColor: "#ffffff",
@@ -131,7 +166,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                             display: "flex",
                             alignItems: "center",
                             padding: "0 12px",
-                            fontSize: "14px",
+                            fontSize: displayWidth > 400 ? "14px" : "12px",
                             fontFamily: "system-ui, sans-serif",
                         }}
                     >
@@ -174,16 +209,96 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 borderRadius: "4px",
                                 padding: "4px 8px",
                                 border: "1px solid #ddd",
-                                fontSize: "12px",
+                                fontSize: displayWidth > 400 ? "12px" : "10px",
                                 color: "#666",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                             }}
                         >
                             {url}
                         </div>
                     </div>
 
-                    {/* Loading overlay */}
-                    {isLoading && !showFallback && (
+                    {/* Screenshot mode (default) */}
+                    {!isLiveMode && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "40px",
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: "#ffffff",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                            onClick={handleScreenshotClick}
+                        >
+                            {screenshotUrl && (
+                                <img
+                                    src={screenshotUrl}
+                                    alt={title}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        display: screenshotLoaded ? "block" : "none",
+                                    }}
+                                    onLoad={() => setScreenshotLoaded(true)}
+                                    onError={() => setScreenshotLoaded(true)}
+                                />
+                            )}
+                            
+                            {/* Loading placeholder for screenshot */}
+                            {!screenshotLoaded && (
+                                <div
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        backgroundColor: "#f0f0f0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: displayWidth > 400 ? "16px" : "14px",
+                                        color: "#666",
+                                        fontFamily: "system-ui, sans-serif",
+                                    }}
+                                >
+                                    Loading preview...
+                                </div>
+                            )}
+
+                            {/* Click overlay */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    bottom: "10px",
+                                    left: "10px",
+                                    right: "10px",
+                                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                                    color: "white",
+                                    padding: displayWidth > 400 ? "12px" : "8px",
+                                    borderRadius: "8px",
+                                    textAlign: "center",
+                                    fontSize: displayWidth > 400 ? "14px" : "12px",
+                                    fontFamily: "system-ui, sans-serif",
+                                    transition: "opacity 0.3s",
+                                }}
+                            >
+                                <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                    {title}
+                                </div>
+                                <div style={{ fontSize: displayWidth > 400 ? "12px" : "10px", opacity: 0.8 }}>
+                                    Click to load live website →
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Loading overlay for live mode */}
+                    {isLiveMode && isLoading && (
                         <div
                             style={{
                                 position: "absolute",
@@ -195,17 +310,26 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "16px",
+                                fontSize: displayWidth > 400 ? "16px" : "14px",
                                 color: "#666",
                                 fontFamily: "system-ui, sans-serif",
+                                flexDirection: "column",
+                                gap: "16px",
                             }}
                         >
-                            Loading {title}...
+                            <div>Loading {title}...</div>
+                            <div style={{ 
+                                fontSize: displayWidth > 400 ? "12px" : "10px",
+                                textAlign: "center",
+                                maxWidth: "80%"
+                            }}>
+                                Loading the live website. This may take a moment.
+                            </div>
                         </div>
                     )}
 
-                    {/* Fallback content */}
-                    {showFallback && (
+                    {/* Error fallback for live mode */}
+                    {isLiveMode && error && (
                         <div
                             style={{
                                 position: "absolute",
@@ -217,7 +341,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "16px",
+                                fontSize: displayWidth > 400 ? "16px" : "14px",
                                 color: "#333",
                                 fontFamily: "system-ui, sans-serif",
                                 flexDirection: "column",
@@ -226,9 +350,9 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 textAlign: "center",
                             }}
                         >
-                            {fallbackImage && (
+                            {screenshotUrl && (
                                 <img
-                                    src={fallbackImage}
+                                    src={screenshotUrl}
                                     alt={title}
                                     style={{
                                         maxWidth: "100%",
@@ -243,7 +367,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 <h3
                                     style={{
                                         margin: "0 0 8px 0",
-                                        fontSize: "18px",
+                                        fontSize: displayWidth > 400 ? "18px" : "16px",
                                         fontWeight: "600",
                                     }}
                                 >
@@ -253,7 +377,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     <p
                                         style={{
                                             margin: "0 0 16px 0",
-                                            fontSize: "14px",
+                                            fontSize: displayWidth > 400 ? "14px" : "12px",
                                             color: "#666",
                                             lineHeight: "1.4",
                                         }}
@@ -267,11 +391,18 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         backgroundColor: "#007bff",
                                         color: "white",
                                         border: "none",
-                                        padding: "8px 16px",
-                                        borderRadius: "4px",
-                                        fontSize: "14px",
+                                        padding: displayWidth > 400 ? "10px 18px" : "8px 14px",
+                                        borderRadius: "6px",
+                                        fontSize: displayWidth > 400 ? "14px" : "12px",
                                         cursor: "pointer",
                                         fontWeight: "500",
+                                        transition: "background-color 0.2s",
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = "#0056b3";
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = "#007bff";
                                     }}
                                 >
                                     Visit {title} →
@@ -280,7 +411,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                             {error && (
                                 <div
                                     style={{
-                                        fontSize: "12px",
+                                        fontSize: displayWidth > 400 ? "12px" : "10px",
                                         color: "#666",
                                         marginTop: "8px",
                                     }}
@@ -291,8 +422,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Iframe for web content */}
-                    {!showFallback && (
+                    {/* Live iframe content */}
+                    {isLiveMode && !isLoading && !error && (
                         <iframe
                             src={url}
                             style={{
@@ -300,8 +431,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 height: "calc(100% - 40px)",
                                 border: "none",
                                 backgroundColor: "#ffffff",
-                                display:
-                                    error && !showFallback ? "none" : "block",
                             }}
                             onLoad={handleIframeLoad}
                             onError={handleIframeError}

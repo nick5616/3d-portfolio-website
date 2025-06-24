@@ -57,8 +57,9 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     scale={scale}
                     url={content.url}
                     title={content.title}
-                    width={content.width}
-                    height={content.height}
+                    description={content.description}
+                    screenshotUrl={content.screenshotUrl}
+                    responsive={content.responsive}
                 />
             );
 
