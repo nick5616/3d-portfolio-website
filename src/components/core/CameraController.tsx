@@ -20,6 +20,11 @@ export const CameraController: React.FC = () => {
 
     const targetPosition = useRef(new THREE.Vector3());
     const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
+    
+    // Reusable vectors to avoid allocations in render loop
+    const forward = useRef(new THREE.Vector3());
+    const right = useRef(new THREE.Vector3());
+    const direction = useRef(new THREE.Vector3());
 
     // Store camera's current position when mounted
     useEffect(() => {
@@ -42,24 +47,24 @@ export const CameraController: React.FC = () => {
             );
             camera.quaternion.setFromEuler(euler.current);
 
-            // Base vectors for movement
-            const forward = new THREE.Vector3(0, 0, -1);
-            const right = new THREE.Vector3(1, 0, 0);
+            // Reset and setup base vectors for movement
+            forward.current.set(0, 0, -1);
+            right.current.set(1, 0, 0);
 
             // Apply camera rotation to get proper directions
-            forward.applyQuaternion(camera.quaternion);
-            right.applyQuaternion(camera.quaternion);
+            forward.current.applyQuaternion(camera.quaternion);
+            right.current.applyQuaternion(camera.quaternion);
 
             // Keep movement on horizontal plane
-            forward.y = 0;
-            right.y = 0;
+            forward.current.y = 0;
+            right.current.y = 0;
 
             // Normalize after removing y component
-            forward.normalize();
-            right.normalize();
+            forward.current.normalize();
+            right.current.normalize();
 
-            // Create direction vector from combined keyboard and virtual inputs
-            const direction = new THREE.Vector3(0, 0, 0);
+            // Reset direction vector
+            direction.current.set(0, 0, 0);
 
             // Movement speed - use the same speed for keyboard and virtual
             const moveSpeed = 0.15;
@@ -75,28 +80,24 @@ export const CameraController: React.FC = () => {
             // Choose which control source to use
             const activeMovement = useVirtual ? virtualMovement : movement;
 
-            if (activeMovement.forward) direction.add(forward.clone());
+            if (activeMovement.forward) direction.current.add(forward.current.clone());
             if (activeMovement.backward)
-                direction.add(forward.clone().negate());
-            if (activeMovement.left) direction.add(right.clone().negate());
-            if (activeMovement.right) direction.add(right.clone());
+                direction.current.add(forward.current.clone().negate());
+            if (activeMovement.left) direction.current.add(right.current.clone().negate());
+            if (activeMovement.right) direction.current.add(right.current.clone());
 
             // Apply movement if we have any direction
-            if (direction.length() > 0) {
+            if (direction.current.length() > 0) {
                 // Normalize for consistent speed in diagonals
-                direction.normalize();
+                direction.current.normalize();
 
                 // Apply speed and delta for frame-rate independence
-                direction.multiplyScalar(moveSpeed * clampedDelta * 60);
+                direction.current.multiplyScalar(moveSpeed * clampedDelta * 60);
 
                 // Apply to camera position
-                camera.position.add(direction);
+                camera.position.add(direction.current);
 
-                console.log(
-                    `Moving camera: ${direction.x.toFixed(
-                        3
-                    )}, ${direction.z.toFixed(3)}`
-                );
+                // Camera movement applied
             }
         } else {
             // Point and click mode

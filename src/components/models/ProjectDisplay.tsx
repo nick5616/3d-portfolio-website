@@ -88,7 +88,7 @@ export const ProjectDisplay: React.FC<{
                 <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
             </mesh>
 
-            {/* Debug arrow to show direction */}
+                                    {/* Direction indicator */}
             <arrowHelper
                 args={[
                     new THREE.Vector3(0, 0, 1), // direction

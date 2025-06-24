@@ -48,13 +48,11 @@ interface SceneState {
     togglePerformanceMonitoring: () => void;
 }
 
-// Helper to detect mobile devices
-const isMobileDevice = () => {
-    return (
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-        ) || window.innerWidth <= 768
-    );
+// Centralized mobile detection - single source of truth
+export const detectMobileDevice = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || '';
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    return mobileRegex.test(userAgent) || window.innerWidth <= 768;
 };
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -63,7 +61,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     cameraTarget: new THREE.Vector3(0, 2, 5),
     spotlightsEnabled: false,
     isFirstPerson: true,
-    isMobile: isMobileDevice(),
+    isMobile: detectMobileDevice(),
 
     performance: {
         showStats: false,

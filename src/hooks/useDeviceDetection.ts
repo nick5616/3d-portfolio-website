@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { detectMobileDevice } from "../stores/sceneStore";
 
 interface DeviceInfo {
     isMobile: boolean;
@@ -9,15 +10,7 @@ export const useDeviceDetection = (): DeviceInfo => {
 
     useEffect(() => {
         const checkMobile = () => {
-            const userAgent =
-                navigator.userAgent ||
-                navigator.vendor ||
-                (window as any).opera;
-            const mobileRegex =
-                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-            setIsMobile(
-                mobileRegex.test(userAgent) || window.innerWidth <= 768
-            );
+            setIsMobile(detectMobileDevice());
         };
 
         checkMobile();

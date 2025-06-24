@@ -10,7 +10,7 @@ import { roomConfigs } from "../../configs/rooms";
 
 export const SceneManager: React.FC = () => {
     const { scene } = useThree();
-    const { loadRoom, performance } = useSceneStore();
+    const { loadRoom, performance, currentRoom } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
     useEffect(() => {
@@ -31,16 +31,12 @@ export const SceneManager: React.FC = () => {
         <>
             <Environment preset="city" />
             <CameraController />
-            {/* Render all rooms */}
-            {Object.values(roomConfigs).map((roomConfig) => (
-                <Room key={roomConfig.id} config={roomConfig} />
+            {/* Render only current room for performance */}
+            {currentRoom && <Room key={currentRoom.id} config={currentRoom} />}
+            {/* Render transition triggers only for current room */}
+            {currentRoom?.archways.map((archway) => (
+                <RoomTransitionTrigger key={archway.id} archway={archway} />
             ))}
-            {/* Render transition triggers for all archways */}
-            {Object.values(roomConfigs).map((roomConfig) =>
-                roomConfig.archways.map((archway) => (
-                    <RoomTransitionTrigger key={archway.id} archway={archway} />
-                ))
-            )}
         </>
     );
 };

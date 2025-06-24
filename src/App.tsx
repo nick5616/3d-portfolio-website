@@ -1,13 +1,11 @@
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
 import { VirtualControls } from "./components/ui/VirtualControls";
+import { SceneErrorBoundary } from "./components/core/ErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useEffect, useState } from "react";
 
-// Define the missing orientation type
-interface OrientationLock {
-    lock(orientation: "portrait" | "landscape"): Promise<void>;
-}
+// Removed unsafe OrientationLock interface - using proper type checking instead
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
@@ -52,35 +50,26 @@ export default function App() {
                     element
                         .requestFullscreen()
                         .then(() => {
-                            try {
+                                                        try {
                                 // Try to lock to landscape if supported
-                                const screenOrientation = window.screen
-                                    .orientation as unknown as OrientationLock;
+                                const screen = window.screen as any;
                                 if (
-                                    screenOrientation &&
-                                    screenOrientation.lock
+                                    screen &&
+                                    screen.orientation &&
+                                    typeof screen.orientation.lock === 'function'
                                 ) {
-                                    screenOrientation
+                                    screen.orientation
                                         .lock("landscape")
                                         .catch((error: Error) => {
-                                            console.log(
-                                                "Could not lock orientation",
-                                                error
-                                            );
+                                            // Orientation lock failed - this is expected on some devices
                                         });
                                 }
                             } catch (err) {
-                                console.error(
-                                    "Orientation API not supported",
-                                    err
-                                );
+                                // Orientation API not supported on this device
                             }
                         })
                         .catch((err) => {
-                            console.error(
-                                "Error attempting to enable fullscreen:",
-                                err
-                            );
+                            // Fullscreen request failed - this is expected in some browsers
                         });
                 }
 
@@ -129,8 +118,10 @@ export default function App() {
                 isMobile ? "touch-none" : ""
             }`}
         >
-            {/* Full viewport scene */}
-            <Scene />
+            {/* Full viewport scene with error boundary */}
+            <SceneErrorBoundary>
+                <Scene />
+            </SceneErrorBoundary>
 
             {/* Interface overlaid on top */}
             <Interface />

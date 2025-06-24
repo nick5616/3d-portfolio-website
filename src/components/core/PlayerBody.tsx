@@ -23,7 +23,8 @@ export const PlayerBody: React.FC = () => {
     const velocity = useRef(new THREE.Vector3());
     const direction = useRef(new THREE.Vector3());
     const [canJump, setCanJump] = useState(true);
-    const lastJumpTime = useRef(0);
+    const jumpCooldownFrames = useRef(0);
+    const frameCounter = useRef(0);
 
     // Helper to check if player is grounded
     const checkIfGrounded = () => {
@@ -36,14 +37,14 @@ export const PlayerBody: React.FC = () => {
     useFrame(() => {
         if (!playerRef.current || flyMode) return;
 
-        const currentTime = Date.now();
+        frameCounter.current++;
         const isGrounded = checkIfGrounded();
 
-        // Reset jump ability when grounded
+        // Reset jump ability when grounded (30 frames = ~500ms at 60fps)
         if (
             isGrounded &&
             !canJump &&
-            currentTime - lastJumpTime.current > JUMP_COOLDOWN
+            frameCounter.current - jumpCooldownFrames.current > 30
         ) {
             setCanJump(true);
         }
@@ -60,7 +61,7 @@ export const PlayerBody: React.FC = () => {
                 true
             );
             setCanJump(false);
-            lastJumpTime.current = currentTime;
+            jumpCooldownFrames.current = frameCounter.current;
         }
 
         // Calculate movement direction based on camera orientation
@@ -88,7 +89,7 @@ export const PlayerBody: React.FC = () => {
 
             // Set movement speed (reduced in air)
             const speed = movement.running ? 8 : 4;
-            const airMultiplier = isGrounded ? 1 : 1;
+            const airMultiplier = isGrounded ? 1 : 0.3;
 
             // Apply horizontal movement
             velocity.current.set(
