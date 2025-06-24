@@ -10,7 +10,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     isVisible = true,
     onClose,
 }) => {
-    const { performance } = useSceneStore();
+    const { performance, isMobile } = useSceneStore();
     const [isOpen, setIsOpen] = useState(isVisible);
 
     const handleClose = () => {
@@ -71,41 +71,98 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                             work and skills. Here's how to navigate:
                         </p>
                         <div className="space-y-4">
-                            <div>
-                                <h3 className="font-semibold text-lg mb-2">
-                                    Getting Started
-                                </h3>
-                                <ul className="list-disc list-inside space-y-2">
-                                    <li>
-                                        Click anywhere in the game window to
-                                        focus the game controls
-                                    </li>
-                                    <li>
-                                        Press ESC to release focus and return to
-                                        normal cursor control
-                                    </li>
-                                    <li>
-                                        You need to focus the game to interact
-                                        with settings and controls
-                                    </li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-lg mb-2">
-                                    Movement Controls
-                                </h3>
-                                <ul className="list-disc list-inside space-y-2">
-                                    <li>
-                                        Use WASD or arrow keys to move around
-                                    </li>
-                                    <li>Click and drag to look around</li>
-                                    <li>Press Space to jump</li>
-                                    <li>
-                                        Interact with objects by clicking on
-                                        them
-                                    </li>
-                                </ul>
-                            </div>
+                            {isMobile ? (
+                                <>
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">
+                                            Mobile Controls
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-2">
+                                            <li>
+                                                Use the D-pad on the left to
+                                                move around
+                                            </li>
+                                            <li>
+                                                Use the joystick on the right to
+                                                look around
+                                            </li>
+                                            <li>
+                                                Tap on objects to interact with
+                                                them
+                                            </li>
+                                            <li>
+                                                The controls will automatically
+                                                adjust based on your device's
+                                                performance
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">
+                                            Mobile Tips
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-2">
+                                            <li>
+                                                For the best experience, use
+                                                your device in landscape mode
+                                            </li>
+                                            <li>
+                                                If you experience lag, try
+                                                reducing the quality in the
+                                                performance settings
+                                            </li>
+                                            <li>
+                                                Make sure your device is in
+                                                fullscreen mode for optimal
+                                                controls
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">
+                                            Getting Started
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-2">
+                                            <li>
+                                                Click anywhere in the game
+                                                window to focus the game
+                                                controls
+                                            </li>
+                                            <li>
+                                                Press ESC to release focus and
+                                                return to normal cursor control
+                                            </li>
+                                            <li>
+                                                You need to focus the game to
+                                                interact with settings and
+                                                controls
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-2">
+                                            Movement Controls
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-2">
+                                            <li>
+                                                Use WASD or arrow keys to move
+                                                around
+                                            </li>
+                                            <li>
+                                                Click and drag to look around
+                                            </li>
+                                            <li>Press Space to jump</li>
+                                            <li>
+                                                Interact with objects by
+                                                clicking on them
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <p className="text-sm text-gray-400 mt-4">
                             Tip: You can adjust performance settings in the

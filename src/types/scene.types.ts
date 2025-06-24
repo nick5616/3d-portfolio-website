@@ -29,7 +29,7 @@ export interface LightPreset {
 
 export interface InteractiveElement {
     id: string;
-    type: "model" | "image" | "text" | "video";
+    type: "model" | "image" | "text" | "video" | "web";
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];

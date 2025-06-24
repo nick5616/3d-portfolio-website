@@ -6,6 +6,7 @@ import { GreekPillar } from "../models/GreekPillar";
 import { DisplayPillar } from "../models/DisplayPillar";
 import { ProjectDisplay } from "../models/ProjectDisplay";
 import { ArtFrame } from "../models/ArtFrame";
+import { Web3DDisplay } from "../models/Web3DDisplay";
 
 interface InteractiveObjectProps {
     element: InteractiveElement;
@@ -47,6 +48,19 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                 );
             }
             return null;
+
+        case "web":
+            return (
+                <Web3DDisplay
+                    position={position}
+                    rotation={rotation}
+                    scale={scale}
+                    url={content.url}
+                    title={content.title}
+                    width={content.width}
+                    height={content.height}
+                />
+            );
 
         case "text":
             return (

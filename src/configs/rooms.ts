@@ -374,7 +374,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "about",
         name: "About & Contact",
         position: [20, 0, 0] as [number, number, number],
-        dimensions: [20, 10, 20],
+        dimensions: [20, 10, 30],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#FFF5E1" },
             directional: {
@@ -427,9 +427,9 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "contact-info",
                 type: "text",
-                position: [7.99, 2, 4] as [number, number, number],
+                position: [7.99, 2, 4.5] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                scale: [0.25, 0.25, 1] as [number, number, number],
+                scale: [0.25, 0.25, 0.8] as [number, number, number],
                 content: `
                     Drop a line, as they say\n
                     Contact: nicolasbelovoskey@gmail.com\n
