@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { useDisplayManager } from "../../stores/displayManager";
 
 export interface Web3DDisplayProps {
     position: [number, number, number];
@@ -32,7 +33,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     responsive,
 }) => {
     const displayRef = useRef<THREE.Group>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const { isMobile } = useDeviceDetection();
+    const { registerDisplay, unregisterDisplay, updateDisplayActivity, isDisplayActive } = useDisplayManager();
+    
+    // Generate unique ID for this display based on position and title
+    const displayId = `display-${position.join('-')}-${title?.replace(/\s+/g, '-').toLowerCase()}`;
     
     // Original working states - iframe loads immediately like before
     const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +57,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const displayWidth = dimensions.width;
     const displayHeight = dimensions.height;
 
+    // Eviction callback that forces display back to screenshot mode
+    const handleEviction = useCallback(() => {
+        setShowScreenshotOverlay(true);
+        console.log(`🔄 Display evicted and returned to screenshot mode: ${title}`);
+    }, [title]);
+
     // Original working iframe handlers
     const handleIframeLoad = () => {
         setIsLoading(false);
@@ -63,14 +75,34 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         setShowFallback(true);
     };
 
-    // New handlers for screenshot overlay and buttons
-    const handleViewInDisplay = () => {
-        setShowScreenshotOverlay(false); // Hide overlay to reveal iframe underneath
-    };
+    // Updated handler for viewing in display with display manager integration
+    const handleViewInDisplay = useCallback(() => {
+        // Register with display manager (this may evict another display)
+        registerDisplay(displayId, title, handleEviction);
+        
+        // Hide screenshot overlay to reveal iframe
+        setShowScreenshotOverlay(false);
+        
+        console.log(`📺 Viewing ${title} in display`);
+    }, [displayId, title, registerDisplay, handleEviction]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
     };
+
+    // Handle iframe interaction to update activity
+    const handleIframeInteraction = useCallback(() => {
+        if (!showScreenshotOverlay && isDisplayActive(displayId)) {
+            updateDisplayActivity(displayId);
+        }
+    }, [showScreenshotOverlay, displayId, isDisplayActive, updateDisplayActivity]);
+
+    // Handle returning to screenshot mode
+    const handleReturnToScreenshot = useCallback(() => {
+        setShowScreenshotOverlay(true);
+        unregisterDisplay(displayId);
+        console.log(`📷 Returned to screenshot mode: ${title}`);
+    }, [displayId, title, unregisterDisplay]);
 
     // Original working timeout logic
     useEffect(() => {
@@ -84,6 +116,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
         return () => clearTimeout(timer);
     }, [isLoading]);
+
+    // Cleanup: unregister display when component unmounts
+    useEffect(() => {
+        return () => {
+            unregisterDisplay(displayId);
+        };
+    }, [displayId, unregisterDisplay]);
 
     return (
         <group
@@ -217,6 +256,27 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         >
                             {url}
                         </div>
+                        
+                        {/* Back to screenshot button when live display is active */}
+                        {!showScreenshotOverlay && (
+                            <button
+                                onClick={handleReturnToScreenshot}
+                                style={{
+                                    marginLeft: "8px",
+                                    backgroundColor: "#6c757d",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    fontSize: "10px",
+                                    cursor: "pointer",
+                                    fontWeight: "500",
+                                }}
+                                title="Return to screenshot mode"
+                            >
+                                📷
+                            </button>
+                        )}
                     </div>
 
                     {/* Loading overlay (original working version) */}
@@ -335,7 +395,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* NEW: Screenshot overlay (shows on top when available) */}
+                    {/* Screenshot overlay (shows on top when available) */}
                     {showScreenshotOverlay && screenshotUrl && (
                         <div
                             style={{
@@ -485,6 +545,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                     {/* Iframe for web content (original working version - loads immediately) */}
                     {!showFallback && (
                         <iframe
+                            ref={iframeRef}
                             src={url}
                             style={{
                                 width: "100%",
@@ -495,6 +556,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                             }}
                             onLoad={handleIframeLoad}
                             onError={handleIframeError}
+                            onMouseEnter={handleIframeInteraction}
+                            onFocus={handleIframeInteraction}
                             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                             referrerPolicy="strict-origin-when-cross-origin"
                             allowFullScreen
