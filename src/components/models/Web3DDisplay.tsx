@@ -35,23 +35,35 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const displayRef = useRef<THREE.Group>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const { isMobile } = useDeviceDetection();
-    const { registerDisplay, unregisterDisplay, updateDisplayActivity, isDisplayActive } = useDisplayManager();
-    
+    const {
+        registerDisplay,
+        unregisterDisplay,
+        updateDisplayActivity,
+        isDisplayActive,
+    } = useDisplayManager();
+
     // Generate unique ID for this display based on position and title
-    const displayId = `display-${position.join('-')}-${title?.replace(/\s+/g, '-').toLowerCase()}`;
-    
-    // Original working states - iframe loads immediately like before
-    const [isLoading, setIsLoading] = useState(true);
+    const displayId = `display-${position.join("-")}-${title
+        ?.replace(/\s+/g, "-")
+        .toLowerCase()}`;
+
+    // Iframe loading states
+    const [isLoading, setIsLoading] = useState(false); // Start as false since iframe doesn't load until clicked
     const [error, setError] = useState<string | null>(null);
     const [showFallback, setShowFallback] = useState(false);
-    
-    // New screenshot overlay state (doesn't interfere with iframe)
-    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(!!screenshotUrl); // Show overlay if screenshot exists
+    const [iframeUrl, setIframeUrl] = useState<string | null>(null); // Only set when user clicks "View in Display"
+
+    // Screenshot overlay state
+    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(
+        !!screenshotUrl
+    ); // Show overlay if screenshot exists
     const [screenshotLoaded, setScreenshotLoaded] = useState(false);
 
     // Calculate responsive dimensions
-    const dimensions = responsive 
-        ? (isMobile ? responsive.mobile : responsive.desktop)
+    const dimensions = responsive
+        ? isMobile
+            ? responsive.mobile
+            : responsive.desktop
         : { width, height };
 
     const displayWidth = dimensions.width;
@@ -60,7 +72,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     // Eviction callback that forces display back to screenshot mode
     const handleEviction = useCallback(() => {
         setShowScreenshotOverlay(true);
-        console.log(`🔄 Display evicted and returned to screenshot mode: ${title}`);
+        // Don't clear iframe URL on eviction to preserve loaded content
+        console.log(
+            `🔄 Display evicted and returned to screenshot mode: ${title}`
+        );
     }, [title]);
 
     // Original working iframe handlers
@@ -79,12 +94,20 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const handleViewInDisplay = useCallback(() => {
         // Register with display manager (this may evict another display)
         registerDisplay(displayId, title, handleEviction);
-        
+
+        // Start loading iframe content for the first time
+        if (!iframeUrl) {
+            setIframeUrl(url);
+            setIsLoading(true);
+            setError(null);
+            setShowFallback(false);
+        }
+
         // Hide screenshot overlay to reveal iframe
         setShowScreenshotOverlay(false);
-        
+
         console.log(`📺 Viewing ${title} in display`);
-    }, [displayId, title, registerDisplay, handleEviction]);
+    }, [displayId, title, registerDisplay, handleEviction, iframeUrl, url]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
@@ -95,7 +118,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         if (!showScreenshotOverlay && isDisplayActive(displayId)) {
             updateDisplayActivity(displayId);
         }
-    }, [showScreenshotOverlay, displayId, isDisplayActive, updateDisplayActivity]);
+    }, [
+        showScreenshotOverlay,
+        displayId,
+        isDisplayActive,
+        updateDisplayActivity,
+    ]);
 
     // Handle returning to screenshot mode
     const handleReturnToScreenshot = useCallback(() => {
@@ -104,8 +132,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         console.log(`📷 Returned to screenshot mode: ${title}`);
     }, [displayId, title, unregisterDisplay]);
 
-    // Original working timeout logic
+    // Timeout logic - only runs when iframe is actually loading
     useEffect(() => {
+        if (!isLoading || !iframeUrl) return;
+
         const timer = setTimeout(() => {
             if (isLoading) {
                 setError("Website may not allow embedding");
@@ -115,7 +145,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         }, 10000); // 10 second timeout
 
         return () => clearTimeout(timer);
-    }, [isLoading]);
+    }, [isLoading, iframeUrl]);
 
     // Cleanup: unregister display when component unmounts
     useEffect(() => {
@@ -133,11 +163,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         >
             {/* Physical display frame - responsive sizing */}
             <mesh>
-                <boxGeometry args={[
-                    (displayWidth / 400) + 0.4,
-                    (displayHeight / 400) + 0.3,
-                    0.1
-                ]} />
+                <boxGeometry
+                    args={[
+                        displayWidth / 400 + 0.4,
+                        displayHeight / 400 + 0.3,
+                        0.1,
+                    ]}
+                />
                 <meshStandardMaterial
                     color="#1a1a1a"
                     metalness={0.5}
@@ -147,11 +179,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
             {/* Screen bezel - responsive sizing */}
             <mesh position={[0, 0, 0.05]}>
-                <boxGeometry args={[
-                    (displayWidth / 400) + 0.3,
-                    (displayHeight / 400) + 0.2,
-                    0.02
-                ]} />
+                <boxGeometry
+                    args={[
+                        displayWidth / 400 + 0.3,
+                        displayHeight / 400 + 0.2,
+                        0.02,
+                    ]}
+                />
                 <meshStandardMaterial
                     color="#000000"
                     metalness={0.8}
@@ -160,13 +194,16 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             </mesh>
 
             {/* Stand - responsive sizing */}
-            <mesh position={[0, -((displayHeight / 400) + 0.3) / 2 - 0.4, 0.2]} rotation={[-Math.PI / 6, 0, 0]}>
+            <mesh
+                position={[0, -(displayHeight / 400 + 0.3) / 2 - 0.4, 0.2]}
+                rotation={[-Math.PI / 6, 0, 0]}
+            >
                 <boxGeometry args={[0.4, 0.8, 0.05]} />
                 <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
             </mesh>
 
             {/* Base - responsive sizing */}
-            <mesh position={[0, -((displayHeight / 400) + 0.3) / 2 - 0.7, 0.4]}>
+            <mesh position={[0, -(displayHeight / 400 + 0.3) / 2 - 0.7, 0.4]}>
                 <boxGeometry args={[0.6, 0.1, 0.4]} />
                 <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
             </mesh>
@@ -256,7 +293,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         >
                             {url}
                         </div>
-                        
+
                         {/* Back to screenshot button when live display is active */}
                         {!showScreenshotOverlay && (
                             <button
@@ -340,7 +377,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 <h3
                                     style={{
                                         margin: "0 0 8px 0",
-                                        fontSize: displayWidth > 400 ? "18px" : "16px",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "18px"
+                                                : "16px",
                                         fontWeight: "600",
                                     }}
                                 >
@@ -350,7 +390,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     <p
                                         style={{
                                             margin: "0 0 16px 0",
-                                            fontSize: displayWidth > 400 ? "14px" : "12px",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "14px"
+                                                    : "12px",
                                             color: "#666",
                                             lineHeight: "1.4",
                                         }}
@@ -364,18 +407,26 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         backgroundColor: "#007bff",
                                         color: "white",
                                         border: "none",
-                                        padding: displayWidth > 400 ? "10px 18px" : "8px 14px",
+                                        padding:
+                                            displayWidth > 400
+                                                ? "10px 18px"
+                                                : "8px 14px",
                                         borderRadius: "6px",
-                                        fontSize: displayWidth > 400 ? "14px" : "12px",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "14px"
+                                                : "12px",
                                         cursor: "pointer",
                                         fontWeight: "500",
                                         transition: "background-color 0.2s",
                                     }}
                                     onMouseOver={(e) => {
-                                        e.currentTarget.style.backgroundColor = "#0056b3";
+                                        e.currentTarget.style.backgroundColor =
+                                            "#0056b3";
                                     }}
                                     onMouseOut={(e) => {
-                                        e.currentTarget.style.backgroundColor = "#007bff";
+                                        e.currentTarget.style.backgroundColor =
+                                            "#007bff";
                                     }}
                                 >
                                     Visit {title} →
@@ -384,7 +435,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                             {error && (
                                 <div
                                     style={{
-                                        fontSize: displayWidth > 400 ? "12px" : "10px",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "12px"
+                                                : "10px",
                                         color: "#666",
                                         marginTop: "8px",
                                     }}
@@ -417,12 +471,14 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     width: "100%",
                                     height: "100%",
                                     objectFit: "cover",
-                                    display: screenshotLoaded ? "block" : "none",
+                                    display: screenshotLoaded
+                                        ? "block"
+                                        : "none",
                                 }}
                                 onLoad={() => setScreenshotLoaded(true)}
                                 onError={() => setScreenshotLoaded(true)}
                             />
-                            
+
                             {/* Loading placeholder for screenshot */}
                             {!screenshotLoaded && (
                                 <div
@@ -433,7 +489,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        fontSize: displayWidth > 400 ? "16px" : "14px",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "16px"
+                                                : "14px",
                                         color: "#666",
                                         fontFamily: "system-ui, sans-serif",
                                     }}
@@ -451,34 +510,41 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     right: "10px",
                                     backgroundColor: "rgba(0, 0, 0, 0.9)",
                                     color: "white",
-                                    padding: displayWidth > 400 ? "16px" : "12px",
+                                    padding:
+                                        displayWidth > 400 ? "16px" : "12px",
                                     borderRadius: "12px",
                                     textAlign: "center",
                                     fontFamily: "system-ui, sans-serif",
                                 }}
                             >
-                                <div 
-                                    style={{ 
-                                        fontWeight: "600", 
+                                <div
+                                    style={{
+                                        fontWeight: "600",
                                         marginBottom: "8px",
-                                        fontSize: displayWidth > 400 ? "16px" : "14px",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "16px"
+                                                : "14px",
                                     }}
                                 >
                                     {title}
                                 </div>
                                 {description && (
-                                    <div 
-                                        style={{ 
-                                            fontSize: displayWidth > 400 ? "13px" : "11px", 
+                                    <div
+                                        style={{
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "13px"
+                                                    : "11px",
                                             opacity: 0.8,
                                             marginBottom: "12px",
-                                            lineHeight: "1.3"
+                                            lineHeight: "1.3",
                                         }}
                                     >
                                         {description}
                                     </div>
                                 )}
-                                
+
                                 {/* Button container */}
                                 <div
                                     style={{
@@ -495,24 +561,35 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                             backgroundColor: "#28a745",
                                             color: "white",
                                             border: "none",
-                                            padding: displayWidth > 400 ? "10px 16px" : "8px 12px",
+                                            padding:
+                                                displayWidth > 400
+                                                    ? "10px 16px"
+                                                    : "8px 12px",
                                             borderRadius: "6px",
-                                            fontSize: displayWidth > 400 ? "13px" : "11px",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "13px"
+                                                    : "11px",
                                             cursor: "pointer",
                                             fontWeight: "500",
                                             transition: "background-color 0.2s",
-                                            minWidth: displayWidth > 400 ? "120px" : "100px",
+                                            minWidth:
+                                                displayWidth > 400
+                                                    ? "120px"
+                                                    : "100px",
                                         }}
                                         onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor = "#218838";
+                                            e.currentTarget.style.backgroundColor =
+                                                "#218838";
                                         }}
                                         onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor = "#28a745";
+                                            e.currentTarget.style.backgroundColor =
+                                                "#28a745";
                                         }}
                                     >
                                         📺 View in Display
                                     </button>
-                                    
+
                                     {/* Open in New Tab button */}
                                     <button
                                         onClick={handleOpenInNewTab}
@@ -520,19 +597,30 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                             backgroundColor: "#007bff",
                                             color: "white",
                                             border: "none",
-                                            padding: displayWidth > 400 ? "10px 16px" : "8px 12px",
+                                            padding:
+                                                displayWidth > 400
+                                                    ? "10px 16px"
+                                                    : "8px 12px",
                                             borderRadius: "6px",
-                                            fontSize: displayWidth > 400 ? "13px" : "11px",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "13px"
+                                                    : "11px",
                                             cursor: "pointer",
                                             fontWeight: "500",
                                             transition: "background-color 0.2s",
-                                            minWidth: displayWidth > 400 ? "120px" : "100px",
+                                            minWidth:
+                                                displayWidth > 400
+                                                    ? "120px"
+                                                    : "100px",
                                         }}
                                         onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor = "#0056b3";
+                                            e.currentTarget.style.backgroundColor =
+                                                "#0056b3";
                                         }}
                                         onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor = "#007bff";
+                                            e.currentTarget.style.backgroundColor =
+                                                "#007bff";
                                         }}
                                     >
                                         🔗 Open in Tab
@@ -542,17 +630,45 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Iframe for web content (original working version - loads immediately) */}
-                    {!showFallback && (
+                    {/* Placeholder when no iframe content has been loaded */}
+                    {!showFallback && !iframeUrl && !showScreenshotOverlay && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "40px",
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: "#f8f9fa",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: displayWidth > 400 ? "16px" : "14px",
+                                color: "#666",
+                                fontFamily: "system-ui, sans-serif",
+                                flexDirection: "column",
+                                gap: "12px",
+                            }}
+                        >
+                            <div style={{ fontSize: "32px", opacity: 0.6 }}>
+                                📺
+                            </div>
+                            <div>Click "View in Display" to load content</div>
+                        </div>
+                    )}
+
+                    {/* Iframe for web content - only loads after "View in Display" is clicked */}
+                    {!showFallback && iframeUrl && (
                         <iframe
                             ref={iframeRef}
-                            src={url}
+                            src={iframeUrl}
                             style={{
                                 width: "100%",
                                 height: "calc(100% - 40px)",
                                 border: "none",
                                 backgroundColor: "#ffffff",
-                                display: error && !showFallback ? "none" : "block",
+                                display:
+                                    error && !showFallback ? "none" : "block",
                             }}
                             onLoad={handleIframeLoad}
                             onError={handleIframeError}
