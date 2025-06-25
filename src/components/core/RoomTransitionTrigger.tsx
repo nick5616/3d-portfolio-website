@@ -14,7 +14,8 @@ export const RoomTransitionTrigger: React.FC<RoomTransitionProps> = ({
     const { camera } = useThree();
     const { teleportToRoom } = useSceneStore();
     const [isInTrigger, setIsInTrigger] = useState(false);
-    const lastTransitionTime = useRef<number>(0);
+    const frameCounter = useRef<number>(0);
+    const lastTransitionFrame = useRef<number>(0);
 
     // Handle collision events
     const handleCollisionEnter = () => {
@@ -28,10 +29,11 @@ export const RoomTransitionTrigger: React.FC<RoomTransitionProps> = ({
     useEffect(() => {
         if (!isInTrigger) return;
 
-        const now = Date.now();
-        if (now - lastTransitionTime.current < 1000) return;
+        frameCounter.current++;
+        // Prevent rapid transitions (60 frames = ~1 second at 60fps)
+        if (frameCounter.current - lastTransitionFrame.current < 60) return;
 
-        lastTransitionTime.current = now;
+        lastTransitionFrame.current = frameCounter.current;
         const newPosition: [number, number, number] = [
             camera.position.x,
             camera.position.y,
@@ -39,7 +41,7 @@ export const RoomTransitionTrigger: React.FC<RoomTransitionProps> = ({
         ];
 
         teleportToRoom(archway.targetRoomId, newPosition);
-    }, [isInTrigger, archway.targetRoomId, camera.position, teleportToRoom]);
+    }, [isInTrigger, archway.targetRoomId, teleportToRoom]);
 
     return (
         <RigidBody
