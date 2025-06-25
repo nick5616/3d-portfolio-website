@@ -17,13 +17,19 @@ export const SceneManager: React.FC = () => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
         loadRoom("atrium");
-    }, []);
+    }, [scene, loadRoom]);
 
     useFrame(({ gl }) => {
-        // Performance monitoring
+        // Performance monitoring with proper memory management
         if (performance.monitoring) {
-            fpsGraph.current.push(gl.info.render.frame);
-            if (fpsGraph.current.length > 100) fpsGraph.current.shift();
+            // Use frame count with proper memory bounds
+            const currentTime = Date.now();
+            fpsGraph.current.push(currentTime);
+            
+            // Keep only last 60 frames and ensure we don't exceed limit
+            if (fpsGraph.current.length >= 60) {
+                fpsGraph.current = fpsGraph.current.slice(-60);
+            }
         }
     });
 

@@ -91,12 +91,6 @@ export const CameraController: React.FC = () => {
 
                 // Apply to camera position
                 camera.position.add(direction);
-
-                console.log(
-                    `Moving camera: ${direction.x.toFixed(
-                        3
-                    )}, ${direction.z.toFixed(3)}`
-                );
             }
         } else {
             // Point and click mode

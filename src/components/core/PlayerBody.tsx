@@ -88,7 +88,7 @@ export const PlayerBody: React.FC = () => {
 
             // Set movement speed (reduced in air)
             const speed = movement.running ? 8 : 4;
-            const airMultiplier = isGrounded ? 1 : 1;
+            const airMultiplier = isGrounded ? 1 : 0.5; // Reduced air control
 
             // Apply horizontal movement
             velocity.current.set(

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface MovementState {
     forward: boolean;
@@ -18,6 +18,9 @@ export const useKeyboardControls = () => {
         running: false,
         jumping: false,
     });
+
+    // Add ref to track if jump is currently active to prevent spam
+    const jumpCooldownRef = useRef<boolean>(false);
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         switch (event.code) {
@@ -42,11 +45,19 @@ export const useKeyboardControls = () => {
                 setMovement((prev) => ({ ...prev, running: true }));
                 break;
             case "Space":
-                // Only trigger jump if not already jumping
-                setMovement((prev) => ({ ...prev, jumping: true }));
+                // Only trigger jump if not already jumping (prevent spam)
+                if (!jumpCooldownRef.current && !movement.jumping) {
+                    jumpCooldownRef.current = true;
+                    setMovement((prev) => ({ ...prev, jumping: true }));
+                    
+                    // Reset cooldown after 200ms to prevent spam
+                    setTimeout(() => {
+                        jumpCooldownRef.current = false;
+                    }, 200);
+                }
                 break;
         }
-    }, []);
+    }, [movement.jumping]);
 
     const handleKeyUp = useCallback((event: KeyboardEvent) => {
         switch (event.code) {

@@ -2,6 +2,7 @@ import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
 import { VirtualControls } from "./components/ui/VirtualControls";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
+import { useSceneStore } from "./stores/sceneStore";
 import { useEffect, useState } from "react";
 
 // Define the missing orientation type
@@ -11,6 +12,7 @@ interface OrientationLock {
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
+    const { updateMobileDetection } = useSceneStore();
     const [isLandscape, setIsLandscape] = useState(false);
 
     // Handle orientation changes and set meta viewport
@@ -36,6 +38,8 @@ export default function App() {
         const handleOrientationChange = () => {
             const isLandscapeMode = window.innerWidth > window.innerHeight;
             setIsLandscape(isLandscapeMode);
+            // Update mobile detection on resize/orientation change
+            updateMobileDetection();
         };
 
         // Initial check
@@ -63,24 +67,15 @@ export default function App() {
                                     screenOrientation
                                         .lock("landscape")
                                         .catch((error: Error) => {
-                                            console.log(
-                                                "Could not lock orientation",
-                                                error
-                                            );
+                                            // Removed console.log for production
                                         });
                                 }
                             } catch (err) {
-                                console.error(
-                                    "Orientation API not supported",
-                                    err
-                                );
+                                // Removed console.error for production
                             }
                         })
                         .catch((err) => {
-                            console.error(
-                                "Error attempting to enable fullscreen:",
-                                err
-                            );
+                            // Removed console.error for production
                         });
                 }
 
@@ -121,7 +116,7 @@ export default function App() {
         return () => {
             window.removeEventListener("resize", handleOrientationChange);
         };
-    }, [isMobile]);
+    }, [isMobile, updateMobileDetection]);
 
     return (
         <main

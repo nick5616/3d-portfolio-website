@@ -60,7 +60,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     // Eviction callback that forces display back to screenshot mode
     const handleEviction = useCallback(() => {
         setShowScreenshotOverlay(true);
-        console.log(`🔄 Display evicted and returned to screenshot mode: ${title}`);
     }, [title]);
 
     // Original working iframe handlers
@@ -82,8 +81,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         
         // Hide screenshot overlay to reveal iframe
         setShowScreenshotOverlay(false);
-        
-        console.log(`📺 Viewing ${title} in display`);
     }, [displayId, title, registerDisplay, handleEviction]);
 
     const handleOpenInNewTab = () => {
@@ -101,7 +98,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const handleReturnToScreenshot = useCallback(() => {
         setShowScreenshotOverlay(true);
         unregisterDisplay(displayId);
-        console.log(`📷 Returned to screenshot mode: ${title}`);
     }, [displayId, title, unregisterDisplay]);
 
     // Original working timeout logic

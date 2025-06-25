@@ -34,6 +34,7 @@ interface SceneState {
     virtualRotation: RotationState;
     setVirtualMovement: (movement: MovementState) => void;
     setVirtualRotation: (rotation: RotationState) => void;
+    updateMobileDetection: () => void;
     toggleFlyMode: () => void;
     loadRoom: (roomId: string) => void;
     setControlMode: (mode: "firstPerson" | "pointAndClick") => void;
@@ -84,6 +85,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     setVirtualMovement: (movement) => set({ virtualMovement: movement }),
     setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
+    updateMobileDetection: () => set({ isMobile: isMobileDevice() }),
     toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
     loadRoom: (roomId) => {
         const config = roomConfigs[roomId];
