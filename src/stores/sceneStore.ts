@@ -18,6 +18,9 @@ interface RotationState {
 
 interface SceneState {
     currentRoom: RoomConfig | null;
+    currentRoomId: string | null;
+    previousRoomId: string | null;
+    isTransitioning: boolean;
     controlMode: "firstPerson" | "pointAndClick";
     cameraTarget: THREE.Vector3;
     spotlightsEnabled: boolean;
@@ -46,6 +49,9 @@ interface SceneState {
     setPerformanceQuality: (quality: "low" | "medium" | "high") => void;
     toggleStats: () => void;
     togglePerformanceMonitoring: () => void;
+    // New room management methods
+    getAdjacentRoomIds: (roomId?: string) => string[];
+    shouldRenderRoom: (roomId: string) => boolean;
 }
 
 // Helper to detect mobile devices
@@ -57,8 +63,11 @@ const isMobileDevice = () => {
     );
 };
 
-export const useSceneStore = create<SceneState>((set) => ({
+export const useSceneStore = create<SceneState>((set, get) => ({
     currentRoom: null,
+    currentRoomId: null,
+    previousRoomId: null,
+    isTransitioning: false,
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     spotlightsEnabled: false,
@@ -85,29 +94,51 @@ export const useSceneStore = create<SceneState>((set) => ({
     setVirtualMovement: (movement) => set({ virtualMovement: movement }),
     setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
     toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
+    
     loadRoom: (roomId) => {
         const config = roomConfigs[roomId];
         if (config) {
-            set({ currentRoom: config });
+            set((state) => ({ 
+                currentRoom: config,
+                currentRoomId: roomId,
+                previousRoomId: state.currentRoomId,
+                isTransitioning: true
+            }));
+            
+            // Clear transition flag after a brief delay
+            setTimeout(() => {
+                set({ isTransitioning: false });
+            }, 500);
         } else {
             console.error(`Room configuration not found for ID: ${roomId}`);
         }
     },
+    
     setControlMode: (mode) =>
         set({
             controlMode: mode,
             isFirstPerson: mode === "firstPerson",
         }),
     setCameraTarget: (target) => set({ cameraTarget: target }),
+    
     teleportToRoom: (roomId, position) => {
         const config = roomConfigs[roomId];
         if (config) {
-            set({
+            set((state) => ({
                 currentRoom: config,
+                currentRoomId: roomId,
+                previousRoomId: state.currentRoomId,
+                isTransitioning: true,
                 cameraTarget: new THREE.Vector3(...position),
-            });
+            }));
+            
+            // Clear transition flag after a brief delay
+            setTimeout(() => {
+                set({ isTransitioning: false });
+            }, 500);
         }
     },
+    
     toggleSpotlights: () =>
         set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
     setPerformanceQuality: (quality) =>
@@ -128,4 +159,21 @@ export const useSceneStore = create<SceneState>((set) => ({
                 monitoring: !state.performance.monitoring,
             },
         })),
+    
+    // Get adjacent room IDs from archways
+    getAdjacentRoomIds: (roomId) => {
+        const currentRoomId = roomId || get().currentRoomId;
+        if (!currentRoomId) return [];
+        
+        const room = roomConfigs[currentRoomId];
+        if (!room) return [];
+        
+        return room.archways.map(archway => archway.targetRoomId);
+    },
+    
+    // Determine if a room should be rendered (current room only for now)
+    shouldRenderRoom: (roomId) => {
+        const { currentRoomId } = get();
+        return roomId === currentRoomId;
+    },
 }));

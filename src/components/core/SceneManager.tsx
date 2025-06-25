@@ -10,14 +10,22 @@ import { roomConfigs } from "../../configs/rooms";
 
 export const SceneManager: React.FC = () => {
     const { scene } = useThree();
-    const { loadRoom, performance } = useSceneStore();
+    const { 
+        loadRoom, 
+        performance, 
+        currentRoomId, 
+        currentRoom,
+        getAdjacentRoomIds,
+        shouldRenderRoom,
+        isTransitioning 
+    } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
     useEffect(() => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
         loadRoom("atrium");
-    }, []);
+    }, [loadRoom, scene]);
 
     useFrame(({ gl }) => {
         // Performance monitoring
@@ -27,19 +35,36 @@ export const SceneManager: React.FC = () => {
         }
     });
 
+    // Get adjacent room IDs for transition triggers
+    const adjacentRoomIds = getAdjacentRoomIds();
+    const roomsToShowTransitions = currentRoomId ? [currentRoomId, ...adjacentRoomIds] : [];
+
     return (
         <>
             <Environment preset="city" />
             <CameraController />
-            {/* Render all rooms */}
-            {Object.values(roomConfigs).map((roomConfig) => (
-                <Room key={roomConfig.id} config={roomConfig} />
-            ))}
-            {/* Render transition triggers for all archways */}
-            {Object.values(roomConfigs).map((roomConfig) =>
-                roomConfig.archways.map((archway) => (
-                    <RoomTransitionTrigger key={archway.id} archway={archway} />
-                ))
+            
+            {/* Render only the current room */}
+            {currentRoom && (
+                <Room key={currentRoom.id} config={currentRoom} />
+            )}
+            
+            {/* Render transition triggers only for current and adjacent rooms */}
+            {roomsToShowTransitions.map((roomId) => {
+                const roomConfig = roomConfigs[roomId];
+                if (!roomConfig) return null;
+                
+                return roomConfig.archways.map((archway) => (
+                    <RoomTransitionTrigger key={`${roomId}-${archway.id}`} archway={archway} />
+                ));
+            })}
+            
+            {/* Loading indicator during transitions */}
+            {isTransitioning && (
+                <mesh position={[0, 5, 0]} visible={false}>
+                    <sphereGeometry args={[0.1, 8, 8]} />
+                    <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
+                </mesh>
             )}
         </>
     );

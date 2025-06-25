@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import { Preload } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomConfig } from "../../types/scene.types";
@@ -10,6 +10,7 @@ import { GalleryRoom } from "../rooms/GalleryRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
 import { AboutRoom } from "../rooms/AboutRoom";
 import { DefaultRoom } from "../rooms/DefaultRoom";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface RoomProps {
     config: RoomConfig;
@@ -17,11 +18,35 @@ interface RoomProps {
 
 export const Room: React.FC<RoomProps> = ({ config }) => {
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
+    const groupRef = useRef<THREE.Group>(null);
     const [width, height, depth] = config.dimensions;
     const wallThickness = 0.1;
     const doorWidth = 3;
     const doorHeight = 4;
-    const materials = getRoomMaterials(config.id);
+    const materials = useMemo(() => getRoomMaterials(config.id), [config.id]);
+    const { isTransitioning, performance } = useSceneStore();
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Fade in effect when room loads
+    useEffect(() => {
+        const timer = setTimeout(() => setIsLoaded(true), 100);
+        return () => clearTimeout(timer);
+    }, [config.id]);
+
+    // Cleanup materials when component unmounts
+    useEffect(() => {
+        return () => {
+            // Dispose of materials to prevent memory leaks
+            Object.values(materials).forEach((material) => {
+                if (material && typeof material.dispose === 'function') {
+                    material.dispose();
+                }
+            });
+        };
+    }, [materials]);
+
+    // Performance optimization - reduce quality during transitions
+    const shouldOptimize = isTransitioning || performance.quality === 'low';
 
     // Memoize archway check function
     const hasArchwayAtPosition = useMemo(() => {
@@ -59,6 +84,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                                     0,
                                     -wallThickness / 2,
                                 ]}
+                                receiveShadow={!shouldOptimize}
+                                castShadow={!shouldOptimize}
                             >
                                 <boxGeometry
                                     args={[sideWidth, height, wallThickness]}
@@ -78,6 +105,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                                     0,
                                     -wallThickness / 2,
                                 ]}
+                                receiveShadow={!shouldOptimize}
+                                castShadow={!shouldOptimize}
                             >
                                 <boxGeometry
                                     args={[sideWidth, height, wallThickness]}
@@ -97,6 +126,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                                     height / 2 - doorHeight / 2,
                                     -wallThickness / 2,
                                 ]}
+                                receiveShadow={!shouldOptimize}
+                                castShadow={!shouldOptimize}
                             >
                                 <boxGeometry
                                     args={[
@@ -115,33 +146,18 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 );
             }
 
-            // Adjust wall dimensions to prevent overlap with adjacent rooms
-            let wallWidth = wall.isVertical ? depth : width;
-            let wallPosition = wall.position.clone();
-
-            // If this is the atrium room and the wall is the east wall (facing about room)
-            if (config.id === "atrium" && wall.id === "east") {
-                // Adjust the wall to start after the projects room
-                const projectsRoomDepth = 20; // From roomConfigs
-                wallWidth = (width - projectsRoomDepth) / 2;
-                wallPosition.x = width / 2 - wallWidth / 2 - 0.01;
-            }
-
-            if (config.id === "atrium" && wall.id === "north") {
-                // Create a divider wall that's visible but not in the player's way
-                wallWidth = width; // Keep the full width
-                wallPosition.z = depth / 2 - wallWidth / 2 + 5; // Original position
-            }
-
-            if (config.id === "atrium" && wall.id === "south") {
-                // Adjust the wall to not overlap with the projects room
-                wallWidth = width / 2;
-                wallPosition.z = depth / 2 - wallWidth / 2 + 3.5;
-            }
+            // No more overlap adjustments needed since rooms are separated
+            const wallWidth = wall.isVertical ? depth : width;
+            const wallPosition = wall.position.clone();
 
             return (
                 <RigidBody type="fixed" colliders="cuboid" key={wall.id}>
-                    <mesh position={wallPosition} rotation={wall.rotation}>
+                    <mesh 
+                        position={wallPosition} 
+                        rotation={wall.rotation}
+                        receiveShadow={!shouldOptimize}
+                        castShadow={!shouldOptimize}
+                    >
                         <boxGeometry
                             args={[wallWidth, height, wallThickness]}
                         />
@@ -159,12 +175,12 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             wallThickness,
             materials.walls,
             hasArchwayAtPosition,
-            config.id,
+            shouldOptimize,
         ]
     );
 
     // Determine which room component to render based on room type
-    const renderRoomComponent = () => {
+    const renderRoomComponent = useMemo(() => {
         switch (config.id) {
             case "atrium":
                 return (
@@ -222,14 +238,18 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     />
                 );
         }
-    };
+    }, [config, materials, wallThickness, width, height, depth]);
 
     // Render room based on room type
     return (
-        <group position={config.position}>
-            {/* Lighting */}
+        <group 
+            ref={groupRef}
+            position={config.position}
+            visible={isLoaded}
+        >
+            {/* Adaptive lighting based on performance */}
             <ambientLight
-                intensity={config.lightPreset.ambient.intensity * 0.5}
+                intensity={config.lightPreset.ambient.intensity * (shouldOptimize ? 1 : 0.5)}
                 color={config.lightPreset.ambient.color}
             />
             <directionalLight
@@ -237,8 +257,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 position={config.lightPreset.directional.position}
                 intensity={config.lightPreset.directional.intensity}
                 color={config.lightPreset.directional.color}
-                castShadow
-                shadow-mapSize={[1024, 1024]}
+                castShadow={!shouldOptimize}
+                shadow-mapSize={shouldOptimize ? [512, 512] : [1024, 1024]}
                 shadow-bias={-0.0001}
             />
             {/* Single corner light for depth */}
@@ -250,7 +270,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             />
             {/* Floor */}
             <RigidBody type="fixed" colliders="cuboid">
-                <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <mesh 
+                    rotation={[-Math.PI / 2, 0, 0]} 
+                    receiveShadow={!shouldOptimize}
+                >
                     <planeGeometry args={[width, depth]} />
                     <meshStandardMaterial color="#444444" />
                 </mesh>
@@ -260,7 +283,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 <mesh
                     position={[0, height, 0]}
                     rotation={[Math.PI / 2, 0, 0]}
-                    receiveShadow
+                    receiveShadow={!shouldOptimize}
                 >
                     <planeGeometry args={[width, depth]} />
                     <primitive object={materials.ceiling} attach="material" />
@@ -276,8 +299,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 height={height}
                 depth={depth}
             >
-                {renderRoomComponent()}
+                {renderRoomComponent}
             </BaseRoom>
+            
+            {/* Only preload resources for the current room */}
             <Preload all />
         </group>
     );
