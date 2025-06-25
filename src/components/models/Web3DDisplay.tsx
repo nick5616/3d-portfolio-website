@@ -34,10 +34,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const displayRef = useRef<THREE.Group>(null);
     const { isMobile } = useDeviceDetection();
     
-    // States for loading and display management
-    const [isLiveMode, setIsLiveMode] = useState(false); // Start with screenshot
-    const [isLoading, setIsLoading] = useState(false);
+    // Original working states - iframe loads immediately like before
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showFallback, setShowFallback] = useState(false);
+    
+    // New screenshot overlay state (doesn't interfere with iframe)
+    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(!!screenshotUrl); // Show overlay if screenshot exists
     const [screenshotLoaded, setScreenshotLoaded] = useState(false);
 
     // Calculate responsive dimensions
@@ -48,7 +51,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const displayWidth = dimensions.width;
     const displayHeight = dimensions.height;
 
-    // Handle iframe load
+    // Original working iframe handlers
     const handleIframeLoad = () => {
         setIsLoading(false);
         setError(null);
@@ -57,34 +60,30 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const handleIframeError = () => {
         setIsLoading(false);
         setError("Failed to load website");
+        setShowFallback(true);
     };
 
-    // Handle screenshot click to load live website
-    const handleScreenshotClick = () => {
-        if (!isLiveMode) {
-            setIsLiveMode(true);
-            setIsLoading(true);
-        }
+    // New handlers for screenshot overlay and buttons
+    const handleViewInDisplay = () => {
+        setShowScreenshotOverlay(false); // Hide overlay to reveal iframe underneath
     };
 
-    // Handle opening in new tab
-    const openInNewTab = () => {
+    const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
     };
 
-    // Timeout for iframe loading
+    // Original working timeout logic
     useEffect(() => {
-        if (!isLiveMode) return;
-
         const timer = setTimeout(() => {
             if (isLoading) {
                 setError("Website may not allow embedding");
+                setShowFallback(true);
                 setIsLoading(false);
             }
         }, 10000); // 10 second timeout
 
         return () => clearTimeout(timer);
-    }, [isLoading, isLiveMode]);
+    }, [isLoading]);
 
     return (
         <group
@@ -96,8 +95,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             {/* Physical display frame - responsive sizing */}
             <mesh>
                 <boxGeometry args={[
-                    (displayWidth / 400) + 0.4, // Scale frame based on content width
-                    (displayHeight / 400) + 0.3, // Scale frame based on content height
+                    (displayWidth / 400) + 0.4,
+                    (displayHeight / 400) + 0.3,
                     0.1
                 ]} />
                 <meshStandardMaterial
@@ -220,85 +219,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     </div>
 
-                    {/* Screenshot mode (default) */}
-                    {!isLiveMode && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: "#ffffff",
-                                cursor: "pointer",
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                            onClick={handleScreenshotClick}
-                        >
-                            {screenshotUrl && (
-                                <img
-                                    src={screenshotUrl}
-                                    alt={title}
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                        display: screenshotLoaded ? "block" : "none",
-                                    }}
-                                    onLoad={() => setScreenshotLoaded(true)}
-                                    onError={() => setScreenshotLoaded(true)}
-                                />
-                            )}
-                            
-                            {/* Loading placeholder for screenshot */}
-                            {!screenshotLoaded && (
-                                <div
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        backgroundColor: "#f0f0f0",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: displayWidth > 400 ? "16px" : "14px",
-                                        color: "#666",
-                                        fontFamily: "system-ui, sans-serif",
-                                    }}
-                                >
-                                    Loading preview...
-                                </div>
-                            )}
-
-                            {/* Click overlay */}
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    bottom: "10px",
-                                    left: "10px",
-                                    right: "10px",
-                                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                                    color: "white",
-                                    padding: displayWidth > 400 ? "12px" : "8px",
-                                    borderRadius: "8px",
-                                    textAlign: "center",
-                                    fontSize: displayWidth > 400 ? "14px" : "12px",
-                                    fontFamily: "system-ui, sans-serif",
-                                    transition: "opacity 0.3s",
-                                }}
-                            >
-                                <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                                    {title}
-                                </div>
-                                <div style={{ fontSize: displayWidth > 400 ? "12px" : "10px", opacity: 0.8 }}>
-                                    Click to load live website →
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Loading overlay for live mode */}
-                    {isLiveMode && isLoading && (
+                    {/* Loading overlay (original working version) */}
+                    {isLoading && !showFallback && (
                         <div
                             style={{
                                 position: "absolute",
@@ -313,23 +235,14 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 fontSize: displayWidth > 400 ? "16px" : "14px",
                                 color: "#666",
                                 fontFamily: "system-ui, sans-serif",
-                                flexDirection: "column",
-                                gap: "16px",
                             }}
                         >
-                            <div>Loading {title}...</div>
-                            <div style={{ 
-                                fontSize: displayWidth > 400 ? "12px" : "10px",
-                                textAlign: "center",
-                                maxWidth: "80%"
-                            }}>
-                                Loading the live website. This may take a moment.
-                            </div>
+                            Loading {title}...
                         </div>
                     )}
 
-                    {/* Error fallback for live mode */}
-                    {isLiveMode && error && (
+                    {/* Fallback content (original working version) */}
+                    {showFallback && (
                         <div
                             style={{
                                 position: "absolute",
@@ -386,7 +299,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     </p>
                                 )}
                                 <button
-                                    onClick={openInNewTab}
+                                    onClick={handleOpenInNewTab}
                                     style={{
                                         backgroundColor: "#007bff",
                                         color: "white",
@@ -422,8 +335,155 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Live iframe content */}
-                    {isLiveMode && !isLoading && !error && (
+                    {/* NEW: Screenshot overlay (shows on top when available) */}
+                    {showScreenshotOverlay && screenshotUrl && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: "40px",
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: "#ffffff",
+                                display: "flex",
+                                flexDirection: "column",
+                                zIndex: 10, // Above iframe
+                            }}
+                        >
+                            <img
+                                src={screenshotUrl}
+                                alt={title}
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: screenshotLoaded ? "block" : "none",
+                                }}
+                                onLoad={() => setScreenshotLoaded(true)}
+                                onError={() => setScreenshotLoaded(true)}
+                            />
+                            
+                            {/* Loading placeholder for screenshot */}
+                            {!screenshotLoaded && (
+                                <div
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        backgroundColor: "#f0f0f0",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: displayWidth > 400 ? "16px" : "14px",
+                                        color: "#666",
+                                        fontFamily: "system-ui, sans-serif",
+                                    }}
+                                >
+                                    Loading preview...
+                                </div>
+                            )}
+
+                            {/* Control overlay with buttons */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    bottom: "10px",
+                                    left: "10px",
+                                    right: "10px",
+                                    backgroundColor: "rgba(0, 0, 0, 0.9)",
+                                    color: "white",
+                                    padding: displayWidth > 400 ? "16px" : "12px",
+                                    borderRadius: "12px",
+                                    textAlign: "center",
+                                    fontFamily: "system-ui, sans-serif",
+                                }}
+                            >
+                                <div 
+                                    style={{ 
+                                        fontWeight: "600", 
+                                        marginBottom: "8px",
+                                        fontSize: displayWidth > 400 ? "16px" : "14px",
+                                    }}
+                                >
+                                    {title}
+                                </div>
+                                {description && (
+                                    <div 
+                                        style={{ 
+                                            fontSize: displayWidth > 400 ? "13px" : "11px", 
+                                            opacity: 0.8,
+                                            marginBottom: "12px",
+                                            lineHeight: "1.3"
+                                        }}
+                                    >
+                                        {description}
+                                    </div>
+                                )}
+                                
+                                {/* Button container */}
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: "8px",
+                                        justifyContent: "center",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    {/* View in Display button */}
+                                    <button
+                                        onClick={handleViewInDisplay}
+                                        style={{
+                                            backgroundColor: "#28a745",
+                                            color: "white",
+                                            border: "none",
+                                            padding: displayWidth > 400 ? "10px 16px" : "8px 12px",
+                                            borderRadius: "6px",
+                                            fontSize: displayWidth > 400 ? "13px" : "11px",
+                                            cursor: "pointer",
+                                            fontWeight: "500",
+                                            transition: "background-color 0.2s",
+                                            minWidth: displayWidth > 400 ? "120px" : "100px",
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#218838";
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#28a745";
+                                        }}
+                                    >
+                                        📺 View in Display
+                                    </button>
+                                    
+                                    {/* Open in New Tab button */}
+                                    <button
+                                        onClick={handleOpenInNewTab}
+                                        style={{
+                                            backgroundColor: "#007bff",
+                                            color: "white",
+                                            border: "none",
+                                            padding: displayWidth > 400 ? "10px 16px" : "8px 12px",
+                                            borderRadius: "6px",
+                                            fontSize: displayWidth > 400 ? "13px" : "11px",
+                                            cursor: "pointer",
+                                            fontWeight: "500",
+                                            transition: "background-color 0.2s",
+                                            minWidth: displayWidth > 400 ? "120px" : "100px",
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#0056b3";
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#007bff";
+                                        }}
+                                    >
+                                        🔗 Open in Tab
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Iframe for web content (original working version - loads immediately) */}
+                    {!showFallback && (
                         <iframe
                             src={url}
                             style={{
@@ -431,6 +491,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 height: "calc(100% - 40px)",
                                 border: "none",
                                 backgroundColor: "#ffffff",
+                                display: error && !showFallback ? "none" : "block",
                             }}
                             onLoad={handleIframeLoad}
                             onError={handleIframeError}
