@@ -60,115 +60,63 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 
             {/* Art pieces along left vertical divider */}
             {/* Left side of left divider */}
-            <ArtFrame 
-                position={[-width / 4 - 0.5, 2.5, -3]}
-                rotation={[0, Math.PI / 2, 0]}
-                scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(22)}
-            />
-            <ArtFrame 
-                position={[-width / 4 - 0.5, 2.5, 3]}
-                rotation={[0, Math.PI / 2, 0]}
-                scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(23)}
-            />
-            {/* Right side of left divider */}
-            <ArtFrame 
+            <ArtFrame
                 position={[-width / 4 + 0.5, 2.5, -3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(0)}
+                imageUrl={getArtImageUrl(22)} // marvin martian
             />
-            <ArtFrame 
+            <ArtFrame
                 position={[-width / 4 + 0.5, 2.5, 3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(1)}
+                imageUrl={getArtImageUrl(23)} // monster under
             />
 
-            {/* Art pieces along right vertical divider */}
             {/* Left side of right divider */}
-            <ArtFrame 
+            <ArtFrame
                 position={[width / 4 - 0.5, 2.5, -3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(2)}
+                imageUrl={getArtImageUrl(5)} // fuzzy
             />
-            <ArtFrame 
+            <ArtFrame
                 position={[width / 4 - 0.5, 2.5, 3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(3)}
-            />
-            {/* Right side of right divider */}
-            <ArtFrame 
-                position={[width / 4 + 0.5, 2.5, -3]}
-                rotation={[0, -Math.PI / 2, 0]}
-                scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(4)}
-            />
-            <ArtFrame 
-                position={[width / 4 + 0.5, 2.5, 3]}
-                rotation={[0, -Math.PI / 2, 0]}
-                scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(5)}
+                imageUrl={getArtImageUrl(3)} // chaos bird
             />
 
             {/* Art pieces along horizontal connector */}
             {/* Front side of horizontal divider */}
-            <ArtFrame 
-                position={[-3, 2.5, -0.5]}
-                rotation={[0, 0, 0]}
-                scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(6)}
-            />
-            <ArtFrame 
-                position={[3, 2.5, -0.5]}
-                rotation={[0, 0, 0]}
-                scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(7)}
-            />
-            {/* Back side of horizontal divider */}
-            <ArtFrame 
-                position={[-3, 2.5, 0.5]}
+            <ArtFrame
+                position={[-3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(8)}
+                imageUrl={getArtImageUrl(6)} // tree night
             />
-            <ArtFrame 
-                position={[3, 2.5, 0.5]}
+            <ArtFrame
+                position={[3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(9)}
+                imageUrl={getArtImageUrl(7)} // wispette
             />
 
             {/* Additional smaller art pieces at different heights */}
-            {/* Left divider - higher pieces */}
-            <ArtFrame 
-                position={[-width / 4 - 0.5, 3.8, 0]}
-                rotation={[0, Math.PI / 2, 0]}
-                scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(10)}
-            />
-            <ArtFrame 
+
+            <ArtFrame
                 position={[-width / 4 + 0.5, 3.8, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(11)}
+                imageUrl={getArtImageUrl(11)} // link botw
             />
 
             {/* Right divider - higher pieces */}
-            <ArtFrame 
+            <ArtFrame
                 position={[width / 4 - 0.5, 3.8, 0]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(12)}
-            />
-            <ArtFrame 
-                position={[width / 4 + 0.5, 3.8, 0]}
-                rotation={[0, -Math.PI / 2, 0]}
-                scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(13)}
+                imageUrl={getArtImageUrl(12)} // okay blue heron
             />
         </>
     );

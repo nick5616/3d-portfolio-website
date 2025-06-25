@@ -2,37 +2,37 @@
 
 export const artPieces = [
     // North wall pieces (indices 0-5)
-    "animal-sketches",
-    "bite-of-87",
-    "brushed-sunset",
-    "chaos-bird",
-    "far-east",
-    "teemo",
+    "animal-sketches", // 0
+    "bite-of-87", // 1
+    "brushed-sunset", // 2
+    "chaos-bird", // 3
+    "far-east", // 4
+    "teemo", // 5
 
     // South wall pieces (indices 6-11)
 
-    "tree-night",
-    "wispette",
-    "wiz-dog",
-    "first-drawing",
-    "homunculus",
-    "link-botw",
+    "tree-night", // 6
+    "wispette", // 7
+    "wiz-dog", // 8
+    "first-drawing", // 9
+    "homunculus", // 10
+    "link-botw", // 11
 
     // West wall pieces (indices 12-17)
-    "okay-blue-heron",
-    "san-bernardino",
-    "teemo",
-    "smoke-man",
-    "snow-white-night",
-    "seal",
+    "okay-blue-heron", // 12
+    "san-bernardino", // 13
+    "teemo", // 14
+    "smoke-man", // 15
+    "snow-white-night", // 16
+    "seal", // 17
 
     // East wall pieces (indices 18-23)
-    "homunculus",
-    "link-botw",
-    "lion-sun",
-    "mackbook",
-    "marvin-martian",
-    "monster-under",
+    "homunculus", // 18
+    "link-botw", // 19
+    "lion-sun", // 20
+    "mackbook", // 21
+    "marvin-martian", // 22
+    "monster-under", // 23
 ];
 
 // Helper function to get image URL for a piece
