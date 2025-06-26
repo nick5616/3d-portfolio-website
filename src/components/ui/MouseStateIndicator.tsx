@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const MouseStateIndicator: React.FC = () => {
     const [isPointerLocked, setIsPointerLocked] = useState(false);
     const { controlMode } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
 
     useEffect(() => {
         const handlePointerLockChange = () => {
@@ -19,8 +21,8 @@ export const MouseStateIndicator: React.FC = () => {
         };
     }, []);
 
-    // Only show on desktop and in first person mode
-    if (controlMode !== "firstPerson") return null;
+    // Only show on desktop in first person mode (never on mobile)
+    if (isMobile || controlMode !== "firstPerson") return null;
 
     return (
         <>

@@ -3,20 +3,17 @@ import { useRef, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useKeyboardControls } from "../../hooks/useKeyboardControls";
 import { useMouseControls } from "../../hooks/useMouseControls";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import * as THREE from "three";
 
 export const CameraController: React.FC = () => {
-    const {
-        controlMode,
-        cameraTarget,
-        virtualMovement,
-        virtualRotation,
-        isMobile,
-    } = useSceneStore();
+    const { controlMode, cameraTarget, virtualMovement, virtualRotation } =
+        useSceneStore();
 
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
     const { rotation } = useMouseControls();
+    const { isMobile } = useDeviceDetection();
 
     const targetPosition = useRef(new THREE.Vector3());
     const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
@@ -31,9 +28,13 @@ export const CameraController: React.FC = () => {
         const clampedDelta = Math.min(delta, 0.1);
 
         if (controlMode === "firstPerson") {
-            // Handle rotation
-            const combinedRotationX = rotation.x + virtualRotation.x;
-            const combinedRotationY = rotation.y + virtualRotation.y;
+            // Handle rotation - on mobile, only use virtual rotation
+            const combinedRotationX = isMobile
+                ? virtualRotation.x
+                : rotation.x + virtualRotation.x;
+            const combinedRotationY = isMobile
+                ? virtualRotation.y
+                : rotation.y + virtualRotation.y;
 
             euler.current.y -= combinedRotationX;
             euler.current.x = Math.max(
@@ -64,13 +65,13 @@ export const CameraController: React.FC = () => {
             // Movement speed - use the same speed for keyboard and virtual
             const moveSpeed = 0.15;
 
-            // Combine keyboard and virtual inputs (virtual takes precedence on mobile)
+            // On mobile, only use virtual controls. On desktop, prefer virtual if active, otherwise keyboard
             const useVirtual =
-                isMobile &&
-                (virtualMovement.forward ||
-                    virtualMovement.backward ||
-                    virtualMovement.left ||
-                    virtualMovement.right);
+                isMobile ||
+                virtualMovement.forward ||
+                virtualMovement.backward ||
+                virtualMovement.left ||
+                virtualMovement.right;
 
             // Choose which control source to use
             const activeMovement = useVirtual ? virtualMovement : movement;
