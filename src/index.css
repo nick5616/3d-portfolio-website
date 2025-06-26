@@ -77,13 +77,31 @@ body {
         right: 0;
         height: 150px;
         display: flex;
-        z-index: 9999;
+        z-index: 10; /* Lower than modal but above canvas */
         touch-action: none !important; /* Ensure no browser default touch actions */
     }
 
     /* Make control buttons explicitly prevent default touch actions */
     .virtual-controls div {
         touch-action: none !important;
+    }
+
+    /* Hide Stats component on mobile by default - will be shown conditionally via JS */
+    [data-testid="stats-panel"],
+    .fps-stats {
+        display: none !important;
+    }
+
+    /* Show stats when modal is hidden - this class will be toggled by JS */
+    .modal-hidden [data-testid="stats-panel"],
+    .modal-hidden .fps-stats {
+        display: block !important;
+        transform: scale(0.15) !important;
+        transform-origin: top right !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        z-index: 20 !important; /* Above controls but below modal */
     }
 
     /* Landscape-specific styles */
@@ -109,22 +127,25 @@ body {
     }
 }
 
-/* Simple Stats styling - target specific elements */
-#root canvas + * {
-    z-index: 99999 !important;
-}
+/* Stats styling for desktop only */
+@media (min-width: 769px) {
+    /* Simple Stats styling - target specific elements */
+    #root canvas + * {
+        z-index: 9999 !important;
+    }
 
-/* Make the Stats panel smaller - using attribute selector */
-[data-testid="stats-panel"],
-.fps-stats {
-    transform: scale(0.125) !important;
-    transform-origin: top right !important;
-    position: absolute !important;
-    top: 0 !important;
-    right: 0 !important;
-}
+    /* Make the Stats panel smaller - using attribute selector */
+    [data-testid="stats-panel"],
+    .fps-stats {
+        transform: scale(0.125) !important;
+        transform-origin: top right !important;
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+    }
 
-/* Make stats panel background slightly transparent */
-div.stats-box-bg {
-    opacity: 0.8 !important;
+    /* Make stats panel background slightly transparent */
+    div.stats-box-bg {
+        opacity: 0.8 !important;
+    }
 }

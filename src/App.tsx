@@ -1,8 +1,8 @@
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
-import { VirtualControls } from "./components/ui/VirtualControls";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { LoadingScreen } from "./components/ui/LoadingScreen";
 
 // Define the missing orientation type
 interface OrientationLock {
@@ -123,20 +123,20 @@ export default function App() {
         };
     }, [isMobile]);
 
+    // Initialize modal state for FPS indicator visibility on mobile
+    useEffect(() => {
+        if (isMobile) {
+            // Start with modal-hidden class removed since modal opens by default
+            document.body.classList.remove("modal-hidden");
+        }
+    }, [isMobile]);
+
     return (
-        <main
-            className={`w-screen h-screen overflow-hidden ${
-                isMobile ? "touch-none" : ""
-            }`}
-        >
-            {/* Full viewport scene */}
-            <Scene />
-
-            {/* Interface overlaid on top */}
-            <Interface />
-
-            {/* Virtual controls for mobile devices */}
-            <VirtualControls />
-        </main>
+        <div id="app-container">
+            <Suspense fallback={<LoadingScreen />}>
+                <Scene />
+                <Interface />
+            </Suspense>
+        </div>
     );
 }

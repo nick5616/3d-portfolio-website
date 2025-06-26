@@ -6,6 +6,7 @@ export const OrbitStatsWrapper: React.FC = () => {
     const statsRef = useRef<Stats>();
     const containerRef = useRef<HTMLDivElement>(null);
     const { isMobile } = useDeviceDetection();
+    console.log("isMobile!!!", isMobile);
 
     useEffect(() => {
         // Don't show on mobile
@@ -55,6 +56,7 @@ export const OrbitStatsWrapper: React.FC = () => {
         };
     }, [isMobile]);
 
+    console.log("isMobile", isMobile);
     // On mobile, return null to not render anything
     if (isMobile) return null;
 

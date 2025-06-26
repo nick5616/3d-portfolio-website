@@ -80,7 +80,7 @@ export const PerformanceOverlay: React.FC = () => {
     };
 
     return (
-        <div className="fixed top-2 right-2 z-50">
+        <div className="fixed top-2 right-2 z-40">
             <canvas
                 ref={canvasRef}
                 className="rounded-sm shadow-sm"

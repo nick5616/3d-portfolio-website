@@ -3,9 +3,10 @@ import { VirtualControls } from "./VirtualControls";
 import { PerformanceControls } from "./PerformanceControls";
 import { EducationalModal } from "./EducationalModal";
 import { MouseStateIndicator } from "./MouseStateIndicator";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export default function Interface() {
-    const { isMobile } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
 
     return (
         <div className="fixed inset-0 pointer-events-none">

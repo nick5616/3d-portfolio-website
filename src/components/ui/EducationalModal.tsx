@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 interface EducationalModalProps {
     isVisible?: boolean;
@@ -10,8 +11,27 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     isVisible = true,
     onClose,
 }) => {
-    const { performance, isMobile } = useSceneStore();
+    const { performance } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
     const [isOpen, setIsOpen] = useState(isVisible);
+
+    // Toggle body class to control FPS indicator visibility on mobile
+    useEffect(() => {
+        if (isMobile) {
+            if (isOpen) {
+                document.body.classList.remove("modal-hidden");
+            } else {
+                document.body.classList.add("modal-hidden");
+            }
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (isMobile) {
+                document.body.classList.add("modal-hidden");
+            }
+        };
+    }, [isOpen, isMobile]);
 
     const handleClose = () => {
         setIsOpen(false);
@@ -20,11 +40,17 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
 
     if (!isOpen) return null;
 
+    // Use inline style for high z-index on mobile (above Tailwind's z-50 limit)
+    const modalStyle = isMobile
+        ? { pointerEvents: "auto" as const, zIndex: 10000 }
+        : { pointerEvents: "auto" as const };
+
+    const modalClass = isMobile
+        ? "fixed inset-0 flex items-center justify-center"
+        : "fixed inset-0 flex items-center justify-center z-50";
+
     return (
-        <div
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ pointerEvents: "auto" }}
-        >
+        <div className={modalClass} style={modalStyle}>
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
@@ -33,7 +59,11 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
 
             {/* Modal Content */}
             <div
-                className="relative bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6"
+                className={`relative bg-gray-900 rounded-lg shadow-xl w-full p-4 ${
+                    isMobile
+                        ? "mx-4 my-8 max-w-sm max-h-[calc(100vh-4rem)] overflow-y-auto"
+                        : "max-w-2xl mx-4 p-6"
+                }`}
                 style={{
                     border: "1px solid rgba(255, 255, 255, 0.1)",
                     boxShadow: "0 0 20px rgba(0, 0, 0, 0.5)",
@@ -42,7 +72,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                 {/* Close button */}
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
                     style={{ pointerEvents: "auto" }}
                 >
                     <svg
@@ -62,11 +92,15 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
 
                 {/* Content */}
                 <div className="text-white">
-                    <h2 className="text-2xl font-bold mb-4">
+                    <h2
+                        className={`font-bold mb-4 ${
+                            isMobile ? "text-xl" : "text-2xl"
+                        }`}
+                    >
                         Welcome to the 3D Portfolio
                     </h2>
                     <div className="space-y-4">
-                        <p>
+                        <p className={isMobile ? "text-sm" : ""}>
                             This is an interactive 3D environment showcasing my
                             work and skills. Here's how to navigate:
                         </p>
@@ -77,7 +111,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                         <h3 className="font-semibold text-lg mb-2">
                                             Mobile Controls
                                         </h3>
-                                        <ul className="list-disc list-inside space-y-2">
+                                        <ul className="list-disc list-inside space-y-2 text-sm">
                                             <li>
                                                 Use the D-pad on the left to
                                                 move around
@@ -101,7 +135,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                         <h3 className="font-semibold text-lg mb-2">
                                             Mobile Tips
                                         </h3>
-                                        <ul className="list-disc list-inside space-y-2">
+                                        <ul className="list-disc list-inside space-y-2 text-sm">
                                             <li>
                                                 For the best experience, use
                                                 your device in landscape mode
@@ -164,9 +198,16 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                 </>
                             )}
                         </div>
-                        <p className="text-sm text-gray-400 mt-4">
+                        <p
+                            className={`text-gray-400 mt-4 ${
+                                isMobile ? "text-xs" : "text-sm"
+                            }`}
+                        >
                             Tip: You can adjust performance settings in the
-                            top-right corner if you experience any lag.
+                            {isMobile
+                                ? " bottom-left corner"
+                                : " top-right corner"}{" "}
+                            if you experience any lag.
                         </p>
                     </div>
                 </div>

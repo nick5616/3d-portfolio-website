@@ -23,7 +23,6 @@ interface SceneState {
     spotlightsEnabled: boolean;
     flyMode: boolean;
     isFirstPerson: boolean;
-    isMobile: boolean;
     performance: {
         showStats: boolean;
         monitoring: boolean;
@@ -48,22 +47,12 @@ interface SceneState {
     togglePerformanceMonitoring: () => void;
 }
 
-// Helper to detect mobile devices
-const isMobileDevice = () => {
-    return (
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-        ) || window.innerWidth <= 768
-    );
-};
-
 export const useSceneStore = create<SceneState>((set) => ({
     currentRoom: null,
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     spotlightsEnabled: false,
     isFirstPerson: true,
-    isMobile: isMobileDevice(),
 
     performance: {
         showStats: false,
