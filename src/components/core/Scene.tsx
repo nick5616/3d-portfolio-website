@@ -3,27 +3,34 @@ import { Suspense, useMemo } from "react";
 import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
-import { useSceneStore } from "../../stores/sceneStore";
 import { PlayerBody } from "./PlayerBody";
+import { useSceneStore } from "../../stores/sceneStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
 
-    // Configure rendering parameters based on quality setting
+    // Configure rendering parameters based on quality setting and device
     const glParams = useMemo(() => {
         const baseConfig = {
-            antialias: performance.quality !== "low",
+            antialias: performance.quality !== "low" && !isMobile,
             alpha: false,
             stencil: false,
             depth: true,
-            powerPreference: "high-performance",
+            powerPreference: isMobile ? "default" : "high-performance",
         };
 
         return baseConfig;
-    }, [performance.quality]);
+    }, [performance.quality, isMobile]);
 
-    // Configure dynamic DPR based on quality
+    // Configure dynamic DPR based on quality and device
     const dpr = useMemo(() => {
+        if (isMobile) {
+            // Balanced DPR for mobile - not too blurry, still performant
+            return [0.6, 1.0] as [number, number];
+        }
+
         switch (performance.quality) {
             case "low":
                 return [0.5, 1] as [number, number];
@@ -34,32 +41,49 @@ export const Scene: React.FC = () => {
             default:
                 return [1, 2] as [number, number];
         }
-    }, [performance.quality]);
+    }, [performance.quality, isMobile]);
+
+    // Mobile-specific performance settings
+    const performanceConfig = useMemo(() => {
+        if (isMobile) {
+            return { min: 0.2, max: 0.6, debounce: 200 };
+        }
+        return { min: 0.5 };
+    }, [isMobile]);
 
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <Canvas
                 gl={glParams}
-                camera={{ fov: 75, near: 0.1, far: 1000, position: [0, 2, 5] }}
-                shadows={performance.quality !== "low"}
+                camera={{
+                    fov: isMobile ? 80 : 75,
+                    near: 0.1,
+                    far: isMobile ? 500 : 1000,
+                    position: [0, 2, 5],
+                }}
+                shadows={performance.quality !== "low" && !isMobile}
                 dpr={dpr}
                 linear={true}
-                flat={performance.quality === "low"}
-                performance={{ min: 0.5 }}
+                flat={performance.quality === "low" || isMobile}
+                performance={performanceConfig}
             >
                 {/* Stats panel in top-right corner */}
                 <Stats
                     className="fps-stats"
-                    showPanel={0} /* 0: FPS, 1: MS, 2: MB */
-                    data-testid="stats-panel" /* For CSS targeting */
+                    showPanel={0}
+                    data-testid="stats-panel"
                 />
 
                 <Suspense fallback={null}>
-                    <Physics interpolate={performance.quality !== "low"}>
+                    <Physics
+                        interpolate={performance.quality !== "low" && !isMobile}
+                        gravity={[0, -9.81, 0]}
+                        timeStep={isMobile ? 1 / 30 : 1 / 60}
+                    >
                         <PlayerBody />
                         <SceneManager />
-                        <AdaptiveDpr pixelated />
-                        <AdaptiveEvents />
+                        {!isMobile && <AdaptiveDpr pixelated />}
+                        {!isMobile && <AdaptiveEvents />}
                         <Preload all />
                         <mesh
                             position={[0, 0, 0]}

@@ -167,5 +167,7 @@ export const getDisplayDimensions = (
     config: DisplayConfig,
     isMobile: boolean
 ) => {
-    return isMobile ? config.responsive.mobile : config.responsive.desktop;
+    // Always use desktop dimensions for a consistent portfolio experience
+    // regardless of the viewing device
+    return config.responsive.desktop;
 };

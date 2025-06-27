@@ -1,88 +1,76 @@
+import React, { Suspense, useEffect, useState } from "react";
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
-import { useDeviceDetection } from "./hooks/useDeviceDetection";
-import { useEffect, useState, Suspense } from "react";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
-
-// Define the missing orientation type
-interface OrientationLock {
-    lock(orientation: "portrait" | "landscape"): Promise<void>;
-}
+import { useDeviceDetection } from "./hooks/useDeviceDetection";
+import { useSceneStore } from "./stores/sceneStore";
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
-    const [isLandscape, setIsLandscape] = useState(false);
+    const { setPerformanceQuality } = useSceneStore();
+    const [hasInteracted, setHasInteracted] = useState(false);
 
-    // Handle orientation changes and set meta viewport
     useEffect(() => {
-        // Add viewport meta tag for better mobile experience
-        const updateViewportMeta = () => {
-            let viewportMeta = document.querySelector('meta[name="viewport"]');
-            if (!viewportMeta) {
-                viewportMeta = document.createElement("meta");
-                viewportMeta.setAttribute("name", "viewport");
-                document.head.appendChild(viewportMeta);
-            }
-
-            viewportMeta.setAttribute(
-                "content",
-                "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-            );
-        };
-
-        updateViewportMeta();
-
-        // Listen for orientation changes
-        const handleOrientationChange = () => {
-            const isLandscapeMode = window.innerWidth > window.innerHeight;
-            setIsLandscape(isLandscapeMode);
-        };
-
-        // Initial check
-        handleOrientationChange();
-
-        // Add listener
-        window.addEventListener("resize", handleOrientationChange);
-
-        // Automatically enter fullscreen and lock to landscape on mobile
+        // Optimize performance for real mobile devices
         if (isMobile) {
-            const enterFullscreenOnFirstInteraction = () => {
-                const element = document.documentElement;
-                if (element.requestFullscreen) {
-                    element
-                        .requestFullscreen()
-                        .then(() => {
-                            try {
-                                // Try to lock to landscape if supported
-                                const screenOrientation = window.screen
-                                    .orientation as unknown as OrientationLock;
-                                if (
-                                    screenOrientation &&
-                                    screenOrientation.lock
-                                ) {
-                                    screenOrientation
-                                        .lock("landscape")
-                                        .catch((error: Error) => {
-                                            console.log(
-                                                "Could not lock orientation",
-                                                error
-                                            );
-                                        });
-                                }
-                            } catch (err) {
-                                console.error(
-                                    "Orientation API not supported",
-                                    err
-                                );
-                            }
-                        })
-                        .catch((err) => {
-                            console.error(
-                                "Error attempting to enable fullscreen:",
-                                err
-                            );
-                        });
+            console.log(
+                "Mobile device detected - setting low performance quality"
+            );
+            setPerformanceQuality("low");
+        }
+    }, [isMobile, setPerformanceQuality]);
+
+    useEffect(() => {
+        if (isMobile) {
+            // Handle orientation changes
+            const handleOrientationChange = () => {
+                // Force reflow after orientation change
+                setTimeout(() => {
+                    window.dispatchEvent(new Event("resize"));
+                }, 100);
+            };
+
+            // Enhanced fullscreen functionality for mobile
+            const requestFullscreen = async () => {
+                try {
+                    const element = document.documentElement;
+
+                    // Try different fullscreen methods
+                    if (element.requestFullscreen) {
+                        await element.requestFullscreen();
+                    } else if ((element as any).webkitRequestFullscreen) {
+                        await (element as any).webkitRequestFullscreen();
+                    } else if ((element as any).mozRequestFullScreen) {
+                        await (element as any).mozRequestFullScreen();
+                    } else if ((element as any).msRequestFullscreen) {
+                        await (element as any).msRequestFullscreen();
+                    }
+
+                    console.log("Fullscreen activated successfully");
+                } catch (error) {
+                    console.log("Fullscreen failed:", error);
+
+                    // Fallback: Try to hide address bar on iOS Safari
+                    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                        // Scroll slightly to hide the address bar
+                        window.scrollTo(0, 1);
+                        setTimeout(() => window.scrollTo(0, 0), 100);
+                    }
                 }
+            };
+
+            const enterFullscreenOnFirstInteraction = async (event: Event) => {
+                if (hasInteracted) return;
+
+                setHasInteracted(true);
+                console.log(
+                    "First interaction detected, attempting fullscreen"
+                );
+
+                // Small delay to ensure event is processed
+                setTimeout(async () => {
+                    await requestFullscreen();
+                }, 50);
 
                 // Remove listener after first interaction
                 document.removeEventListener(
@@ -93,17 +81,65 @@ export default function App() {
                     "click",
                     enterFullscreenOnFirstInteraction
                 );
+                document.removeEventListener(
+                    "keydown",
+                    enterFullscreenOnFirstInteraction
+                );
             };
 
             // Add listeners to enter fullscreen on first interaction
             document.addEventListener(
                 "touchstart",
-                enterFullscreenOnFirstInteraction
+                enterFullscreenOnFirstInteraction,
+                { passive: true }
             );
             document.addEventListener(
                 "click",
                 enterFullscreenOnFirstInteraction
             );
+            document.addEventListener(
+                "keydown",
+                enterFullscreenOnFirstInteraction
+            );
+
+            // Handle fullscreen exit
+            const handleFullscreenChange = () => {
+                const isFullscreen = !!(
+                    document.fullscreenElement ||
+                    (document as any).webkitFullscreenElement ||
+                    (document as any).mozFullScreenElement ||
+                    (document as any).msFullscreenElement
+                );
+
+                if (!isFullscreen && hasInteracted) {
+                    console.log("Fullscreen exited");
+                    // Optionally try to re-enter fullscreen after a delay
+                    setTimeout(() => {
+                        if (!document.fullscreenElement) {
+                            requestFullscreen();
+                        }
+                    }, 2000);
+                }
+            };
+
+            document.addEventListener(
+                "fullscreenchange",
+                handleFullscreenChange
+            );
+            document.addEventListener(
+                "webkitfullscreenchange",
+                handleFullscreenChange
+            );
+            document.addEventListener(
+                "mozfullscreenchange",
+                handleFullscreenChange
+            );
+            document.addEventListener(
+                "MSFullscreenChange",
+                handleFullscreenChange
+            );
+
+            window.addEventListener("resize", handleOrientationChange);
 
             return () => {
                 window.removeEventListener("resize", handleOrientationChange);
@@ -115,13 +151,29 @@ export default function App() {
                     "click",
                     enterFullscreenOnFirstInteraction
                 );
+                document.removeEventListener(
+                    "keydown",
+                    enterFullscreenOnFirstInteraction
+                );
+                document.removeEventListener(
+                    "fullscreenchange",
+                    handleFullscreenChange
+                );
+                document.removeEventListener(
+                    "webkitfullscreenchange",
+                    handleFullscreenChange
+                );
+                document.removeEventListener(
+                    "mozfullscreenchange",
+                    handleFullscreenChange
+                );
+                document.removeEventListener(
+                    "MSFullscreenChange",
+                    handleFullscreenChange
+                );
             };
         }
-
-        return () => {
-            window.removeEventListener("resize", handleOrientationChange);
-        };
-    }, [isMobile]);
+    }, [isMobile, hasInteracted]);
 
     // Initialize modal state for FPS indicator visibility on mobile
     useEffect(() => {
@@ -132,11 +184,9 @@ export default function App() {
     }, [isMobile]);
 
     return (
-        <div id="app-container">
-            <Suspense fallback={<LoadingScreen />}>
-                <Scene />
-                <Interface />
-            </Suspense>
-        </div>
+        <Suspense fallback={<LoadingScreen />}>
+            <Scene />
+            <Interface />
+        </Suspense>
     );
 }

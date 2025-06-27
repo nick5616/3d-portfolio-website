@@ -17,7 +17,7 @@ export const SceneManager: React.FC = () => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
         loadRoom("atrium");
-    }, []);
+    }, [scene, loadRoom]);
 
     useFrame(({ gl }) => {
         // Performance monitoring
@@ -29,7 +29,13 @@ export const SceneManager: React.FC = () => {
 
     return (
         <>
+            {/* Basic lighting to ensure scene is visible */}
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[10, 10, 5]} intensity={1} />
+
+            {/* Environment */}
             <Environment preset="city" />
+
             <CameraController />
             {/* Render all rooms */}
             {Object.values(roomConfigs).map((roomConfig) => (

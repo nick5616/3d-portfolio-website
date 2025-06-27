@@ -2,55 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-    margin: 0;
-    padding: 0;
+/* Global styles */
+*,
+*::before,
+*::after {
     box-sizing: border-box;
-}
-
-html,
-body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    overscroll-behavior: none; /* Prevent pull-to-refresh */
-    -webkit-touch-callout: none; /* Disable selection popup on touch */
-    -webkit-user-select: none; /* Disable text selection */
-    user-select: none; /* Disable text selection */
 }
 
 html,
 body,
 #root {
-    width: 100%;
-    height: 100%;
-}
-
-#app-container {
-    width: 100vw;
-    height: 100vh;
     margin: 0;
     padding: 0;
-    display: block;
-}
-
-/* Common styles */
-:root {
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #000;
+    overflow: hidden;
 }
 
 /* Canvas should take full viewport */
 canvas {
-    touch-action: none !important; /* Disable browser handling of all touch gestures */
+    touch-action: none !important;
     position: absolute !important;
     top: 0;
     left: 0;
@@ -59,16 +36,58 @@ canvas {
     z-index: 0;
 }
 
-/* Fix for iOS Safari to prevent elastic scrolling/bouncing */
-body {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+/* Desktop styles - normal behavior */
+@media (min-width: 769px) {
+    /* Stats styling for desktop */
+    #root canvas + * {
+        z-index: 9999 !important;
+    }
+
+    /* Make the Stats panel smaller - using attribute selector */
+    [data-testid="stats-panel"],
+    .fps-stats {
+        transform: scale(0.125) !important;
+        transform-origin: top right !important;
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+    }
+
+    /* Make stats panel background slightly transparent */
+    div.stats-box-bg {
+        opacity: 0.8 !important;
+    }
 }
 
-/* Mobile orientation styles */
+/* Enhanced mobile optimizations */
 @media (max-width: 768px) {
+    html,
+    body,
+    #root {
+        /* Prevent bounce scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: none;
+        /* Better font rendering on mobile */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    /* Prevent iOS zoom on input focus */
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    /* Enhanced canvas optimizations */
+    canvas {
+        /* Prevent touch callouts and selections */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
     /* Common mobile styles regardless of orientation */
     .virtual-controls {
         position: fixed;
@@ -104,48 +123,16 @@ body {
         z-index: 20 !important; /* Above controls but below modal */
     }
 
-    /* Landscape-specific styles */
-    @media (orientation: landscape) {
-        html,
-        body,
-        #root {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        canvas {
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover;
-        }
-
-        /* Fix for iOS Safari full height issues */
-        .h-screen {
-            height: 100vh;
-        }
-    }
-}
-
-/* Stats styling for desktop only */
-@media (min-width: 769px) {
-    /* Simple Stats styling - target specific elements */
-    #root canvas + * {
-        z-index: 9999 !important;
+    /* Reduce animation jitter on mobile */
+    * {
+        /* Reduce motion for better mobile performance */
+        animation-duration: 0.1s !important;
+        transition-duration: 0.1s !important;
     }
 
-    /* Make the Stats panel smaller - using attribute selector */
-    [data-testid="stats-panel"],
-    .fps-stats {
-        transform: scale(0.125) !important;
-        transform-origin: top right !important;
-        position: absolute !important;
-        top: 0 !important;
-        right: 0 !important;
-    }
-
-    /* Make stats panel background slightly transparent */
-    div.stats-box-bg {
-        opacity: 0.8 !important;
+    /* Exception for loading animations that should remain smooth */
+    .loading-spinner,
+    .ripple-animation {
+        animation-duration: 0.3s !important;
     }
 }

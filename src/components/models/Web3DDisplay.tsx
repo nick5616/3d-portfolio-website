@@ -59,11 +59,9 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     ); // Show overlay if screenshot exists
     const [screenshotLoaded, setScreenshotLoaded] = useState(false);
 
-    // Calculate responsive dimensions
+    // Calculate responsive dimensions - ALWAYS use desktop dimensions
     const dimensions = responsive
-        ? isMobile
-            ? responsive.mobile
-            : responsive.desktop
+        ? responsive.desktop // Always use desktop dimensions for consistent display sizes
         : { width, height };
 
     const displayWidth = dimensions.width;
