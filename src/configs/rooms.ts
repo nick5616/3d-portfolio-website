@@ -169,6 +169,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 },
             ],
         },
+        defaultEntrance: {
+            position: [0, 0.1, 5] as [number, number, number],
+            rotation: [0, Math.PI, 0] as [number, number, number],
+        },
         interactiveElements: [
             // Circular arrangement of pillars
             ...Array(8)
@@ -204,6 +208,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
+                entrancePoint: {
+                    position: [7, 0.1, 0] as [number, number, number],
+                    rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+                },
             },
             {
                 id: "to-projects",
@@ -212,6 +220,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,
+                entrancePoint: {
+                    position: [0, 0.1, 7] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
+                },
             },
             {
                 id: "to-about",
@@ -220,6 +232,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 2,
                 height: 3,
+                entrancePoint: {
+                    position: [-7, 0.1, 0] as [number, number, number],
+                    rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                },
             },
         ],
     },
@@ -293,6 +309,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     })),
             ],
         },
+        defaultEntrance: {
+            position: [7, 0.1, 0] as [number, number, number],
+            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+        },
         interactiveElements: createArtLayout(),
         archways: [
             {
@@ -302,6 +322,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
+                entrancePoint: {
+                    position: [-7, 0.1, 0] as [number, number, number],
+                    rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                },
             },
         ],
     },
@@ -331,6 +355,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     color: "#ffffff",
                 })),
         },
+        defaultEntrance: {
+            position: [0, 0.1, 7] as [number, number, number],
+            rotation: [0, Math.PI, 0] as [number, number, number],
+        },
         interactiveElements: createProjectsLayout(),
         archways: [
             {
@@ -340,6 +368,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, Math.PI, 0] as [number, number, number],
                 width: 3,
                 height: 4,
+                entrancePoint: {
+                    position: [0, 0.1, -7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
             },
         ],
     },
@@ -415,6 +447,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 },
             ],
         },
+        defaultEntrance: {
+            position: [-7, 0.1, 0] as [number, number, number],
+            rotation: [0, Math.PI / 2, 0] as [number, number, number],
+        },
         interactiveElements: [
             {
                 id: "about-text",
@@ -461,6 +497,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
+                entrancePoint: {
+                    position: [7, 0.1, 0] as [number, number, number],
+                    rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+                },
             },
         ],
     },

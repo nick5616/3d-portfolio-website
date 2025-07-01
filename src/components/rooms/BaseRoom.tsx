@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { RoomConfig } from "../../types/scene.types";
-import { RigidBody } from "@react-three/rapier";
+import { RigidBody, interactionGroups } from "@react-three/rapier";
 import * as THREE from "three";
 import { InteractiveObject } from "../core/InteractiveObject";
 
@@ -82,20 +82,24 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 decay={1.5}
             />
             {/* Floor */}
-            <RigidBody type="fixed" colliders="cuboid">
-                <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <planeGeometry args={[width, depth]} />
+            <RigidBody
+                type="fixed"
+                colliders="cuboid"
+                collisionGroups={interactionGroups(0, [0])}
+            >
+                <mesh position={[0, -0.1, 0]} receiveShadow>
+                    <boxGeometry args={[width, 0.2, depth]} />
                     <meshStandardMaterial color="#444444" />
                 </mesh>
             </RigidBody>
             {/* Ceiling */}
-            <RigidBody type="fixed" colliders="cuboid">
-                <mesh
-                    position={[0, height, 0]}
-                    rotation={[Math.PI / 2, 0, 0]}
-                    receiveShadow
-                >
-                    <planeGeometry args={[width, depth]} />
+            <RigidBody
+                type="fixed"
+                colliders="cuboid"
+                collisionGroups={interactionGroups(0, [0])}
+            >
+                <mesh position={[0, height + 0.1, 0]} receiveShadow>
+                    <boxGeometry args={[width, 0.2, depth]} />
                     <primitive object={materials.ceiling} attach="material" />
                 </mesh>
             </RigidBody>

@@ -3,21 +3,23 @@ import { useEffect, useRef } from "react";
 import { Environment } from "@react-three/drei";
 import { Room } from "./Room";
 import { CameraController } from "./CameraController";
-import { RoomTransitionTrigger } from "./RoomTransitionTrigger";
+import { Door } from "./Door";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
 
 export const SceneManager: React.FC = () => {
     const { scene } = useThree();
-    const { loadRoom, performance } = useSceneStore();
+    const { currentRoom, loadRoom, performance } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
     useEffect(() => {
         // Initialize scene
         scene.fog = new THREE.Fog("#000000", 10, 20);
-        loadRoom("atrium");
-    }, [scene, loadRoom]);
+        if (!currentRoom) {
+            loadRoom("atrium");
+        }
+    }, [scene, loadRoom, currentRoom]);
 
     useFrame(({ gl }) => {
         // Performance monitoring
@@ -37,15 +39,16 @@ export const SceneManager: React.FC = () => {
             <Environment preset="city" />
 
             <CameraController />
-            {/* Render all rooms */}
-            {Object.values(roomConfigs).map((roomConfig) => (
-                <Room key={roomConfig.id} config={roomConfig} />
-            ))}
-            {/* Render transition triggers for all archways */}
-            {Object.values(roomConfigs).map((roomConfig) =>
-                roomConfig.archways.map((archway) => (
-                    <RoomTransitionTrigger key={archway.id} archway={archway} />
-                ))
+
+            {/* Render only the current room */}
+            {currentRoom && (
+                <>
+                    <Room key={currentRoom.id} config={currentRoom} />
+                    {/* Render doors for the current room's archways */}
+                    {currentRoom.archways.map((archway) => (
+                        <Door key={archway.id} archway={archway} />
+                    ))}
+                </>
             )}
         </>
     );

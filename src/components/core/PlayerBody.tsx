@@ -17,7 +17,8 @@ const JUMP_COOLDOWN = 500; // milliseconds
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
-    const { flyMode } = useSceneStore();
+    const { flyMode, shouldTeleportPlayer, playerPosition, clearTeleportFlag } =
+        useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
     const velocity = useRef(new THREE.Vector3());
@@ -35,6 +36,22 @@ export const PlayerBody: React.FC = () => {
 
     useFrame(() => {
         if (!playerRef.current || flyMode) return;
+
+        // Handle teleportation
+        if (shouldTeleportPlayer) {
+            playerRef.current.setTranslation(
+                {
+                    x: playerPosition[0],
+                    y: playerPosition[1],
+                    z: playerPosition[2],
+                },
+                true
+            );
+            playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            playerRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+            clearTeleportFlag();
+            return; // Skip normal movement this frame
+        }
 
         const currentTime = Date.now();
         const isGrounded = checkIfGrounded();
@@ -113,7 +130,7 @@ export const PlayerBody: React.FC = () => {
             type="dynamic"
             enabledRotations={[false, false, false]}
             lockRotations
-            position={[0, 2, 8]}
+            position={[0, 3, 5]}
             friction={20}
             restitution={0}
             // Add collision groups

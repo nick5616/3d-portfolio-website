@@ -4,6 +4,7 @@ import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { PlayerBody } from "./PlayerBody";
+import { SceneDataBridge } from "./SceneDataBridge";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
@@ -67,6 +68,9 @@ export const Scene: React.FC = () => {
                 flat={performance.quality === "low" || isMobile}
                 performance={performanceConfig}
             >
+                {/* Data bridge to update store with Three.js data */}
+                <SceneDataBridge />
+
                 {/* Stats panel in top-right corner */}
                 <Stats
                     className="fps-stats"

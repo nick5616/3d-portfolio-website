@@ -7,8 +7,13 @@ import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import * as THREE from "three";
 
 export const CameraController: React.FC = () => {
-    const { controlMode, cameraTarget, virtualMovement, virtualRotation } =
-        useSceneStore();
+    const {
+        controlMode,
+        cameraTarget,
+        cameraRotation,
+        virtualMovement,
+        virtualRotation,
+    } = useSceneStore();
 
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
@@ -17,11 +22,37 @@ export const CameraController: React.FC = () => {
 
     const targetPosition = useRef(new THREE.Vector3());
     const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
+    const lastCameraRotation = useRef<[number, number, number] | undefined>();
+    const lastCameraTarget = useRef(new THREE.Vector3());
 
     // Store camera's current position when mounted
     useEffect(() => {
         targetPosition.current.copy(camera.position);
-    }, [camera]);
+        lastCameraTarget.current.copy(cameraTarget);
+    }, [camera, cameraTarget]);
+
+    // Handle teleportation rotation
+    useEffect(() => {
+        if (cameraRotation && cameraRotation !== lastCameraRotation.current) {
+            euler.current.set(
+                cameraRotation[0],
+                cameraRotation[1],
+                cameraRotation[2],
+                "YXZ"
+            );
+            camera.quaternion.setFromEuler(euler.current);
+            lastCameraRotation.current = cameraRotation;
+        }
+    }, [cameraRotation, camera]);
+
+    // Handle teleportation position
+    useEffect(() => {
+        if (!lastCameraTarget.current.equals(cameraTarget)) {
+            camera.position.copy(cameraTarget);
+            targetPosition.current.copy(cameraTarget);
+            lastCameraTarget.current.copy(cameraTarget);
+        }
+    }, [cameraTarget, camera]);
 
     useFrame((_, delta) => {
         // Limit delta time to avoid large jumps
@@ -92,12 +123,6 @@ export const CameraController: React.FC = () => {
 
                 // Apply to camera position
                 camera.position.add(direction);
-
-                console.log(
-                    `Moving camera: ${direction.x.toFixed(
-                        3
-                    )}, ${direction.z.toFixed(3)}`
-                );
             }
         } else {
             // Point and click mode

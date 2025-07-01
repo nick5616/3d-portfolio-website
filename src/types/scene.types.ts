@@ -7,6 +7,10 @@ export interface RoomConfig {
     lightPreset: LightPreset;
     interactiveElements: InteractiveElement[];
     archways: Archway[];
+    defaultEntrance: {
+        position: [number, number, number];
+        rotation: [number, number, number];
+    };
 }
 
 export interface LightPreset {
@@ -45,4 +49,8 @@ export interface Archway {
     rotation: [number, number, number];
     width: number;
     height: number;
+    entrancePoint?: {
+        position: [number, number, number];
+        rotation: [number, number, number];
+    };
 }
