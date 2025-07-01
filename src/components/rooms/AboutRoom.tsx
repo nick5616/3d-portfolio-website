@@ -3,7 +3,6 @@ import { RoomConfig } from "../../types/scene.types";
 import { RoomComments } from "./RoomComments";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 
 interface AboutRoomProps {
@@ -45,17 +44,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             <RoomComments roomId={config.id} />
 
             {/* Minimal room with only essential elements for performance */}
-
-            {/* Basic description text */}
-            <Text
-                position={[0, 4, 0]}
-                fontSize={0.5}
-                color="#ffffff"
-                anchorX="center"
-                anchorY="middle"
-            >
-                About Room
-            </Text>
 
             {/* 
             // Creative corner with wooden workbench and tools
@@ -379,39 +367,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     intensity={0.5}
                     distance={5}
                     color="#6A5ACD"
-                />
-            </group>
-
-            {/* Media wall with floating icons for different creative pursuits */}
-            <group position={[8, 3, 0]}>
-                {/* Wall backdrop */}
-                <mesh position={[0, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-                    <planeGeometry args={[12, 5]} />
-                    <meshStandardMaterial
-                        color="#2F4F4F"
-                        roughness={0.3}
-                        metalness={0.4}
-                        emissive="#20B2AA"
-                        emissiveIntensity={0.1}
-                    />
-                </mesh>
-
-                {/* Dynamic accent lighting */}
-                <spotLight
-                    position={[2, 0, -1]}
-                    target-position={[0, 0, 0]}
-                    angle={0.8}
-                    penumbra={0.5}
-                    intensity={0.8}
-                    color="#48D1CC"
-                />
-                <spotLight
-                    position={[2, 0, 3]}
-                    target-position={[0, 0, 0]}
-                    angle={0.8}
-                    penumbra={0.5}
-                    intensity={0.6}
-                    color="#9370DB"
                 />
             </group>
 

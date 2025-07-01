@@ -192,13 +192,6 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                         content: "greek-pillar",
                     };
                 }),
-            {
-                id: "atrium-label",
-                type: "text",
-                position: [0, 4, 0] as [number, number, number],
-                content: "✨",
-                scale: [1, 1, 1] as [number, number, number],
-            },
         ],
         archways: [
             {
