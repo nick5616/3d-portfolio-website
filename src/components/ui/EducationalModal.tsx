@@ -3,19 +3,113 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 interface EducationalModalProps {
-    isVisible?: boolean;
-    onClose?: () => void;
+    isOverride?: boolean;
 }
 
+// Browser-specific instruction components
+const BrowserSpecificInstructions: React.FC = () => {
+    const { isSafari, isDuckDuckGo } = useDeviceDetection();
+
+    if (isDuckDuckGo) {
+        return (
+            <ul className="list-disc list-inside space-y-2">
+                <li>
+                    Your browser is in compatibility mode - click anywhere to start exploring
+                </li>
+                <li>
+                    The mouse cursor will remain visible for easy navigation
+                </li>
+                <li>
+                    Click and drag to look around while in first-person mode
+                </li>
+            </ul>
+        );
+    }
+
+    if (isSafari) {
+        return (
+            <ul className="list-disc list-inside space-y-2">
+                <li>
+                    Safari compatibility mode is active for optimal performance
+                </li>
+                <li>
+                    Click anywhere to start exploring with your cursor visible
+                </li>
+                <li>
+                    Click and drag to look around in first-person mode
+                </li>
+            </ul>
+        );
+    }
+
+    return (
+        <ul className="list-disc list-inside space-y-2">
+            <li>
+                Click anywhere in the game window to focus the game controls
+            </li>
+            <li>
+                Press ESC to release focus and return to normal cursor control
+            </li>
+            <li>
+                You need to focus the game to interact with settings and controls
+            </li>
+        </ul>
+    );
+};
+
+const BrowserSpecificMovementInstructions: React.FC = () => {
+    const { isSafari, isDuckDuckGo } = useDeviceDetection();
+
+    if (isDuckDuckGo || isSafari) {
+        return (
+            <li>
+                Click and drag with your mouse to look around (cursor stays visible)
+            </li>
+        );
+    }
+
+    return (
+        <li>
+            Click and drag to look around
+        </li>
+    );
+};
+
 export const EducationalModal: React.FC<EducationalModalProps> = ({
-    isVisible = true,
-    onClose,
+    isOverride,
 }) => {
     const { performance } = useSceneStore();
     const { isMobile } = useDeviceDetection();
-    const [isOpen, setIsOpen] = useState(isVisible);
+    const [isOpen, setIsOpen] = useState(true);
 
-    // Toggle body class to control FPS indicator visibility on mobile
+    useEffect(() => {
+        // Close modal after 15 seconds on mobile, 10 seconds on desktop
+        const timer = setTimeout(() => {
+            setIsOpen(false);
+        }, isMobile ? 15000 : 10000);
+
+        return () => clearTimeout(timer);
+    }, [isMobile]);
+
+    // Close modal on user interaction
+    useEffect(() => {
+        const handleInteraction = () => {
+            setIsOpen(false);
+        };
+
+        // Listen for any user interaction
+        window.addEventListener("click", handleInteraction);
+        window.addEventListener("keydown", handleInteraction);
+        window.addEventListener("touchstart", handleInteraction);
+
+        return () => {
+            window.removeEventListener("click", handleInteraction);
+            window.removeEventListener("keydown", handleInteraction);
+            window.removeEventListener("touchstart", handleInteraction);
+        };
+    }, []);
+
+    // Control modal visibility on mobile for FPS stats
     useEffect(() => {
         if (isMobile) {
             if (isOpen) {
@@ -24,21 +118,9 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                 document.body.classList.add("modal-hidden");
             }
         }
-
-        // Cleanup on unmount
-        return () => {
-            if (isMobile) {
-                document.body.classList.add("modal-hidden");
-            }
-        };
     }, [isOpen, isMobile]);
 
-    const handleClose = () => {
-        setIsOpen(false);
-        onClose?.();
-    };
-
-    if (!isOpen) return null;
+    if (!isOpen && !isOverride) return null;
 
     // Use inline style for high z-index on mobile (above Tailwind's z-50 limit)
     const modalStyle = isMobile
@@ -54,7 +136,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-                onClick={handleClose}
+                onClick={() => setIsOpen(false)}
             />
 
             {/* Modal Content */}
@@ -71,7 +153,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             >
                 {/* Close button */}
                 <button
-                    onClick={handleClose}
+                    onClick={() => setIsOpen(false)}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
                     style={{ pointerEvents: "auto" }}
                 >
@@ -104,51 +186,42 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                             This is an interactive 3D environment showcasing my
                             work and skills. Here's how to navigate:
                         </p>
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {isMobile ? (
                                 <>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-2">
-                                            Mobile Controls
+                                            Touch Controls
                                         </h3>
-                                        <ul className="list-disc list-inside space-y-2 text-sm">
+                                        <ul className="list-disc list-inside space-y-2">
                                             <li>
-                                                Use the D-pad on the left to
-                                                move around
+                                                Use the virtual joystick on the
+                                                right to look around
                                             </li>
                                             <li>
-                                                Use the joystick on the right to
-                                                look around
+                                                Use the D-pad on the left to move
+                                                around
                                             </li>
                                             <li>
-                                                Tap on objects to interact with
-                                                them
+                                                Tap the center button to jump
                                             </li>
                                             <li>
-                                                The controls will automatically
-                                                adjust based on your device's
-                                                performance
+                                                Tap objects to interact with them
                                             </li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-2">
-                                            Mobile Tips
+                                            Performance
                                         </h3>
-                                        <ul className="list-disc list-inside space-y-2 text-sm">
+                                        <ul className="list-disc list-inside space-y-2">
                                             <li>
-                                                For the best experience, use
-                                                your device in landscape mode
+                                                Performance is automatically
+                                                optimized for mobile
                                             </li>
                                             <li>
-                                                If you experience lag, try
-                                                reducing the quality in the
-                                                performance settings
-                                            </li>
-                                            <li>
-                                                Make sure your device is in
-                                                fullscreen mode for optimal
-                                                controls
+                                                Use the settings button in the
+                                                bottom-left to adjust quality
                                             </li>
                                         </ul>
                                     </div>
@@ -159,22 +232,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                         <h3 className="font-semibold text-lg mb-2">
                                             Getting Started
                                         </h3>
-                                        <ul className="list-disc list-inside space-y-2">
-                                            <li>
-                                                Click anywhere in the game
-                                                window to focus the game
-                                                controls
-                                            </li>
-                                            <li>
-                                                Press ESC to release focus and
-                                                return to normal cursor control
-                                            </li>
-                                            <li>
-                                                You need to focus the game to
-                                                interact with settings and
-                                                controls
-                                            </li>
-                                        </ul>
+                                        <BrowserSpecificInstructions />
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-2">
@@ -185,9 +243,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                                 Use WASD or arrow keys to move
                                                 around
                                             </li>
-                                            <li>
-                                                Click and drag to look around
-                                            </li>
+                                            <BrowserSpecificMovementInstructions />
                                             <li>Press Space to jump</li>
                                             <li>
                                                 Interact with objects by
