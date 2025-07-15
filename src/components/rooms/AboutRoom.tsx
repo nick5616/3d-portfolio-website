@@ -370,7 +370,10 @@ me                />
             */}
 
             {/* Interactive drawing easel */}
-            <InteractiveEasel position={[0, 0, 7]} />
+            <InteractiveEasel
+                position={[0, 0, 14]}
+                rotation={[0, Math.PI, 0]}
+            />
 
             {/* "About Me" section with creative typography on wall */}
             <group position={[0, 4, -8]}>
