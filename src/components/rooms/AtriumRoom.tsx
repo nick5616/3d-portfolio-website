@@ -6,6 +6,86 @@ import { RoomComments } from "./RoomComments";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 
+// Procedural grass texture shader
+const createGrassFloorShader = () => {
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 },
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vWorldPosition;
+            
+            void main() {
+                vUv = uv;
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float time;
+            varying vec2 vUv;
+            varying vec3 vWorldPosition;
+            
+            // Improved noise function
+            float random(vec2 st) {
+                return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+            }
+            
+            float noise(vec2 st) {
+                vec2 i = floor(st);
+                vec2 f = fract(st);
+                f = f * f * (3.0 - 2.0 * f);
+                
+                float a = random(i);
+                float b = random(i + vec2(1.0, 0.0));
+                float c = random(i + vec2(0.0, 1.0));
+                float d = random(i + vec2(1.0, 1.0));
+                
+                return mix(a, b, f.x) + (c - a) * f.y * (1.0 - f.x) + (d - b) * f.x * f.y;
+            }
+            
+            void main() {
+                vec2 worldXZ = vWorldPosition.xz;
+                
+                // Create grass blade patterns with multiple scales
+                vec2 grassCoord1 = worldXZ * 8.0;
+                vec2 grassCoord2 = worldXZ * 16.0;
+                vec2 grassCoord3 = worldXZ * 32.0;
+                
+                float grassNoise1 = noise(grassCoord1);
+                float grassNoise2 = noise(grassCoord2);
+                float grassNoise3 = noise(grassCoord3);
+                
+                // Combine noise for grass texture
+                float grassPattern = grassNoise1 * 0.5 + grassNoise2 * 0.3 + grassNoise3 * 0.2;
+                
+                // Create grass blade directionality
+                float stripePattern = sin(grassCoord2.x * 2.0) * sin(grassCoord2.y * 2.0);
+                grassPattern = mix(grassPattern, stripePattern, 0.3);
+                
+                // Define grass color variations
+                vec3 darkGrass = vec3(0.1, 0.3, 0.1);   // Dark green
+                vec3 mediumGrass = vec3(0.15, 0.4, 0.15); // Medium green
+                vec3 lightGrass = vec3(0.2, 0.5, 0.2);   // Light green
+                vec3 yellowGrass = vec3(0.3, 0.4, 0.1);  // Yellowish green
+                
+                // Mix colors based on noise patterns for natural grass variation
+                vec3 grassColor = mix(darkGrass, mediumGrass, grassPattern);
+                grassColor = mix(grassColor, lightGrass, grassNoise2);
+                grassColor = mix(grassColor, yellowGrass, grassNoise3 * 0.2);
+                
+                // Add subtle brightness variation for more realistic grass
+                float brightnessVariation = noise(worldXZ * 12.0) * 0.1;
+                grassColor += vec3(brightnessVariation);
+                
+                gl_FragColor = vec4(grassColor, 1.0);
+            }
+        `,
+    });
+};
+
 interface AtriumRoomProps {
     config: RoomConfig;
     materials: any;
@@ -24,170 +104,49 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
     depth,
 }) => {
     const { scene } = useThree();
-    const mistParticlesRef = useRef<THREE.InstancedMesh | null>(null);
-    const grassInstancesRef = useRef<THREE.Group | null>(null);
+    const grassFloorRef = useRef<THREE.Mesh | null>(null);
+    const grassMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
 
     // Initialize enhanced effects
     useEffect(() => {
-        // Create concentrated floor-level mist (doubled)
-        if (!mistParticlesRef.current && scene) {
-            const particleCount = 150; // Doubled from 150
-            const geometry = new THREE.SphereGeometry(0.25, 6, 6); // Slightly larger
-            const material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.08, // Much more transparent - ethereal mist
-                fog: false,
-                blending: THREE.AdditiveBlending, // Additive blending for ethereal effect
-            });
+        // Create grassy textured floor
+        if (!grassFloorRef.current && scene) {
+            grassMaterialRef.current = createGrassFloorShader();
 
-            mistParticlesRef.current = new THREE.InstancedMesh(
-                geometry,
-                material,
-                particleCount
+            // Create a large floor plane that covers the room more completely
+            const floorGeometry = new THREE.PlaneGeometry(
+                width * 0.98,
+                depth * 0.98,
+                128,
+                128
+            );
+            grassFloorRef.current = new THREE.Mesh(
+                floorGeometry,
+                grassMaterialRef.current
             );
 
-            const dummy = new THREE.Object3D();
-            for (let i = 0; i < particleCount; i++) {
-                // Create mist ring that concentrates away from pedestal
-                const minRadius = 3.5; // Start mist 3.5 units away from pedestal
-                const maxRadius = width * 0.8; // Maximum spread
-                const radius =
-                    minRadius + Math.random() * (maxRadius - minRadius);
-                const angle = Math.random() * Math.PI * 2;
-                const x = Math.cos(angle) * radius;
-                const z = Math.sin(angle) * radius;
+            // Position the floor horizontally at ground level
+            grassFloorRef.current.rotation.x = -Math.PI / 2;
+            grassFloorRef.current.position.y = 0.01; // Slightly above ground to avoid z-fighting
 
-                // Create gradient opacity - denser further from center
-                const distanceFromCenter = Math.sqrt(x * x + z * z);
-                const fadeZone = 4.5; // Distance where mist starts to fade toward center
-                let opacityMultiplier = 1.0;
-
-                if (distanceFromCenter < fadeZone) {
-                    // Fade mist as it approaches the pedestal
-                    opacityMultiplier =
-                        (distanceFromCenter - minRadius) /
-                        (fadeZone - minRadius);
-                    opacityMultiplier = Math.max(0.1, opacityMultiplier); // Minimum opacity
-                }
-
-                dummy.position.set(x, Math.random() * 0.1 - 0.1, z);
-
-                // Scale particles based on distance and fade effect
-                const baseScale = 0.2 + Math.random() * 10.5;
-                dummy.scale.setScalar(baseScale * opacityMultiplier);
-                dummy.updateMatrix();
-                mistParticlesRef.current.setMatrixAt(i, dummy.matrix);
-            }
-
-            scene.add(mistParticlesRef.current);
-        }
-
-        // Create realistic moss-like ground cover
-        if (!grassInstancesRef.current && scene) {
-            const mossGeometry = new THREE.SphereGeometry(
-                1,
-                8,
-                6,
-                0,
-                Math.PI * 2,
-                0,
-                Math.PI / 2
-            );
-
-            // Create multiple colored moss groups for better coverage
-            grassInstancesRef.current = new THREE.Group() as any;
-
-            // Define varying dark green colors
-            const mossColors = [
-                0x1a4d0f, // Dark forest green
-                0x0f3d0a, // Very dark green
-                0x2a5d1f, // Medium dark green
-                0x154010, // Darker forest
-                0x225518, // Brighter dark green
-                0x0d350c, // Deep green
-                0x1f4a15, // Moss green
-            ];
-
-            // Create separate instanced meshes for each color for better coverage
-            mossColors.forEach((color) => {
-                const instancesPerColor = 800; // Denser coverage
-                const mossMaterial = new THREE.MeshLambertMaterial({
-                    color: color,
-                });
-
-                const colorGroup = new THREE.InstancedMesh(
-                    mossGeometry,
-                    mossMaterial,
-                    instancesPerColor
-                );
-
-                // Position moss instances for this color
-                const dummy = new THREE.Object3D();
-                for (let i = 0; i < instancesPerColor; i++) {
-                    // Ensure full coverage with overlapping areas, but avoid center pedestal
-                    let x, z;
-                    do {
-                        x = (Math.random() - 0.5) * (width - 0.5);
-                        z = (Math.random() - 0.5) * (depth - 0.5);
-                    } while (Math.sqrt(x * x + z * z) < 2.5); // Avoid 2.5 unit radius around center
-
-                    // Much wider rivets with more variation
-                    const baseScale = 0.05 + Math.random() * 0.2;
-                    const width_scale = 1.8 + Math.random() * 2.0; // Very wide (1.8-3.8x)
-                    const height_scale = 0.15 + Math.random() * 0.35; // Short
-
-                    dummy.position.set(x, 0.01, z);
-                    dummy.rotation.y = Math.random() * Math.PI * 2;
-                    dummy.scale.set(
-                        baseScale * width_scale,
-                        baseScale * height_scale,
-                        baseScale * width_scale
-                    );
-                    dummy.updateMatrix();
-                    colorGroup.setMatrixAt(i, dummy.matrix);
-                }
-
-                (grassInstancesRef.current as THREE.Group).add(colorGroup);
-            });
-
-            scene.add(grassInstancesRef.current as THREE.Group);
+            scene.add(grassFloorRef.current);
         }
 
         return () => {
             // Cleanup
-            if (mistParticlesRef.current) {
-                scene.remove(mistParticlesRef.current);
-            }
-            if (grassInstancesRef.current) {
-                scene.remove(grassInstancesRef.current);
+            if (grassFloorRef.current) {
+                scene.remove(grassFloorRef.current);
             }
         };
-    }, [scene]);
+    }, [scene, width, depth]);
 
-    // Animation loop
+    // Animation loop for shader uniforms
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
 
-        // Animate mist particles
-        if (mistParticlesRef.current) {
-            const dummy = new THREE.Object3D();
-            for (let i = 0; i < mistParticlesRef.current.count; i++) {
-                mistParticlesRef.current.getMatrixAt(i, dummy.matrix);
-                dummy.matrix.decompose(
-                    dummy.position,
-                    dummy.quaternion,
-                    dummy.scale
-                );
-
-                // Very subtle floating motion
-                dummy.position.y += Math.sin(elapsed * 0.3 + i * 0.1) * 0.001;
-                dummy.rotation.y += 0.001;
-
-                dummy.updateMatrix();
-                mistParticlesRef.current.setMatrixAt(i, dummy.matrix);
-            }
-            mistParticlesRef.current.instanceMatrix.needsUpdate = true;
+        // Animate grass shader (for potential wind effects)
+        if (grassMaterialRef.current) {
+            grassMaterialRef.current.uniforms.time.value = elapsed;
         }
     });
 
@@ -241,7 +200,7 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
             <group position={[0, height * 0.5, depth / 2 - 1.2]}>
                 {/* Glass pane with 3D depth */}
                 <mesh>
-                    <boxGeometry args={[width * 0.7, height * 0.5, 0.3]} />
+                    <boxGeometry args={[width * 0.85, height * 0.5, 0.3]} />
                     <meshPhysicalMaterial
                         transparent
                         opacity={0.15}

@@ -10,7 +10,6 @@ export const artPieces = [
     "teemo", // 5
 
     // South wall pieces (indices 6-11)
-
     "tree-night", // 6
     "wispette", // 7
     "wiz-dog", // 8

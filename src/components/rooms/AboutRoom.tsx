@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
+import { InteractiveEasel } from "../models/InteractiveEasel";
 
 interface AboutRoomProps {
     config: RoomConfig;
@@ -25,7 +26,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
 }) => {
     // References for animated elements
     const pulsingLightRef = useRef<THREE.PointLight>(null);
-    const spinningEaselRef = useRef<THREE.Group>(null);
 
     // Holographic computer setup refs
     const holoDisplayRef = useRef<THREE.Group>(null);
@@ -35,7 +35,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const holoFrameRef = useRef<THREE.Group>(null);
 
     // Current URL state
-    const [currentUrl] = React.useState("https://github.com");
+    const [currentUrl] = React.useState("https://saucedog.art");
 
     // Animation for pulsing light and spinning elements
     useFrame((state) => {
@@ -44,10 +44,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
         if (pulsingLightRef.current) {
             pulsingLightRef.current.intensity =
                 0.3 + Math.sin(elapsed * 1.5) * 0.2;
-        }
-
-        if (spinningEaselRef.current) {
-            spinningEaselRef.current.rotation.y += 0.005;
         }
 
         // Holographic computer animations - stationary display
@@ -369,61 +365,12 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     angle={0.5}
                     penumbra={0.5}
                     color="#F9EAD0"
-                />
+me                />
             </group>
             */}
 
-            {/* 3D art corner with spinning easel and art supplies */}
-            <group ref={spinningEaselRef} position={[0, 0, 7]}>
-                {/* Easel base */}
-                <mesh position={[0, 1.5, 0]}>
-                    <boxGeometry args={[1.5, 3, 0.1]} />
-                    <meshStandardMaterial color="#8B4513" roughness={0.8} />
-                </mesh>
-
-                {/* Canvas on easel */}
-                <mesh position={[0, 1.5, 0.1]} rotation={[0, 0, 0]}>
-                    <planeGeometry args={[1.3, 2]} />
-                    <meshStandardMaterial
-                        color="#FFFFFF"
-                        roughness={0.2}
-                        metalness={0.05}
-                    />
-                </mesh>
-
-                {/* Paint strokes on canvas */}
-                <mesh position={[0, 1.5, 0.12]} rotation={[0, 0, 0]}>
-                    <planeGeometry args={[1.2, 1.9]} />
-                    <meshStandardMaterial
-                        color="#FFFFFF"
-                        transparent
-                        opacity={0.9}
-                        roughness={0.3}
-                        emissive="#F5DEB3"
-                        emissiveIntensity={0.2}
-                    />
-                </mesh>
-
-                {/* Art supplies around the easel */}
-                <mesh position={[0.7, 0.1, 0.3]}>
-                    <cylinderGeometry args={[0.2, 0.2, 0.4, 8]} />
-                    <meshStandardMaterial color="#4169E1" />
-                </mesh>
-
-                <mesh position={[-0.7, 0.1, 0.3]}>
-                    <cylinderGeometry args={[0.2, 0.2, 0.4, 8]} />
-                    <meshStandardMaterial color="#8A2BE2" />
-                </mesh>
-
-                {/* Pulsing creative light */}
-                <pointLight
-                    ref={pulsingLightRef}
-                    position={[0, 2.5, 1]}
-                    intensity={0.5}
-                    distance={5}
-                    color="#6A5ACD"
-                />
-            </group>
+            {/* Interactive drawing easel */}
+            <InteractiveEasel position={[0, 0, 7]} />
 
             {/* "About Me" section with creative typography on wall */}
             <group position={[0, 4, -8]}>
@@ -519,7 +466,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             </group>
 
             {/* 🚀 WALL-MOUNTED HOLOGRAPHIC CONTROL STATION - North Wall */}
-            <group position={[-5, 3, -14.5]} rotation={[0, 0, 0]}>
+            <group position={[-5, 1.6, -14.5]} rotation={[0, 0, 0]}>
                 {/* Wall Mount Base */}
                 <RigidBody type="fixed" colliders="cuboid">
                     <mesh position={[0, 0, -0.2]}>
@@ -637,16 +584,17 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     {/* Web browser interface */}
                     <Html
                         transform
-                        occlude={false}
-                        position={[0, 0, 0.08]}
+                        occlude={true}
+                        position={[0, 0, 0.031]}
+                        rotation={[0, 0, 0]}
                         style={{
-                            width: "800px",
-                            height: "500px",
+                            width: "132px",
+                            height: "80px",
                             background: "rgba(0, 20, 30, 0.4)",
-                            border: "2px solid #00ffff",
-                            borderRadius: "8px",
+                            border: "1px solid #00ffff",
+                            borderRadius: "3px",
                             boxShadow:
-                                "0 0 40px #00ffff, inset 0 0 30px rgba(0, 255, 255, 0.3)",
+                                "0 0 15px #00ffff, inset 0 0 12px rgba(0, 255, 255, 0.3)",
                             overflow: "hidden",
                             pointerEvents: "auto",
                         }}
@@ -667,42 +615,42 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                             {/* Browser header */}
                             <div
                                 style={{
-                                    height: "40px",
+                                    height: "24px",
                                     background: "rgba(0,10,20,0.8)",
                                     borderBottom: "1px solid #00ffff",
                                     display: "flex",
                                     alignItems: "center",
-                                    padding: "0 12px",
-                                    fontSize: "14px",
+                                    padding: "0 6px",
+                                    fontSize: "10px",
                                 }}
                             >
                                 <div
                                     style={{
                                         display: "flex",
-                                        gap: "8px",
-                                        marginRight: "16px",
+                                        gap: "2px",
+                                        marginRight: "8px",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            width: "12px",
-                                            height: "12px",
+                                            width: "6px",
+                                            height: "6px",
                                             background: "#ff5555",
                                             borderRadius: "50%",
                                         }}
                                     />
                                     <div
                                         style={{
-                                            width: "12px",
-                                            height: "12px",
+                                            width: "6px",
+                                            height: "6px",
                                             background: "#ffaa00",
                                             borderRadius: "50%",
                                         }}
                                     />
                                     <div
                                         style={{
-                                            width: "12px",
-                                            height: "12px",
+                                            width: "6px",
+                                            height: "6px",
                                             background: "#00ff00",
                                             borderRadius: "50%",
                                         }}
@@ -712,30 +660,74 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                                     style={{
                                         flex: 1,
                                         background: "rgba(0,20,40,0.5)",
-                                        padding: "4px 12px",
-                                        borderRadius: "4px",
+                                        padding: "2px 6px",
+                                        borderRadius: "2px",
                                         border: "1px solid #00ffff",
                                         color: "#00ffff",
                                         fontFamily: "monospace",
-                                        fontSize: "14px",
+                                        fontSize: "10px",
                                     }}
                                 >
-                                    🌐 github.com
+                                    🌐 saucedog.art
                                 </div>
                             </div>
 
-                            {/* Browser content */}
-                            <iframe
-                                src={currentUrl}
+                            {/* Browser content mockup */}
+                            <div
                                 style={{
                                     flex: 1,
-                                    border: "none",
-                                    background: "transparent",
-                                    filter: "hue-rotate(180deg) brightness(0.8) contrast(1.2)",
+                                    background:
+                                        "linear-gradient(45deg, #001122, #002244)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    padding: "4px",
+                                    fontSize: "8px",
+                                    color: "#00ffff",
                                 }}
-                                title="Holographic Web Browser"
-                                sandbox="allow-scripts allow-same-origin allow-forms"
-                            />
+                            >
+                                <div
+                                    style={{
+                                        marginBottom: "3px",
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    🎨 Portfolio Website
+                                </div>
+                                <div
+                                    style={{
+                                        marginBottom: "2px",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    ➤ Projects & Art Gallery
+                                </div>
+                                <div
+                                    style={{
+                                        marginBottom: "2px",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    ➤ Interactive 3D Experience
+                                </div>
+                                <div
+                                    style={{
+                                        marginBottom: "2px",
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    ➤ Creative Coding Demos
+                                </div>
+                                <div
+                                    style={{
+                                        marginTop: "auto",
+                                        textAlign: "center",
+                                        opacity: 0.5,
+                                        fontSize: "6px",
+                                    }}
+                                >
+                                    ✨ saucedog.art ✨
+                                </div>
+                            </div>
                         </div>
                     </Html>
                 </group>
