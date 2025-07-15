@@ -34,6 +34,9 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const [currentColor, setCurrentColor] = useState("#000000");
     const [brushSize, setBrushSize] = useState(3);
 
+    // Prevent pointer lock during drawing
+    const preventPointerLockRef = useRef(false);
+
     // Create drawing texture and canvas
     const { texture, canvas, ctx } = useMemo(() => {
         const canvas = document.createElement("canvas");
@@ -105,6 +108,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
             setIsDrawing(true);
             setIsCanvasFocused(true);
             setIsInteracting(true); // Disable camera controls
+            preventPointerLockRef.current = true; // Prevent pointer lock requests
 
             // Exit pointer lock to switch to mouse mode
             if (document.pointerLockElement) {
@@ -203,6 +207,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const exitDrawingMode = useCallback(() => {
         setIsCanvasFocused(false);
         setIsInteracting(false);
+        preventPointerLockRef.current = false; // Allow pointer lock requests again
 
         // Request pointer lock to switch back to camera mode
         const canvas = document.querySelector("canvas");
@@ -258,10 +263,50 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         }
     }, [isCanvasFocused, exitDrawingMode, camera, raycaster]);
 
+    // Prevent pointer lock requests during drawing
+    useEffect(() => {
+        const originalRequestPointerLock =
+            HTMLElement.prototype.requestPointerLock;
+
+        HTMLElement.prototype.requestPointerLock = function () {
+            if (preventPointerLockRef.current) {
+                console.log("Prevented pointer lock request during drawing");
+                return Promise.resolve();
+            }
+            return originalRequestPointerLock.call(this);
+        };
+
+        return () => {
+            HTMLElement.prototype.requestPointerLock =
+                originalRequestPointerLock;
+        };
+    }, []);
+
+    // Ensure pointer lock stays disabled during drawing
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+
+        if (isCanvasFocused) {
+            intervalId = setInterval(() => {
+                if (document.pointerLockElement) {
+                    console.log("Force exiting pointer lock during drawing");
+                    document.exitPointerLock();
+                }
+            }, 100); // Check every 100ms
+        }
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [isCanvasFocused]);
+
     // Safety cleanup: ensure interaction state is cleared on unmount
     useEffect(() => {
         return () => {
             setIsInteracting(false);
+            preventPointerLockRef.current = false;
         };
     }, [setIsInteracting]);
 
@@ -356,17 +401,27 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 ))}
             </group>
 
-            {/* Clear button */}
-            <mesh
-                position={[2.2, 3.5, 0.2]}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    clearCanvas();
-                }}
-            >
-                <boxGeometry args={[0.4, 0.3, 0.1]} />
-                <meshStandardMaterial color="#8B4513" />
-            </mesh>
+            {/* Clear button with label */}
+            <group position={[2.2, 3.5, 0.2]}>
+                <mesh
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        clearCanvas();
+                    }}
+                >
+                    <boxGeometry args={[0.6, 0.4, 0.1]} />
+                    <meshStandardMaterial color="#8B4513" />
+                </mesh>
+                <Text
+                    position={[0, 0, 0.06]}
+                    fontSize={0.08}
+                    color="#FFFFFF"
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    CLEAR
+                </Text>
+            </group>
 
             {/* Art supplies */}
             <mesh position={[2, 0.1, 0.5]}>
@@ -389,13 +444,13 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
             {/* Drawing mode indicator */}
             {isCanvasFocused && (
                 <Text
-                    position={[0, 5, 0]}
-                    fontSize={0.3}
-                    color="#00ff00"
+                    position={[0, 4, 0]}
+                    fontSize={0.2}
+                    color={currentColor}
                     anchorX="center"
                     anchorY="middle"
                 >
-                    🎨 Drawing Mode - ESC or click outside to exit
+                    🎨 Drawing Mode - Click outside the canvas to exit
                 </Text>
             )}
 
