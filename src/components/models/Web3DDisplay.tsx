@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useDisplayManager } from "../../stores/displayManager";
 
@@ -34,7 +35,14 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 }) => {
     const displayRef = useRef<THREE.Group>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const hologramFrameRef = useRef<THREE.Group>(null);
+    const scanLineRef = useRef<THREE.Mesh>(null);
     const { isMobile } = useDeviceDetection();
+
+    // Check if this is the nicolasbelovoskey.com display for holographic effects
+    const isNicolasDisplay =
+        url.includes("nicolasbelovoskey.com") ||
+        title?.includes("Nicolas Belovoskey");
     const {
         registerDisplay,
         unregisterDisplay,
@@ -195,6 +203,33 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         };
     }, [displayId, unregisterDisplay]);
 
+    // Holographic animation loop for Nicolas display
+    useFrame((state) => {
+        if (!isNicolasDisplay) return;
+
+        const elapsed = state.clock.elapsedTime;
+
+        // Animate holographic scan line
+        if (scanLineRef.current) {
+            scanLineRef.current.position.y =
+                Math.sin(elapsed * 3) * (displayHeight / 400) * 0.3;
+            (
+                scanLineRef.current.material as THREE.MeshStandardMaterial
+            ).emissiveIntensity = 0.3 + Math.sin(elapsed * 5) * 0.2;
+        }
+
+        // Animate holographic frame effects
+        if (hologramFrameRef.current) {
+            hologramFrameRef.current.children.forEach((child, i) => {
+                if (child instanceof THREE.Mesh) {
+                    (
+                        child.material as THREE.MeshStandardMaterial
+                    ).emissiveIntensity = 0.8 + Math.sin(elapsed * 2 + i) * 0.3;
+                }
+            });
+        }
+    });
+
     return (
         <group
             ref={displayRef}
@@ -247,6 +282,86 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 <boxGeometry args={[0.6, 0.1, 0.4]} />
                 <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
             </mesh>
+
+            {/* Holographic Effects for Nicolas Display */}
+            {isNicolasDisplay && (
+                <group position={[0, 0, -0.05]}>
+                    {/* Holographic backdrop */}
+                    <mesh>
+                        <planeGeometry
+                            args={[
+                                (displayWidth / 400) * 1.1,
+                                (displayHeight / 400) * 1.1,
+                            ]}
+                        />
+                        <meshBasicMaterial
+                            transparent
+                            opacity={0.3}
+                            color="#00ffff"
+                            side={THREE.DoubleSide}
+                        />
+                    </mesh>
+
+                    {/* Bright holographic frame */}
+                    <mesh>
+                        <ringGeometry
+                            args={[
+                                (displayWidth / 400) * 0.45,
+                                (displayWidth / 400) * 0.52,
+                                32,
+                            ]}
+                        />
+                        <meshStandardMaterial
+                            color="#00ffff"
+                            emissive="#00ffff"
+                            emissiveIntensity={1.0}
+                            transparent
+                            opacity={0.9}
+                        />
+                    </mesh>
+
+                    {/* Holographic frame effects */}
+                    <group ref={hologramFrameRef}>
+                        {/* Corner projectors */}
+                        {[
+                            [-1, -1],
+                            [1, -1],
+                            [1, 1],
+                            [-1, 1],
+                        ].map(([x, y], i) => (
+                            <mesh
+                                key={i}
+                                position={[
+                                    ((x * displayWidth) / 400) * 0.6,
+                                    ((y * displayHeight) / 400) * 0.5,
+                                    0.1,
+                                ]}
+                            >
+                                <sphereGeometry args={[0.02, 8, 8]} />
+                                <meshStandardMaterial
+                                    color="#00ffff"
+                                    emissive="#00ffff"
+                                    emissiveIntensity={1.2}
+                                />
+                            </mesh>
+                        ))}
+
+                        {/* Scanning line */}
+                        <mesh ref={scanLineRef} position={[0, 0, 0.05]}>
+                            <planeGeometry
+                                args={[(displayWidth / 400) * 0.9, 0.01]}
+                            />
+                            <meshStandardMaterial
+                                color="#00ffff"
+                                transparent
+                                opacity={0.8}
+                                emissive="#00ffff"
+                                emissiveIntensity={0.6}
+                            />
+                        </mesh>
+                    </group>
+                </group>
+            )}
 
             {/* Web content using Html component */}
             <Html

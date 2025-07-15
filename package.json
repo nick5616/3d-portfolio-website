@@ -12,20 +12,20 @@
         "update-screenshots": "npm run capture-screenshots && npm run update-screenshots-config"
     },
     "dependencies": {
-        "@react-three/drei": "^9.0.0",
-        "@react-three/fiber": "^8.0.0",
-        "@react-three/rapier": "^1.0.0",
+        "@react-three/drei": "^9.114.0",
+        "@react-three/fiber": "^8.17.10",
+        "@react-three/rapier": "^1.4.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-icons": "^5.5.0",
-        "three": "^0.160.0",
+        "three": "^0.170.0",
         "zustand": "^4.0.0"
     },
     "devDependencies": {
         "@types/puppeteer": "^7.0.4",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
-        "@types/three": "^0.160.0",
+        "@types/three": "^0.170.0",
         "@vitejs/plugin-react": "^4.0.0",
         "autoprefixer": "^10.4.0",
         "postcss": "^8.4.0",

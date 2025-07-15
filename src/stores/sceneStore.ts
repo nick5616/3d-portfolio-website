@@ -36,6 +36,7 @@ interface SceneState {
     spotlightsEnabled: boolean;
     flyMode: boolean;
     isFirstPerson: boolean;
+    isInteracting: boolean;
     performance: {
         showStats: boolean;
         monitoring: boolean;
@@ -53,6 +54,7 @@ interface SceneState {
     virtualRotation: RotationState;
     setVirtualMovement: (movement: MovementState) => void;
     setVirtualRotation: (rotation: RotationState) => void;
+    setIsInteracting: (interacting: boolean) => void;
     updateCameraData: (cameraData: CameraData) => void;
     updateSceneData: (sceneData: SceneData) => void;
     clearTeleportFlag: () => void;
@@ -81,6 +83,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     shouldTeleportPlayer: false,
     spotlightsEnabled: false,
     isFirstPerson: true,
+    isInteracting: false,
 
     performance: {
         showStats: false,
@@ -114,6 +117,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     setVirtualMovement: (movement) => set({ virtualMovement: movement }),
     setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
+    setIsInteracting: (interacting) => set({ isInteracting: interacting }),
     updateCameraData: (cameraData) => set({ cameraData }),
     updateSceneData: (sceneData) => set({ sceneData }),
     clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),

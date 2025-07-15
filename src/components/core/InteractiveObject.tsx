@@ -7,6 +7,7 @@ import { DisplayPillar } from "../models/DisplayPillar";
 import { ProjectDisplay } from "../models/ProjectDisplay";
 import { ArtFrame } from "../models/ArtFrame";
 import { Web3DDisplay } from "../models/Web3DDisplay";
+import { InteractiveEasel } from "../models/InteractiveEasel";
 
 interface InteractiveObjectProps {
     element: InteractiveElement;
@@ -44,6 +45,14 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                         rotation={rotation}
                         scale={scale}
                         imageUrl={content.imageUrl}
+                    />
+                );
+            } else if (content === "interactive-easel") {
+                return (
+                    <InteractiveEasel
+                        position={position}
+                        rotation={rotation}
+                        scale={scale}
                     />
                 );
             }
