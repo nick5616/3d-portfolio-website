@@ -1,6 +1,8 @@
 import React from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RoomComments } from "./RoomComments";
+import { InteractiveObject } from "../core/InteractiveObject";
+import { displaysConfig } from "../../configs/displayConfig";
 
 interface ProjectsRoomProps {
     config: RoomConfig;
@@ -12,12 +14,31 @@ interface ProjectsRoomProps {
 }
 
 export const ProjectsRoom: React.FC<ProjectsRoomProps> = ({ config }) => {
+    // Convert display configs to interactive elements
+    const projectDisplays = displaysConfig.map((display) => ({
+        id: `project-${display.id}`,
+        type: "web" as const,
+        position: display.position,
+        rotation: display.rotation || [0, 0, 0],
+        scale: display.scale || [1, 1, 1],
+        content: {
+            url: display.url,
+            title: display.title,
+            description: display.description,
+            screenshotUrl: display.screenshotUrl,
+            responsive: display.responsive,
+        },
+    }));
+
     return (
         <>
             {/* Room annotation comments */}
             <RoomComments roomId={config.id} />
 
-            {/* Projects room has no special elements beyond what's in the base room and interactive elements */}
+            {/* Project displays - render the interactive web displays */}
+            {projectDisplays.map((element) => (
+                <InteractiveObject key={element.id} element={element} />
+            ))}
         </>
     );
 };

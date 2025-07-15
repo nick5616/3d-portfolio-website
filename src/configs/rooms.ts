@@ -1,7 +1,6 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
 import { getArtImageUrl } from "./artConfig";
-import { createProjectsLayout } from "./createProjectsLayout";
 
 const createArtLayout = (): InteractiveElement[] => [
     // North wall (-x)
@@ -352,7 +351,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             position: [0, 0.1, 7] as [number, number, number],
             rotation: [0, Math.PI, 0] as [number, number, number],
         },
-        interactiveElements: createProjectsLayout(),
+        interactiveElements: [], // Interactive elements are now handled directly in ProjectsRoom component
         archways: [
             {
                 id: "to-atrium-from-projects",
