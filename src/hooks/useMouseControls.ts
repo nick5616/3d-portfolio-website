@@ -10,7 +10,7 @@ interface MouseRotation {
 export const useMouseControls = () => {
     const [rotation, setRotation] = useState<MouseRotation>({ x: 0, y: 0 });
     const [isLocked, setIsLocked] = useState(false);
-    const { controlMode } = useSceneStore();
+    const { controlMode, isInteracting } = useSceneStore();
     const { isMobile } = useDeviceDetection();
 
     const handleMouseMove = useCallback(
@@ -21,7 +21,7 @@ export const useMouseControls = () => {
                 return;
             }
 
-            if (!isLocked || controlMode !== "firstPerson") {
+            if (!isLocked || controlMode !== "firstPerson" || isInteracting) {
                 setRotation({ x: 0, y: 0 });
                 return;
             }
@@ -32,7 +32,7 @@ export const useMouseControls = () => {
                 y: event.movementY * sensitivity,
             });
         },
-        [isLocked, controlMode, isMobile]
+        [isLocked, controlMode, isMobile, isInteracting]
     );
 
     // Reset rotation when mouse stops moving

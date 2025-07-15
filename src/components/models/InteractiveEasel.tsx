@@ -7,6 +7,9 @@ import React, {
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { RigidBody } from "@react-three/rapier";
+import { Text } from "@react-three/drei";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface InteractiveEaselProps {
     position?: [number, number, number];
@@ -23,9 +26,11 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const pulsingLightRef = useRef<THREE.PointLight>(null);
     const canvasMeshRef = useRef<THREE.Mesh>(null);
     const { camera, raycaster, scene } = useThree();
+    const { setIsInteracting } = useSceneStore();
 
     // Drawing state
     const [isDrawing, setIsDrawing] = useState(false);
+    const [isCanvasFocused, setIsCanvasFocused] = useState(false);
     const [currentColor, setCurrentColor] = useState("#000000");
     const [brushSize, setBrushSize] = useState(3);
 
@@ -98,6 +103,13 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         (event: any) => {
             event.stopPropagation();
             setIsDrawing(true);
+            setIsCanvasFocused(true);
+            setIsInteracting(true); // Disable camera controls
+
+            // Exit pointer lock to switch to mouse mode
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
 
             // Get intersection point on the mesh
             if (!canvasMeshRef.current) return;
@@ -122,7 +134,15 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 ctx.lineJoin = "round";
             }
         },
-        [camera, raycaster, canvas, ctx, currentColor, brushSize]
+        [
+            camera,
+            raycaster,
+            canvas,
+            ctx,
+            currentColor,
+            brushSize,
+            setIsInteracting,
+        ]
     );
 
     const continueDrawing = useCallback(
@@ -152,6 +172,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
 
     const stopDrawing = useCallback(() => {
         setIsDrawing(false);
+        // Keep canvas focused and camera disabled until user clicks elsewhere
     }, []);
 
     // Clear canvas function
@@ -178,6 +199,72 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         texture.needsUpdate = true;
     }, [ctx, canvas.width, canvas.height, texture]);
 
+    // Handle exiting drawing mode
+    const exitDrawingMode = useCallback(() => {
+        setIsCanvasFocused(false);
+        setIsInteracting(false);
+
+        // Request pointer lock to switch back to camera mode
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+            canvas.requestPointerLock();
+        }
+    }, [setIsInteracting]);
+
+    // Exit canvas focus when ESC key is pressed
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && isCanvasFocused) {
+                exitDrawingMode();
+            }
+        };
+
+        if (isCanvasFocused) {
+            document.addEventListener("keydown", handleKeyDown);
+            return () => {
+                document.removeEventListener("keydown", handleKeyDown);
+            };
+        }
+    }, [isCanvasFocused, exitDrawingMode]);
+
+    // Also handle clicks outside the easel to exit drawing mode
+    useEffect(() => {
+        const handleGlobalClick = (event: MouseEvent) => {
+            if (isCanvasFocused && easelRef.current) {
+                // Use raycaster to check if click intersects with easel elements
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(
+                    easelRef.current,
+                    true
+                );
+
+                // If no intersection with easel, exit drawing mode
+                if (intersects.length === 0) {
+                    exitDrawingMode();
+                }
+            }
+        };
+
+        if (isCanvasFocused) {
+            // Use capture phase to catch clicks before they're handled by other elements
+            document.addEventListener("click", handleGlobalClick, true);
+            return () => {
+                document.removeEventListener("click", handleGlobalClick, true);
+            };
+        }
+    }, [isCanvasFocused, exitDrawingMode, camera, raycaster]);
+
+    // Safety cleanup: ensure interaction state is cleared on unmount
+    useEffect(() => {
+        return () => {
+            setIsInteracting(false);
+        };
+    }, [setIsInteracting]);
+
     // Animation for pulsing light
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
@@ -194,11 +281,30 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
             rotation={rotation}
             scale={scale}
         >
-            {/* Easel base */}
-            <mesh position={[0, 2, 0]}>
-                <boxGeometry args={[4, 3, 0.2]} />
-                <meshStandardMaterial color="#8B4513" roughness={0.8} />
-            </mesh>
+            {/* Easel base with consolidated physics */}
+            <RigidBody type="fixed" colliders="cuboid">
+                <mesh position={[0, 2, 0]}>
+                    <boxGeometry args={[4, 3, 0.2]} />
+                    <meshStandardMaterial color="#8B4513" roughness={0.8} />
+                </mesh>
+
+                {/* Easel legs - positioned to connect to the base properly */}
+                {/* Left front leg */}
+                <mesh position={[-0.8, 0.75, 0.05]} rotation={[0, 0, -0.15]}>
+                    <boxGeometry args={[0.08, 1.5, 0.08]} />
+                    <meshStandardMaterial color="#8B4513" roughness={0.8} />
+                </mesh>
+                {/* Right front leg */}
+                <mesh position={[0.8, 0.75, 0.05]} rotation={[0, 0, 0.15]}>
+                    <boxGeometry args={[0.08, 1.5, 0.08]} />
+                    <meshStandardMaterial color="#8B4513" roughness={0.8} />
+                </mesh>
+                {/* Back support leg - moved even closer to the front legs */}
+                <mesh position={[0, 0.75, -0.2]} rotation={[0.2, 0, 0]}>
+                    <boxGeometry args={[0.08, 1.5, 0.08]} />
+                    <meshStandardMaterial color="#8B4513" roughness={0.8} />
+                </mesh>
+            </RigidBody>
 
             {/* Interactive drawing canvas - using texture */}
             <mesh
@@ -207,7 +313,10 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 onPointerDown={startDrawing}
                 onPointerMove={continueDrawing}
                 onPointerUp={stopDrawing}
-                onPointerLeave={stopDrawing}
+                onPointerLeave={(e) => {
+                    e.stopPropagation();
+                    stopDrawing();
+                }}
             >
                 <planeGeometry args={[3.5, 2.5]} />
                 <meshStandardMaterial map={texture} toneMapped={false} />
@@ -259,23 +368,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 <meshStandardMaterial color="#8B4513" />
             </mesh>
 
-            {/* Easel legs - positioned to connect to the base properly */}
-            {/* Left front leg */}
-            <mesh position={[-0.8, 0.75, 0.05]} rotation={[0, 0, -0.15]}>
-                <boxGeometry args={[0.08, 1.5, 0.08]} />
-                <meshStandardMaterial color="#8B4513" roughness={0.8} />
-            </mesh>
-            {/* Right front leg */}
-            <mesh position={[0.8, 0.75, 0.05]} rotation={[0, 0, 0.15]}>
-                <boxGeometry args={[0.08, 1.5, 0.08]} />
-                <meshStandardMaterial color="#8B4513" roughness={0.8} />
-            </mesh>
-            {/* Back support leg - closer to the other two */}
-            <mesh position={[0, 0.75, -0.4]} rotation={[0.2, 0, 0]}>
-                <boxGeometry args={[0.08, 1.5, 0.08]} />
-                <meshStandardMaterial color="#8B4513" roughness={0.8} />
-            </mesh>
-
             {/* Art supplies */}
             <mesh position={[2, 0.1, 0.5]}>
                 <cylinderGeometry args={[0.2, 0.2, 0.4, 8]} />
@@ -293,6 +385,19 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 <cylinderGeometry args={[0.15, 0.15, 0.3, 8]} />
                 <meshStandardMaterial color="#32CD32" />
             </mesh>
+
+            {/* Drawing mode indicator */}
+            {isCanvasFocused && (
+                <Text
+                    position={[0, 5, 0]}
+                    fontSize={0.3}
+                    color="#00ff00"
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    🎨 Drawing Mode - ESC or click outside to exit
+                </Text>
+            )}
 
             {/* Pulsing creative light */}
             <pointLight
