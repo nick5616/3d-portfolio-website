@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import { useSceneStore } from "../../stores/sceneStore";
 
@@ -6,20 +6,30 @@ export const SceneDataBridge: React.FC = () => {
     const { camera, scene } = useThree();
     const { updateCameraData, updateSceneData } = useSceneStore();
 
-    // Update camera data on every frame
+    // Throttling refs to reduce update frequency
+    const lastCameraUpdate = useRef(0);
+    const CAMERA_UPDATE_INTERVAL = 1000 / 30; // 30fps instead of 60fps
+
+    // Use throttled camera updates instead of every frame
     useFrame(() => {
-        updateCameraData({
-            position: {
-                x: camera.position.x,
-                y: camera.position.y,
-                z: camera.position.z,
-            },
-            rotation: {
-                x: camera.rotation.x,
-                y: camera.rotation.y,
-                z: camera.rotation.z,
-            },
-        });
+        const now = window.performance.now();
+
+        // Only update camera data at 30fps instead of 60fps
+        if (now - lastCameraUpdate.current >= CAMERA_UPDATE_INTERVAL) {
+            updateCameraData({
+                position: {
+                    x: camera.position.x,
+                    y: camera.position.y,
+                    z: camera.position.z,
+                },
+                rotation: {
+                    x: camera.rotation.x,
+                    y: camera.rotation.y,
+                    z: camera.rotation.z,
+                },
+            });
+            lastCameraUpdate.current = now;
+        }
     });
 
     // Update scene data periodically (less frequently since it changes less often)

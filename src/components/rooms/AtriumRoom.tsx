@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { RoomComments } from "./RoomComments";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
+import { useSceneStore } from "../../stores/sceneStore";
 
 // Procedural grass texture shader
 const createGrassFloorShader = () => {
@@ -104,6 +105,7 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
     depth,
 }) => {
     const { scene } = useThree();
+    const { performance } = useSceneStore();
     const grassFloorRef = useRef<THREE.Mesh | null>(null);
     const grassMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
 
@@ -140,32 +142,22 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
         };
     }, [scene, width, depth]);
 
-    // Animation loop for shader uniforms
+    // Animation loop for shader uniforms - throttled for performance
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
 
-        // Animate grass shader (for potential wind effects)
-        if (grassMaterialRef.current) {
-            grassMaterialRef.current.uniforms.time.value = elapsed;
+        // Only update grass shader on high quality settings, and throttle updates
+        if (grassMaterialRef.current && performance.quality === "high") {
+            // Update less frequently to reduce GPU load
+            if (Math.floor(elapsed * 30) % 2 === 0) {
+                // Update every other frame at 30fps
+                grassMaterialRef.current.uniforms.time.value = elapsed;
+            }
         }
     });
 
     return (
         <>
-            {/* Room annotation comments */}
-            <RoomComments roomId={config.id} />
-            {/* Central Stone Pedestal */}
-            {/* <RigidBody type="fixed">
-                <mesh position={[0, 0.4, 0]}>
-                    <cylinderGeometry args={[1.2, 2.2, 0.8, 8]} />
-                    <meshStandardMaterial
-                        color="#4a4a4a"
-                        roughness={0.8}
-                        metalness={0.1}
-                    />
-                </mesh>
-            </RigidBody> */}
-            {/* Simplified lighting */}
             <group>
                 {/* Central ambient light */}
                 <pointLight
@@ -197,7 +189,7 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                 })}
             </group>
             {/* Glass Display - Recessed */}
-            <group position={[0, height * 0.5, depth / 2 - 1.2]}>
+            <group position={[0, height * 0.5, depth / 2 - 0.5]}>
                 {/* Glass pane with 3D depth */}
                 <mesh>
                     <boxGeometry args={[width * 0.85, height * 0.5, 0.3]} />

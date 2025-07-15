@@ -13,6 +13,7 @@ export const CameraController: React.FC = () => {
         cameraRotation,
         virtualMovement,
         virtualRotation,
+        performance,
     } = useSceneStore();
 
     const { camera } = useThree();
@@ -24,6 +25,20 @@ export const CameraController: React.FC = () => {
     const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
     const lastCameraRotation = useRef<[number, number, number] | undefined>();
     const lastCameraTarget = useRef(new THREE.Vector3());
+
+    // Reuse vectors to avoid allocations in hot path
+    const forward = useRef(new THREE.Vector3());
+    const right = useRef(new THREE.Vector3());
+    const direction = useRef(new THREE.Vector3());
+
+    // Throttling for performance
+    const lastUpdate = useRef(0);
+    const updateInterval =
+        performance.quality === "low"
+            ? 1000 / 20 // 20fps
+            : performance.quality === "medium"
+            ? 1000 / 30 // 30fps
+            : 1000 / 60; // 60fps for high quality
 
     // Store camera's current position when mounted
     useEffect(() => {
@@ -55,6 +70,17 @@ export const CameraController: React.FC = () => {
     }, [cameraTarget, camera]);
 
     useFrame((_, delta) => {
+        const now = window.performance.now();
+
+        // Throttle updates on low quality or when system is stressed
+        if (
+            performance.quality === "low" &&
+            now - lastUpdate.current < updateInterval
+        ) {
+            return;
+        }
+        lastUpdate.current = now;
+
         // Limit delta time to avoid large jumps
         const clampedDelta = Math.min(delta, 0.1);
 
@@ -67,31 +93,37 @@ export const CameraController: React.FC = () => {
                 ? virtualRotation.y
                 : rotation.y + virtualRotation.y;
 
-            euler.current.y -= combinedRotationX;
-            euler.current.x = Math.max(
-                -Math.PI / 2,
-                Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
-            );
-            camera.quaternion.setFromEuler(euler.current);
+            // Skip rotation if very small changes to reduce computation
+            if (
+                Math.abs(combinedRotationX) > 0.001 ||
+                Math.abs(combinedRotationY) > 0.001
+            ) {
+                euler.current.y -= combinedRotationX;
+                euler.current.x = Math.max(
+                    -Math.PI / 2,
+                    Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
+                );
+                camera.quaternion.setFromEuler(euler.current);
+            }
 
-            // Base vectors for movement
-            const forward = new THREE.Vector3(0, 0, -1);
-            const right = new THREE.Vector3(1, 0, 0);
+            // Reuse vectors to reduce allocations
+            forward.current.set(0, 0, -1);
+            right.current.set(1, 0, 0);
 
             // Apply camera rotation to get proper directions
-            forward.applyQuaternion(camera.quaternion);
-            right.applyQuaternion(camera.quaternion);
+            forward.current.applyQuaternion(camera.quaternion);
+            right.current.applyQuaternion(camera.quaternion);
 
             // Keep movement on horizontal plane
-            forward.y = 0;
-            right.y = 0;
+            forward.current.y = 0;
+            right.current.y = 0;
 
             // Normalize after removing y component
-            forward.normalize();
-            right.normalize();
+            forward.current.normalize();
+            right.current.normalize();
 
-            // Create direction vector from combined keyboard and virtual inputs
-            const direction = new THREE.Vector3(0, 0, 0);
+            // Reset direction vector
+            direction.current.set(0, 0, 0);
 
             // Movement speed - use the same speed for keyboard and virtual
             const moveSpeed = 0.15;
@@ -107,22 +139,35 @@ export const CameraController: React.FC = () => {
             // Choose which control source to use
             const activeMovement = useVirtual ? virtualMovement : movement;
 
-            if (activeMovement.forward) direction.add(forward.clone());
-            if (activeMovement.backward)
-                direction.add(forward.clone().negate());
-            if (activeMovement.left) direction.add(right.clone().negate());
-            if (activeMovement.right) direction.add(right.clone());
+            // Build direction vector only if there's input
+            let hasMovement = false;
+            if (activeMovement.forward) {
+                direction.current.add(forward.current);
+                hasMovement = true;
+            }
+            if (activeMovement.backward) {
+                direction.current.sub(forward.current);
+                hasMovement = true;
+            }
+            if (activeMovement.left) {
+                direction.current.sub(right.current);
+                hasMovement = true;
+            }
+            if (activeMovement.right) {
+                direction.current.add(right.current);
+                hasMovement = true;
+            }
 
             // Apply movement if we have any direction
-            if (direction.length() > 0) {
+            if (hasMovement) {
                 // Normalize for consistent speed in diagonals
-                direction.normalize();
+                direction.current.normalize();
 
                 // Apply speed and delta for frame-rate independence
-                direction.multiplyScalar(moveSpeed * clampedDelta * 60);
+                direction.current.multiplyScalar(moveSpeed * clampedDelta * 60);
 
                 // Apply to camera position
-                camera.position.add(direction);
+                camera.position.add(direction.current);
             }
         } else {
             // Point and click mode

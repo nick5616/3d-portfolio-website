@@ -14,33 +14,60 @@ export const SceneManager: React.FC = () => {
     const { currentRoom, loadRoom, performance } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
+    // Throttling refs to reduce update frequency
+    const lastShaderUpdate = useRef(0);
+    const lastPerformanceUpdate = useRef(0);
+
+    // Adaptive update intervals based on performance quality
+    const shaderUpdateInterval =
+        performance.quality === "low"
+            ? 1000 / 20 // 20fps
+            : performance.quality === "medium"
+            ? 1000 / 30 // 30fps
+            : 1000 / 60; // 60fps for high quality
+
+    const performanceUpdateInterval = 1000; // Only update performance stats once per second
+
     useEffect(() => {
         // Initialize scene with enhanced settings
         scene.fog = new THREE.Fog("#000000", 10, 20);
-        
+
         // Enable shadows for enhanced lighting
         gl.shadowMap.enabled = true;
         gl.shadowMap.type = THREE.PCFSoftShadowMap;
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.2;
-        
+
         if (!currentRoom) {
             loadRoom("atrium");
         }
     }, [scene, loadRoom, currentRoom, gl]);
 
     useFrame(({ gl, clock }) => {
-        // Performance monitoring
-        if (performance.monitoring) {
+        const now = window.performance.now();
+
+        // Throttled performance monitoring
+        if (
+            performance.monitoring &&
+            now - lastPerformanceUpdate.current >= performanceUpdateInterval
+        ) {
             fpsGraph.current.push(gl.info.render.frame);
             if (fpsGraph.current.length > 100) fpsGraph.current.shift();
+            lastPerformanceUpdate.current = now;
         }
 
-        // Update all enhanced shaders
-        try {
-            updateAllShaders(clock.elapsedTime);
-        } catch (error) {
-            // Enhanced shaders not available, skip
+        // Throttled shader updates - skip on low quality or when overheating
+        if (
+            performance.quality !== "low" &&
+            now - lastShaderUpdate.current >= shaderUpdateInterval
+        ) {
+            try {
+                updateAllShaders(clock.elapsedTime);
+                lastShaderUpdate.current = now;
+            } catch (error) {
+                // Enhanced shaders not available, skip
+                console.warn("Shader update failed, skipping:", error);
+            }
         }
     });
 
@@ -48,11 +75,13 @@ export const SceneManager: React.FC = () => {
         <>
             {/* Enhanced lighting setup */}
             <ambientLight intensity={0.3} color="#f0f8ff" />
-            <directionalLight 
-                position={[10, 10, 5]} 
+            <directionalLight
+                position={[10, 10, 5]}
                 intensity={0.8}
-                castShadow
-                shadow-mapSize={[2048, 2048]}
+                castShadow={performance.quality !== "low"}
+                shadow-mapSize={
+                    performance.quality === "high" ? [2048, 2048] : [1024, 1024]
+                }
                 shadow-camera-far={50}
                 shadow-camera-left={-50}
                 shadow-camera-right={50}
@@ -61,10 +90,10 @@ export const SceneManager: React.FC = () => {
             />
 
             {/* Environment with enhanced settings */}
-            <Environment 
-                preset="city" 
+            <Environment
+                preset="city"
                 background={false}
-                environmentIntensity={0.6}
+                environmentIntensity={performance.quality === "low" ? 0.3 : 0.6}
             />
 
             <CameraController />

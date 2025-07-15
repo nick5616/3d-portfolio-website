@@ -82,7 +82,14 @@ export const Scene: React.FC = () => {
                     <Physics
                         interpolate={performance.quality !== "low" && !isMobile}
                         gravity={[0, -9.81, 0]}
-                        timeStep={isMobile ? 1 / 30 : 1 / 60}
+                        timeStep={
+                            isMobile
+                                ? 1 / 30
+                                : performance.quality === "low"
+                                ? 1 / 20 // Reduce physics steps when quality is low
+                                : 1 / 60
+                        }
+                        maxCcdSubsteps={performance.quality === "low" ? 1 : 3} // Reduce physics substeps on low quality
                     >
                         <PlayerBody />
                         <SceneManager />
