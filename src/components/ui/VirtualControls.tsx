@@ -80,12 +80,14 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         const lastMovementTime = useRef<number>(0);
 
         // Minimum time between movement updates in ms (throttling)
-        const movementThrottle =
-            performance.quality === "low"
-                ? 50
-                : performance.quality === "medium"
-                ? 30
-                : 16;
+        // Reduced throttling on mobile for smoother movement
+        const movementThrottle = isMobileLocal
+            ? 8 // ~120fps updates on mobile for smooth movement
+            : performance.quality === "low"
+            ? 50
+            : performance.quality === "medium"
+            ? 30
+            : 16;
 
         const simulateKeyEvent = useCallback((key: string, isDown: boolean) => {
             // Skip if key state hasn't changed to avoid jitter
@@ -175,10 +177,10 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 d: false,
             };
 
-            // Determine directions based on touch position, lower threshold for touch detection
+            // Determine directions based on touch position - allow diagonal movement
             if (absDx > deadzone || absDy > deadzone) {
-                if (absDx > absDy) {
-                    // Horizontal movement
+                // Check horizontal movement
+                if (absDx > deadzone) {
                     if (dx > 0) {
                         // Right
                         keysToPress.d = true;
@@ -188,8 +190,10 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         keysToPress.a = true;
                         newActiveDirections.left = true;
                     }
-                } else {
-                    // Vertical movement
+                }
+
+                // Check vertical movement (allow both horizontal and vertical simultaneously)
+                if (absDy > deadzone) {
                     if (dy < 0) {
                         // Up
                         keysToPress.w = true;

@@ -80,11 +80,11 @@ export const Scene: React.FC = () => {
 
                 <Suspense fallback={null}>
                     <Physics
-                        interpolate={performance.quality !== "low" && !isMobile}
+                        interpolate={performance.quality !== "low"} // Enable interpolation on mobile for smoother movement
                         gravity={[0, -9.81, 0]}
                         timeStep={
                             isMobile
-                                ? 1 / 30
+                                ? 1 / 60 // Increase to 60fps for smoother mobile movement
                                 : performance.quality === "low"
                                 ? 1 / 20 // Reduce physics steps when quality is low
                                 : 1 / 60

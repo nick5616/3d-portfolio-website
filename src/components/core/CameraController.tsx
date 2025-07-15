@@ -31,14 +31,15 @@ export const CameraController: React.FC = () => {
     const right = useRef(new THREE.Vector3());
     const direction = useRef(new THREE.Vector3());
 
-    // Throttling for performance
+    // Throttling for performance - less aggressive on mobile for smoother movement
     const lastUpdate = useRef(0);
-    const updateInterval =
-        performance.quality === "low"
-            ? 1000 / 20 // 20fps
-            : performance.quality === "medium"
-            ? 1000 / 30 // 30fps
-            : 1000 / 60; // 60fps for high quality
+    const updateInterval = isMobile
+        ? 1000 / 60 // Full 60fps on mobile for smooth movement
+        : performance.quality === "low"
+        ? 1000 / 20 // 20fps only for low quality desktop
+        : performance.quality === "medium"
+        ? 1000 / 30 // 30fps for medium quality desktop
+        : 1000 / 60; // 60fps for high quality desktop
 
     // Store camera's current position when mounted
     useEffect(() => {
@@ -46,34 +47,12 @@ export const CameraController: React.FC = () => {
         lastCameraTarget.current.copy(cameraTarget);
     }, [camera, cameraTarget]);
 
-    // Handle teleportation rotation
-    useEffect(() => {
-        if (cameraRotation && cameraRotation !== lastCameraRotation.current) {
-            euler.current.set(
-                cameraRotation[0],
-                cameraRotation[1],
-                cameraRotation[2],
-                "YXZ"
-            );
-            camera.quaternion.setFromEuler(euler.current);
-            lastCameraRotation.current = cameraRotation;
-        }
-    }, [cameraRotation, camera]);
-
-    // Handle teleportation position
-    useEffect(() => {
-        if (!lastCameraTarget.current.equals(cameraTarget)) {
-            camera.position.copy(cameraTarget);
-            targetPosition.current.copy(cameraTarget);
-            lastCameraTarget.current.copy(cameraTarget);
-        }
-    }, [cameraTarget, camera]);
-
     useFrame((_, delta) => {
         const now = window.performance.now();
 
-        // Throttle updates on low quality or when system is stressed
+        // Only throttle updates on desktop low quality - mobile needs smooth updates
         if (
+            !isMobile &&
             performance.quality === "low" &&
             now - lastUpdate.current < updateInterval
         ) {
@@ -81,8 +60,10 @@ export const CameraController: React.FC = () => {
         }
         lastUpdate.current = now;
 
-        // Limit delta time to avoid large jumps
-        const clampedDelta = Math.min(delta, 0.1);
+        // More conservative delta clamping for mobile to prevent large jumps
+        const clampedDelta = isMobile
+            ? Math.min(delta, 0.033)
+            : Math.min(delta, 0.1);
 
         if (controlMode === "firstPerson") {
             // Handle rotation - on mobile, only use virtual rotation
@@ -125,8 +106,8 @@ export const CameraController: React.FC = () => {
             // Reset direction vector
             direction.current.set(0, 0, 0);
 
-            // Movement speed - use the same speed for keyboard and virtual
-            const moveSpeed = 0.15;
+            // Movement speed - adjusted for mobile
+            const moveSpeed = isMobile ? 0.12 : 0.15; // Slightly slower on mobile for better control
 
             // On mobile, only use virtual controls. On desktop, prefer virtual if active, otherwise keyboard
             const useVirtual =
@@ -163,7 +144,8 @@ export const CameraController: React.FC = () => {
                 // Normalize for consistent speed in diagonals
                 direction.current.normalize();
 
-                // Apply speed and delta for frame-rate independence
+                // Proper frame-rate independent movement calculation
+                // Use delta time for smooth movement regardless of framerate
                 direction.current.multiplyScalar(moveSpeed * clampedDelta * 60);
 
                 // Apply to camera position

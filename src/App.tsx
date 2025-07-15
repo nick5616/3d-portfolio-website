@@ -14,9 +14,9 @@ export default function App() {
         // Optimize performance for real mobile devices
         if (isMobile) {
             console.log(
-                "Mobile device detected - setting low performance quality"
+                "Mobile device detected - setting medium performance quality for smoother movement"
             );
-            setPerformanceQuality("low");
+            setPerformanceQuality("medium"); // Changed from "low" to support 60fps movement
         }
     }, [isMobile, setPerformanceQuality]);
 
