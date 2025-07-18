@@ -37,14 +37,6 @@ export const useDeviceDetection = (): DeviceInfo => {
                     userAgent
                 );
 
-            console.log("Mobile detection:", {
-                userAgent: isMobileUserAgent,
-                smallScreen: isSmallScreen,
-                touch: isTouchDevice,
-                result: isMobileDevice,
-                width: window.innerWidth,
-            });
-
             setIsMobile(isMobileDevice);
         };
 

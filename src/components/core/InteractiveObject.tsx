@@ -68,6 +68,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     title={content.title}
                     description={content.description}
                     screenshotUrl={content.screenshotUrl}
+                    crtStyle={content.crtStyle}
                     responsive={content.responsive}
                 />
             );

@@ -7,15 +7,22 @@ import { MouseStateIndicator } from "./MouseStateIndicator";
 import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { Archway } from "../../types/scene.types";
 
 export default function Interface() {
     const { isMobile } = useDeviceDetection();
     const [isHoveringDoor, setIsHoveringDoor] = useState(false);
+    const [currentDoorData, setCurrentDoorData] = useState<{
+        archway: Archway;
+        doorId: string;
+        targetRoomId: string;
+    } | null>(null);
 
     // Listen for door hover events
     useEffect(() => {
         const handleDoorHover = (event: CustomEvent) => {
             setIsHoveringDoor(event.detail.hovering);
+            setCurrentDoorData(event.detail.doorData);
         };
 
         window.addEventListener("doorHover", handleDoorHover as EventListener);
@@ -26,6 +33,48 @@ export default function Interface() {
             );
         };
     }, []);
+
+    // Handle door interaction click
+    const handleDoorClick = (event?: React.MouseEvent | React.TouchEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (currentDoorData) {
+            console.log(
+                `🖱️ UI dispatching click event for door: ${currentDoorData.doorId}`
+            );
+            // Dispatch event that Door component will listen for
+            window.dispatchEvent(
+                new CustomEvent("doorUIClick", {
+                    detail: {
+                        doorId: currentDoorData.doorId,
+                        targetRoomId: currentDoorData.targetRoomId,
+                    },
+                })
+            );
+        }
+    };
+
+    // Handle touch start specifically for mobile
+    const handleDoorTouchStart = (event: React.TouchEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (currentDoorData) {
+            console.log(
+                `📱 UI dispatching touch event for door: ${currentDoorData.doorId}`
+            );
+            // Dispatch event that Door component will listen for
+            window.dispatchEvent(
+                new CustomEvent("doorUIClick", {
+                    detail: {
+                        doorId: currentDoorData.doorId,
+                        targetRoomId: currentDoorData.targetRoomId,
+                    },
+                })
+            );
+        }
+    };
 
     return (
         <div className="fixed inset-0 pointer-events-none">
@@ -43,8 +92,17 @@ export default function Interface() {
             {/* Door interaction prompt */}
             {isHoveringDoor && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 translate-y-8 z-50">
-                    <div className="bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm font-medium">
-                        [Click] Open
+                    <div
+                        className={`bg-black bg-opacity-70 text-white rounded font-medium pointer-events-auto cursor-pointer hover:bg-opacity-90 active:bg-opacity-100 active:scale-95 transition-all duration-150 select-none ${
+                            isMobile
+                                ? "px-4 py-2 text-base min-h-[44px] flex items-center justify-center"
+                                : "px-3 py-1 text-sm"
+                        }`}
+                        onClick={handleDoorClick}
+                        onTouchStart={handleDoorTouchStart}
+                        style={{ touchAction: "manipulation" }}
+                    >
+                        {isMobile ? "Tap to Open" : "[Click] Open"}
                     </div>
                 </div>
             )}

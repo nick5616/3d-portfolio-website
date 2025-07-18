@@ -26,6 +26,7 @@ export const ProjectsRoom: React.FC<ProjectsRoomProps> = ({ config }) => {
             title: display.title,
             description: display.description,
             screenshotUrl: display.screenshotUrl,
+            crtStyle: display.crtStyle,
             responsive: display.responsive,
         },
     }));

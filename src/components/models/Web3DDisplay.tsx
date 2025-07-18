@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, {
+    useRef,
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+} from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
@@ -15,11 +21,166 @@ export interface Web3DDisplayProps {
     height?: number;
     screenshotUrl?: string;
     description?: string;
+    crtStyle?: boolean; // Enable 3D CRT monitor styling
     responsive?: {
         desktop: { width: number; height: number };
         mobile: { width: number; height: number };
     };
 }
+
+interface CRTGlassPanelProps {
+    displayWidth: number;
+    displayHeight: number;
+    isMobileDisplay: boolean;
+    position: [number, number, number]; // Individual positioning for each display
+}
+
+const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
+    displayWidth,
+    displayHeight,
+    isMobileDisplay,
+    position,
+}) => {
+    // Create custom shader material for CRT glass effect
+    const glassMaterial = useMemo(() => {
+        const material = new THREE.MeshPhysicalMaterial({
+            transparent: true,
+            opacity: 0.25, // More visible opacity for better glass effect
+            transmission: 0.75, // Balanced transmission
+            roughness: 0.02, // Very smooth glass
+            metalness: 0.0,
+            clearcoat: 1.0, // Full clearcoat for glass shine
+            clearcoatRoughness: 0.005, // Very smooth clearcoat
+            ior: 1.52, // Standard glass IOR
+            thickness: 0.08, // Thicker for more visible effect
+            color: new THREE.Color(0.88, 1.0, 0.92), // Slight green tint like CRT glass
+            side: THREE.DoubleSide, // Render both sides
+            depthWrite: false, // Don't write to depth buffer
+            reflectivity: 0.15, // More reflection for visibility
+        });
+
+        return material;
+    }, []);
+
+    // Create curved geometry for CRT glass
+    const glassGeometry = useMemo(() => {
+        const width = displayWidth / 400;
+        const height = displayHeight / 400;
+
+        // Create a thick, convex CRT glass that bulges outward (like real CRTs)
+        // Use a much smaller radius and larger arc to create noticeable curvature
+        const radius = Math.max(width, height) * 0.8; // Smaller radius for more pronounced curve
+
+        const geometry = new THREE.SphereGeometry(
+            radius,
+            64, // High resolution for smooth curve
+            32,
+            Math.PI * 0.4, // Start further back for more curve
+            Math.PI * 0.2, // Larger arc for visible 3D bulge
+            Math.PI * 0.4, // Vertical start
+            Math.PI * 0.2 // Larger vertical arc
+        );
+
+        // Scale to match display dimensions while preserving the 3D bulge
+        const scaleX = width / (radius * Math.PI * 0.2);
+        const scaleY = height / (radius * Math.PI * 0.2);
+        const scaleZ = 1.5; // Amplify the Z depth for visible convex bulge
+
+        geometry.scale(scaleX, scaleY, scaleZ);
+
+        // Move the geometry forward so the bulge extends toward the viewer
+        geometry.translate(0, 0, 0.08);
+
+        return geometry;
+    }, [displayWidth, displayHeight]);
+
+    // Reference for the mesh
+    const meshRef = useRef<THREE.Mesh>(null);
+
+    // Position glass flush with the display surface
+    const glassPosition: [number, number, number] = [
+        0, // Centered on display
+        0, // Centered on display
+        -3.22, // Just slightly in front of display surface
+    ];
+
+    return (
+        <group>
+            {/* Retro CRT Monitor Housing */}
+            <group>
+                {/* Main CRT Body - Deep box like 2000s monitors */}
+                <mesh position={[0, 0, -0.3]}>
+                    <boxGeometry
+                        args={[
+                            displayWidth / 400 + 0.3, // Much wider than display
+                            displayHeight / 400 + 0.3, // Much taller than display
+                            0.6, // Deep CRT tube depth
+                        ]}
+                    />
+                    <meshStandardMaterial
+                        color="#e8e8e8" // Classic beige/off-white
+                        roughness={0.4}
+                        metalness={0.1}
+                    />
+                </mesh>
+
+                {/* Front Bezel */}
+                <mesh position={[0, 0, 0.01]}>
+                    <boxGeometry
+                        args={[
+                            displayWidth / 400 + 0.15,
+                            displayHeight / 400 + 0.15,
+                            0.08,
+                        ]}
+                    />
+                    <meshStandardMaterial
+                        color="#f0f0f0" // Slightly lighter front
+                        roughness={0.3}
+                        metalness={0.05}
+                    />
+                </mesh>
+
+                {/* Power LED */}
+                <mesh
+                    position={[
+                        (displayWidth / 400 + 0.15) / 2 - 0.05,
+                        -(displayHeight / 400 + 0.15) / 2 + 0.05,
+                        0.05,
+                    ]}
+                >
+                    <sphereGeometry args={[0.008, 8, 8]} />
+                    <meshStandardMaterial
+                        color="#00ff00"
+                        emissive="#00ff00"
+                        emissiveIntensity={0.5}
+                    />
+                </mesh>
+
+                {/* Brand Label */}
+                <mesh
+                    position={[
+                        -(displayWidth / 400 + 0.15) / 2 + 0.1,
+                        -(displayHeight / 400 + 0.15) / 2 + 0.03,
+                        0.05,
+                    ]}
+                >
+                    <planeGeometry args={[0.15, 0.03]} />
+                    <meshStandardMaterial color="#333333" />
+                </mesh>
+            </group>
+
+            {/* Curved CRT Glass with proper positioning */}
+            <mesh
+                position={glassPosition}
+                geometry={glassGeometry}
+                material={glassMaterial}
+                ref={meshRef}
+                renderOrder={-5} // Render before HTML content
+                raycast={() => null} // Disable raycasting to prevent interaction interference
+            />
+        </group>
+    );
+};
 
 export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     position,
@@ -31,6 +192,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     height = 700,
     screenshotUrl,
     description,
+    crtStyle = false,
     responsive,
 }) => {
     const displayRef = useRef<THREE.Group>(null);
@@ -237,51 +399,65 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             rotation={rotation}
             scale={scale}
         >
-            {/* Physical display frame - minimal bezel for flush look */}
-            <mesh>
-                <boxGeometry
-                    args={[
-                        displayWidth / 400 + (isMobileDisplay ? 0.05 : 0.1), // Ultra-thin frame for mobile
-                        displayHeight / 400 + (isMobileDisplay ? 0.05 : 0.1),
-                        0.02, // Much thinner depth
-                    ]}
-                />
-                <meshStandardMaterial
-                    color={isMobileDisplay ? "#2c2c2c" : "#1a1a1a"}
-                    metalness={isMobileDisplay ? 0.8 : 0.5}
-                    roughness={isMobileDisplay ? 0.1 : 0.2}
-                />
-            </mesh>
+            {/* Physical display frame - only for non-CRT displays */}
+            {!crtStyle && (
+                <mesh>
+                    <boxGeometry
+                        args={[
+                            displayWidth / 400 + (isMobileDisplay ? 0.05 : 0.1), // Ultra-thin frame for mobile
+                            displayHeight / 400 +
+                                (isMobileDisplay ? 0.05 : 0.1),
+                            0.02, // Much thinner depth
+                        ]}
+                    />
+                    <meshStandardMaterial
+                        color={isMobileDisplay ? "#2c2c2c" : "#1a1a1a"}
+                        metalness={isMobileDisplay ? 0.8 : 0.5}
+                        roughness={isMobileDisplay ? 0.1 : 0.2}
+                    />
+                </mesh>
+            )}
 
-            {/* Stand - adjusted for thinner display frame */}
-            <mesh
-                position={[
-                    0,
-                    -(displayHeight / 400 + (isMobileDisplay ? 0.05 : 0.1)) /
-                        2 -
-                        0.15,
-                    0.15,
-                ]}
-                rotation={[-Math.PI / 6, 0, 0]}
-            >
-                <boxGeometry args={[0.4, 1.2, 0.05]} />{" "}
-                {/* Made taller to reach thinner frame */}
-                <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
-            </mesh>
+            {/* Stand and base - only for non-CRT displays */}
+            {!crtStyle && (
+                <>
+                    {/* Stand - adjusted for thinner display frame */}
+                    <mesh
+                        position={[
+                            0,
+                            -(
+                                displayHeight / 400 +
+                                (isMobileDisplay ? 0.05 : 0.1)
+                            ) /
+                                2 -
+                                0.15,
+                            0.15,
+                        ]}
+                        rotation={[-Math.PI / 6, 0, 0]}
+                    >
+                        <boxGeometry args={[0.4, 1.2, 0.05]} />{" "}
+                        {/* Made taller to reach thinner frame */}
+                        <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
+                    </mesh>
 
-            {/* Base - adjusted positioning */}
-            <mesh
-                position={[
-                    0,
-                    -(displayHeight / 400 + (isMobileDisplay ? 0.05 : 0.1)) /
-                        2 -
-                        0.8,
-                    0.4,
-                ]}
-            >
-                <boxGeometry args={[0.6, 0.1, 0.4]} />
-                <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
-            </mesh>
+                    {/* Base - adjusted positioning */}
+                    <mesh
+                        position={[
+                            0,
+                            -(
+                                displayHeight / 400 +
+                                (isMobileDisplay ? 0.05 : 0.1)
+                            ) /
+                                2 -
+                                0.8,
+                            0.4,
+                        ]}
+                    >
+                        <boxGeometry args={[0.6, 0.1, 0.4]} />
+                        <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
+                    </mesh>
+                </>
+            )}
 
             {/* Holographic Effects for Nicolas Display */}
             {isNicolasDisplay && (
@@ -363,10 +539,19 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 </group>
             )}
 
+            {/* CRT Glass Panel with Barrel Distortion - only if CRT style is enabled */}
+            {crtStyle && (
+                <CRTGlassPanel
+                    displayWidth={displayWidth}
+                    displayHeight={displayHeight}
+                    isMobileDisplay={isMobileDisplay}
+                    position={position}
+                />
+            )}
+
             {/* Web content using Html component */}
             <Html
                 transform
-                occlude
                 position={[0, 0, 0.015]} // Much closer to frame for flush look
                 distanceFactor={1}
                 style={{
@@ -379,6 +564,18 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                     boxShadow: isMobileDisplay
                         ? "0 8px 24px rgba(0,0,0,0.4)" // Deeper shadow for mobile
                         : "0 4px 12px rgba(0,0,0,0.2)", // Subtle shadow for desktop
+                    ...(crtStyle && {
+                        filter: "brightness(0.95) contrast(1.1) blur(0.3px)", // CRT effect with slight blur
+                        transform: "perspective(1000px) rotateX(0.5deg)", // Subtle perspective for CRT curvature
+                        background: `
+                            radial-gradient(ellipse at center, 
+                                transparent 0%, 
+                                transparent 85%, 
+                                rgba(0,0,0,0.1) 100%
+                            )
+                        `, // Barrel distortion edge darkening
+                        backgroundBlendMode: "multiply",
+                    }),
                 }}
             >
                 <div
@@ -981,6 +1178,86 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 📺
                             </div>
                             <div>Click "View in Display" to load content</div>
+                        </div>
+                    )}
+
+                    {/* CRT Barrel Distortion Overlay */}
+                    {crtStyle && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: isMobileDisplay ? "44px" : "40px",
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                pointerEvents: "none", // Don't block interactions
+                                background: `
+                                    radial-gradient(ellipse 100% 100% at center,
+                                        transparent 0%,
+                                        transparent 70%,
+                                        rgba(0,0,0,0.02) 75%,
+                                        rgba(0,0,0,0.05) 80%,
+                                        rgba(0,0,0,0.08) 85%,
+                                        rgba(0,0,0,0.12) 90%,
+                                        rgba(0,0,0,0.2) 100%
+                                    )
+                                `,
+                                mixBlendMode: "multiply",
+                                borderRadius: isMobileDisplay
+                                    ? "0 0 12px 12px"
+                                    : "0 0 4px 4px",
+                                zIndex: 1000, // On top of everything
+                            }}
+                        >
+                            {/* Scanlines effect */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: `
+                                        repeating-linear-gradient(
+                                            0deg,
+                                            transparent,
+                                            transparent 1px,
+                                            rgba(0,0,0,0.03) 1px,
+                                            rgba(0,0,0,0.03) 2px
+                                        )
+                                    `,
+                                    mixBlendMode: "multiply",
+                                }}
+                            />
+
+                            {/* Corner reflections */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: "10%",
+                                    left: "10%",
+                                    width: "15%",
+                                    height: "15%",
+                                    background:
+                                        "radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%)",
+                                    borderRadius: "50%",
+                                    transform: "rotate(-30deg)",
+                                }}
+                            />
+
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: "20%",
+                                    right: "15%",
+                                    width: "8%",
+                                    height: "12%",
+                                    background:
+                                        "radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%)",
+                                    borderRadius: "50%",
+                                    transform: "rotate(45deg)",
+                                }}
+                            />
                         </div>
                     )}
 

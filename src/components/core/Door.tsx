@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -81,35 +81,38 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
     const theme = getRoomTheme(archway.targetRoomId);
 
-    const handleTeleport = (source: "click" | "collision") => {
-        console.log(
-            `🚪 Door ${source}: ${archway.id} -> ${archway.targetRoomId}`
-        );
+    const handleTeleport = useCallback(
+        (source: "click" | "collision") => {
+            console.log(
+                `🚪 Door ${source}: ${archway.id} -> ${archway.targetRoomId}`
+            );
 
-        // Use entrance point if available, otherwise use archway position
-        const entrancePosition = archway.entrancePoint?.position || [
-            archway.position[0],
-            3,
-            archway.position[2],
-        ];
+            // Use entrance point if available, otherwise use archway position
+            const entrancePosition = archway.entrancePoint?.position || [
+                archway.position[0],
+                3,
+                archway.position[2],
+            ];
 
-        // Add 180-degree rotation to the entrance rotation
-        const baseRotation = archway.entrancePoint?.rotation || [0, 0, 0];
-        const entranceRotation = [
-            baseRotation[0],
-            baseRotation[1] + Math.PI, // 180 degrees
-            baseRotation[2],
-        ];
+            // Add 180-degree rotation to the entrance rotation
+            const baseRotation = archway.entrancePoint?.rotation || [0, 0, 0];
+            const entranceRotation = [
+                baseRotation[0],
+                baseRotation[1] + Math.PI, // 180 degrees
+                baseRotation[2],
+            ];
 
-        console.log(`📍 Teleporting to:`, entrancePosition);
-        console.log(`🔄 With 180° rotation:`, entranceRotation);
+            console.log(`📍 Teleporting to:`, entrancePosition);
+            console.log(`🔄 With 180° rotation:`, entranceRotation);
 
-        teleportToRoom(
-            archway.targetRoomId,
-            entrancePosition as [number, number, number],
-            entranceRotation as [number, number, number]
-        );
-    };
+            teleportToRoom(
+                archway.targetRoomId,
+                entrancePosition as [number, number, number],
+                entranceRotation as [number, number, number]
+            );
+        },
+        [archway, teleportToRoom]
+    );
 
     const handleDoorClick = () => {
         handleTeleport("click");
@@ -142,6 +145,25 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         }, 100);
     }, [isInTrigger, isTransitioning, handleTeleport]);
 
+    // Listen for UI click events
+    useEffect(() => {
+        const handleUIClick = (event: CustomEvent) => {
+            if (event.detail.doorId === archway.id) {
+                console.log(`🖱️ UI Click received for door: ${archway.id}`);
+                handleTeleport("click");
+            }
+        };
+
+        window.addEventListener("doorUIClick", handleUIClick as EventListener);
+
+        return () => {
+            window.removeEventListener(
+                "doorUIClick",
+                handleUIClick as EventListener
+            );
+        };
+    }, [archway.id, handleTeleport]);
+
     // Cleanup hover state on unmount
     useEffect(() => {
         return () => {
@@ -160,10 +182,10 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
         // Cast ray from camera center
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersects = raycaster.intersectObject(doorMeshRef.current);
+        const intersects = raycaster.intersectObject(doorMeshRef.current, true); // Include children
 
         // Check if door is hit by raycast AND within interaction range
-        const maxInteractionDistance = 5; // Maximum distance for door interaction
+        const maxInteractionDistance = 6; // Maximum distance for door interaction
         const nowHovering =
             intersects.length > 0 &&
             intersects[0].distance <= maxInteractionDistance;
@@ -171,7 +193,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         if (nowHovering !== isHoveringFromCenter) {
             setIsHoveringFromCenter(nowHovering);
 
-            // Dispatch custom event to UI
+            // Dispatch custom event to UI with door interaction data
             window.dispatchEvent(
                 new CustomEvent("doorHover", {
                     detail: {
@@ -180,6 +202,14 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                             intersects.length > 0
                                 ? intersects[0].distance
                                 : Infinity,
+                        // Pass door interaction data for UI click handling
+                        doorData: nowHovering
+                            ? {
+                                  archway: archway,
+                                  doorId: archway.id,
+                                  targetRoomId: archway.targetRoomId,
+                              }
+                            : null,
                     },
                 })
             );
@@ -306,6 +336,22 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     />
                 </mesh>
             )}
+
+            {/* Invisible larger mesh for easier clicking/interaction */}
+            <mesh
+                position={[
+                    archway.position[0],
+                    archway.position[1] + archway.height / 2,
+                    archway.position[2],
+                ]}
+                rotation={archway.rotation}
+                visible={false}
+            >
+                <boxGeometry
+                    args={[archway.width * 2, archway.height * 1.5, 1]}
+                />
+                <meshBasicMaterial transparent opacity={0} />
+            </mesh>
 
             {/* Collision trigger for walking into door */}
             <RigidBody

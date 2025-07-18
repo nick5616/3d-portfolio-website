@@ -41,11 +41,23 @@ export const CameraController: React.FC = () => {
         ? 1000 / 30 // 30fps for medium quality desktop
         : 1000 / 60; // 60fps for high quality desktop
 
-    // Store camera's current position when mounted
+    // Store camera's current position when mounted and handle teleportation rotation
     useEffect(() => {
         targetPosition.current.copy(camera.position);
         lastCameraTarget.current.copy(cameraTarget);
-    }, [camera, cameraTarget]);
+
+        // Apply camera rotation from teleportation
+        if (cameraRotation && cameraRotation !== lastCameraRotation.current) {
+            euler.current.set(
+                cameraRotation[0],
+                cameraRotation[1],
+                cameraRotation[2],
+                "YXZ"
+            );
+            camera.quaternion.setFromEuler(euler.current);
+            lastCameraRotation.current = cameraRotation;
+        }
+    }, [camera, cameraTarget, cameraRotation]);
 
     useFrame((_, delta) => {
         const now = window.performance.now();

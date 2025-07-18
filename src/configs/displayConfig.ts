@@ -7,6 +7,7 @@ export interface DisplayConfig {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
+    crtStyle?: boolean; // Enable 3D CRT monitor styling with thick curved glass and retro box
     responsive: {
         desktop: {
             width: number;
@@ -71,6 +72,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [-9, 2, 3],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        crtStyle: true, // Enable retro CRT styling
         responsive: {
             desktop: desktopDimensions.imaginaryDesktop,
             mobile: mobileDimensions.pixel7,
@@ -135,6 +137,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [-5, 2, -9],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
+        crtStyle: true, // Enable retro CRT styling
         responsive: {
             desktop: { width: 1200, height: 800 },
             mobile: { width: 375, height: 667 },

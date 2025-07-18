@@ -202,7 +202,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 height: 4,
                 entrancePoint: {
                     position: [7, 0.1, 0] as [number, number, number],
-                    rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+                    rotation: [0, -Math.PI, 0] as [number, number, number],
                 },
             },
             {

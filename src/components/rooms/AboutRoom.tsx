@@ -6,6 +6,7 @@ import { Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
 import { InteractiveEasel } from "../models/InteractiveEasel";
+import { CourageComputer } from "../models/CourageComputer";
 
 interface AboutRoomProps {
     config: RoomConfig;
@@ -373,6 +374,13 @@ me                />
             <InteractiveEasel
                 position={[0, 0, 14]}
                 rotation={[0, Math.PI, 0]}
+            />
+
+            {/* Courage the Cowardly Dog Style AI Computer */}
+            <CourageComputer
+                position={[6, 2, -14]}
+                rotation={[0, -Math.PI / 4, 0]}
+                scale={[1.5, 1.5, 1.5]}
             />
 
             {/* "About Me" section with creative typography on wall */}
