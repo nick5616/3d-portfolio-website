@@ -18,7 +18,6 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
     // References for animations
     const crtScreenRef = useRef<THREE.Mesh>(null);
     const scanLineRef = useRef<THREE.Mesh>(null);
-    const glassRef = useRef<THREE.Mesh>(null);
     const powerLEDRef = useRef<THREE.Mesh>(null);
 
     // AI personality state
@@ -61,39 +60,42 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
         });
     }, []);
 
-    // Curved CRT glass geometry
-    const crtGlassGeometry = useMemo(() => {
-        const radius = 1.2;
-        const geometry = new THREE.SphereGeometry(
-            radius,
-            64,
-            32,
-            Math.PI * 0.42,
-            Math.PI * 0.16,
-            Math.PI * 0.42,
-            Math.PI * 0.16
-        );
+    // Low-poly curved glass - visible effect, good performance
+    const curvedGlassGeometry = useMemo(() => {
+        // Create a simple curved plane using PlaneGeometry with subdivision
+        const geometry = new THREE.PlaneGeometry(1.7, 1.1, 8, 6); // Low subdivision for performance
 
-        geometry.scale(2.85, 1.8, 1.17);
-        geometry.translate(0, 0, -0.1);
+        // Apply subtle curve by modifying vertex positions
+        const positionAttribute = geometry.getAttribute("position");
+        const positions = positionAttribute.array as Float32Array;
+
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = positions[i];
+            const y = positions[i + 1];
+
+            // Calculate distance from center for curve effect
+            const distanceFromCenter = Math.sqrt(x * x + y * y);
+            const maxDistance = Math.sqrt(0.9 * 0.9 + 0.6 * 0.6); // Half width/height
+            const normalizedDistance = distanceFromCenter / maxDistance;
+
+            // Apply inward curve (concave like real CRT glass)
+            const curve = normalizedDistance * normalizedDistance * -0.08; // Negative for inward curve
+            positions[i + 2] = curve; // Move Z position backward (inward)
+        }
+
+        positionAttribute.needsUpdate = true;
+        geometry.computeVertexNormals();
 
         return geometry;
     }, []);
 
-    // CRT glass material
-    const crtGlassMaterial = useMemo(() => {
-        return new THREE.MeshPhysicalMaterial({
+    const curvedGlassMaterial = useMemo(() => {
+        return new THREE.MeshStandardMaterial({
             transparent: true,
-            opacity: 0.3,
-            transmission: 0.7,
+            opacity: 0.15,
+            color: new THREE.Color(0.88, 1.0, 0.92),
             roughness: 0.02,
             metalness: 0.0,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.005,
-            ior: 1.52,
-            thickness: 0.1,
-            color: new THREE.Color(0.85, 1.0, 0.9),
-            side: THREE.DoubleSide,
             depthWrite: false,
         });
     }, []);
@@ -162,10 +164,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
             material.emissiveIntensity = 0.8 + Math.sin(elapsed * 3) * 0.4;
         }
 
-        // Glass subtle animation
-        if (glassRef.current) {
-            glassRef.current.rotation.y = Math.sin(elapsed * 0.5) * 0.01;
-        }
+        // No glass animation needed anymore
     });
 
     return (
@@ -285,15 +284,11 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                 </mesh>
             </RigidBody>
 
-            {/* Curved CRT Glass Panel */}
-            <mesh
-                ref={glassRef}
-                position={[0, 0.05, -1.12]}
-                geometry={crtGlassGeometry}
-                material={crtGlassMaterial}
-                renderOrder={1}
-                raycast={() => null}
-            />
+            {/* Low-poly curved CRT glass panel */}
+            <mesh position={[0, 0.04, 0.19]}>
+                <primitive object={curvedGlassGeometry} />
+                <primitive object={curvedGlassMaterial} />
+            </mesh>
 
             {/* AI Text Display */}
             <Text
