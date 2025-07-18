@@ -101,7 +101,7 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
     const glassPosition: [number, number, number] = [
         0, // Centered on display
         0, // Centered on display
-        -3.22, // Just slightly in front of display surface
+        0.02, // Just slightly in front of display surface
     ];
 
     return (

@@ -378,7 +378,7 @@ me                />
 
             {/* Courage the Cowardly Dog Style AI Computer */}
             <CourageComputer
-                position={[6, 2, -14]}
+                position={[7, 2, -12]}
                 rotation={[0, -Math.PI / 4, 0]}
                 scale={[1.5, 1.5, 1.5]}
             />
