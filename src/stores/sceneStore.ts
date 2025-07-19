@@ -88,7 +88,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     performance: {
         showStats: false,
         monitoring: true,
-        quality: "high",
+        quality: "high", // Ensure default is high quality
     },
     minimap: {
         enabled: true,

@@ -24,6 +24,11 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
     // Simple wall rendering - just render solid walls
     const renderWall = useMemo(
         () => (wall: any) => {
+            // Calculate correct wall dimensions based on orientation
+            const wallDimensions: [number, number, number] = wall.isVertical
+                ? [depth, height, wallThickness] // East/West walls use depth
+                : [width, height, wallThickness]; // North/South walls use width
+
             return (
                 <RigidBody
                     type="fixed"
@@ -32,13 +37,13 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     collisionGroups={interactionGroups(0, [0])}
                 >
                     <mesh position={wall.position} rotation={wall.rotation}>
-                        <boxGeometry args={[width, height, wallThickness]} />
+                        <boxGeometry args={wallDimensions} />
                         <primitive object={materials.walls} attach="material" />
                     </mesh>
                 </RigidBody>
             );
         },
-        [width, height, wallThickness, materials.walls]
+        [width, height, depth, wallThickness, materials.walls]
     );
 
     // Determine which room component to render based on room type

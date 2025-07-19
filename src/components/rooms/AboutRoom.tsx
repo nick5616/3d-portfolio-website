@@ -38,9 +38,19 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     // Current URL state
     const [currentUrl] = React.useState("https://saucedog.art");
 
-    // Animation for pulsing light and spinning elements
+    // Animation for pulsing light and spinning elements - throttled for performance
+    const lastAnimationUpdate = useRef(0);
+    const ANIMATION_INTERVAL = 1000 / 30; // 30fps instead of 60fps
+
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
+        const now = window.performance.now();
+
+        // Throttle animation updates to 30fps
+        if (now - lastAnimationUpdate.current < ANIMATION_INTERVAL) {
+            return;
+        }
+        lastAnimationUpdate.current = now;
 
         if (pulsingLightRef.current) {
             pulsingLightRef.current.intensity =
@@ -96,24 +106,21 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             <RoomComments roomId={config.id} />
 
             {/* Interactive drawing easel */}
-            <InteractiveEasel
-                position={[0, 0, 14]}
-                rotation={[0, Math.PI, 0]}
-            />
+            <InteractiveEasel position={[0, 0, 9]} rotation={[0, Math.PI, 0]} />
 
             {/* Courage the Cowardly Dog Style AI Computer */}
             <CourageComputer
-                position={[7, 2, -12]}
+                position={[6, 1.5, -8]}
                 rotation={[0, -Math.PI / 4, 0]}
-                scale={[1.5, 1.5, 1.5]}
+                scale={[1.2, 1.2, 1.2]}
             />
 
             {/* "About Me" section with creative typography on wall */}
-            <group position={[0, 4, -8]}>
+            <group position={[0, 3, -9.5]}>
                 <Text
-                    position={[0, 1, -1.9]}
+                    position={[0, 1, -0.4]}
                     rotation={[0, 0, 0]}
-                    fontSize={1}
+                    fontSize={0.8}
                     color="#8A2BE2"
                     anchorX="center"
                     anchorY="middle"
@@ -122,9 +129,9 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                 </Text>
 
                 <Text
-                    position={[-3, 0, -1.9]}
+                    position={[-3, 0, -0.4]}
                     rotation={[0, 0, 0]}
-                    fontSize={0.8}
+                    fontSize={0.6}
                     color="#20B2AA"
                     anchorX="center"
                     anchorY="middle"
@@ -133,9 +140,9 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                 </Text>
 
                 <Text
-                    position={[3, 0, -1.9]}
+                    position={[3, 0, -0.4]}
                     rotation={[0, 0, 0]}
-                    fontSize={0.8}
+                    fontSize={0.6}
                     color="#FF8C00"
                     anchorX="center"
                     anchorY="middle"
@@ -150,19 +157,23 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     penumbra={0.7}
                     intensity={1.2}
                     color="#FFFAF0"
+                    castShadow={false}
                 />
             </group>
 
             {/* Exercise corner with weighted calisthenics equipment */}
-            <group position={[7, 0, -7]}>
+            <group position={[6, 0, -6]}>
                 {/* Exercise mat */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+                <mesh
+                    rotation={[-Math.PI / 2, 0, Math.PI / 2]}
+                    position={[-1, 0.01, 2]}
+                >
                     <planeGeometry args={[3, 2]} />
                     <meshStandardMaterial color="#4682B4" roughness={0.9} />
                 </mesh>
 
                 {/* Weights */}
-                <mesh position={[-0.8, 0.3, 0.5]}>
+                <mesh position={[-0.25, 0.3, 2]} rotation={[0, 0, Math.PI / 2]}>
                     <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
                     <meshStandardMaterial
                         color="#2F4F4F"
@@ -171,7 +182,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     />
                 </mesh>
 
-                <mesh position={[0.8, 0.3, 0.5]}>
+                <mesh position={[-1.75, 0.3, 2]} rotation={[0, 0, Math.PI / 2]}>
                     <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
                     <meshStandardMaterial
                         color="#2F4F4F"
@@ -181,7 +192,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                 </mesh>
 
                 {/* Exercise bar */}
-                <mesh position={[0, 0.3, 0.5]} rotation={[0, Math.PI / 2, 0]}>
+                <mesh position={[-1, 0.3, 2]} rotation={[0, 0, Math.PI / 2]}>
                     <cylinderGeometry args={[0.05, 0.05, 1.8, 8]} />
                     <meshStandardMaterial
                         color="#A9A9A9"
@@ -198,11 +209,12 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     penumbra={0.5}
                     intensity={0.8}
                     color="#F0FFFF"
+                    castShadow={false}
                 />
             </group>
 
             {/* 🚀 WALL-MOUNTED HOLOGRAPHIC CONTROL STATION - North Wall */}
-            <group position={[-5, 1.6, -14.5]} rotation={[0, 0, 0]}>
+            <group position={[-4, 1.6, -9.8]} rotation={[0, 0, 0]}>
                 {/* Wall Mount Base */}
                 <RigidBody type="fixed" colliders="cuboid">
                     <mesh position={[0, 0, -0.2]}>
@@ -482,8 +494,8 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                         />
                     </mesh>
 
-                    {/* Floating holographic keys */}
-                    {Array.from({ length: 42 }).map((_, i) => {
+                    {/* Floating holographic keys - reduced for performance */}
+                    {Array.from({ length: 21 }).map((_, i) => {
                         const x = (i % 14) * 0.18 - 1.17;
                         const z = Math.floor(i / 14) * 0.18 - 0.18;
                         return (
@@ -553,12 +565,12 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     penumbra={0.7}
                     intensity={2.5}
                     color="#0077ff"
-                    castShadow
+                    castShadow={false}
                 />
 
-                {/* Floating UI elements */}
+                {/* Floating UI elements - reduced for performance */}
                 <group position={[-3, 2.5, -1]}>
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({ length: 3 }).map((_, i) => (
                         <mesh
                             key={i}
                             position={[0, i * 0.3, Math.sin(i) * 0.2]}
@@ -578,7 +590,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                 </group>
 
                 <group position={[3, 2.5, -1]}>
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({ length: 3 }).map((_, i) => (
                         <mesh
                             key={i}
                             position={[0, i * 0.3, Math.cos(i) * 0.2]}
@@ -598,25 +610,25 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                 </group>
             </group>
 
-            {/* Ambient, more subtle room lighting with warm tones */}
+            {/* Ambient, more subtle room lighting with warm tones - reduced for smaller room */}
             <pointLight
-                position={[0, 6, 0]}
-                intensity={0.4}
-                distance={15}
+                position={[0, 4, 0]}
+                intensity={0.3}
+                distance={12}
                 color="#FFD700"
             />
 
             <pointLight
-                position={[-7, 3, -7]}
-                intensity={0.3}
-                distance={10}
+                position={[-6, 2, -6]}
+                intensity={0.2}
+                distance={8}
                 color="#FFA07A"
             />
 
             <pointLight
-                position={[7, 3, 7]}
-                intensity={0.3}
-                distance={10}
+                position={[6, 2, 6]}
+                intensity={0.2}
+                distance={8}
                 color="#B0C4DE"
             />
         </>

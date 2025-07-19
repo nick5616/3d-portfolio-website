@@ -49,15 +49,15 @@ export const PerformanceOverlay: React.FC = () => {
                     fpsHistoryRef.current.shift(); // Keep last 10 seconds
                 }
 
-                // Auto-adjust quality based on performance
-                const now = currentTime;
-                if (
-                    now - lastQualityAdjustmentRef.current >=
-                    QUALITY_ADJUSTMENT_COOLDOWN
-                ) {
-                    adjustQualityBasedOnFPS();
-                    lastQualityAdjustmentRef.current = now;
-                }
+                // Auto-adjust quality based on performance - DISABLED to prevent unwanted downgrades
+                // const now = currentTime;
+                // if (
+                //     now - lastQualityAdjustmentRef.current >=
+                //     QUALITY_ADJUSTMENT_COOLDOWN
+                // ) {
+                //     adjustQualityBasedOnFPS();
+                //     lastQualityAdjustmentRef.current = now;
+                // }
 
                 frameCountRef.current = 0;
                 lastTimeRef.current = currentTime;

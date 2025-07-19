@@ -398,7 +398,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "about",
         name: "About & Contact",
         position: [20, 0, 0] as [number, number, number],
-        dimensions: [20, 10, 30],
+        dimensions: [16, 8, 20],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#FFF5E1" },
             directional: {
