@@ -111,9 +111,219 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             {/* Courage the Cowardly Dog Style AI Computer */}
             <CourageComputer
                 position={[6, 1.5, -8]}
-                rotation={[0, -Math.PI / 4, 0]}
+                rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1.2]}
             />
+
+            {/* Simple House Structure around Courage Computer */}
+            <group position={[6, 0, -8]}>
+                {/* Wooden floor */}
+                <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <planeGeometry args={[4.2, 4]} />
+                    <meshStandardMaterial
+                        color="#8B4513"
+                        roughness={0.8}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Back wall (where computer is mounted) - full wall */}
+                <mesh position={[0, 2, -2]}>
+                    <boxGeometry args={[4, 4, 0.2]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Left wall with doorway - left side of door */}
+                <mesh position={[-2, 2, -1.5]}>
+                    <boxGeometry args={[0.2, 4, 1]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Left wall with doorway - right side of door */}
+                <mesh position={[-2, 2, 1.5]}>
+                    <boxGeometry args={[0.2, 4, 1]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Left wall with doorway - top of doorway */}
+                <mesh position={[-2, 3.5, 0]}>
+                    <boxGeometry args={[0.2, 1, 2]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Right wall - full wall */}
+                <mesh position={[2, 2, 0]}>
+                    <boxGeometry args={[0.2, 4, 4]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Front wall - full wall */}
+                <mesh position={[0, 2, 2]}>
+                    <boxGeometry args={[4, 4, 0.2]} />
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* 45-degree peaked roof - left side (rotated 90 degrees, flipped) */}
+                <mesh
+                    position={[0, 4.83, -1]}
+                    rotation={[0, Math.PI / 2, -Math.PI / 4]}
+                >
+                    <boxGeometry args={[2.83, 0.2, 4]} />
+                    <meshStandardMaterial
+                        color="#8B0000"
+                        roughness={0.7}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* 45-degree peaked roof - right side (rotated 90 degrees, flipped) */}
+                <mesh
+                    position={[0, 4.83, 1]}
+                    rotation={[0, Math.PI / 2, Math.PI / 4]}
+                >
+                    <boxGeometry args={[2.83, 0.2, 4]} />
+                    <meshStandardMaterial
+                        color="#8B0000"
+                        roughness={0.7}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Left end cap - actual isosceles triangle */}
+                <mesh
+                    position={[-2, 4.83, 0]}
+                    rotation={[Math.PI / 2, Math.PI / 2, 0]}
+                >
+                    <bufferGeometry>
+                        <bufferAttribute
+                            attach="attributes-position"
+                            count={3}
+                            array={
+                                new Float32Array([
+                                    -2,
+                                    -2,
+                                    0, // bottom left
+                                    -2,
+                                    -2,
+                                    0, // bottom right
+                                    2,
+                                    4,
+                                    0, // top center
+                                ])
+                            }
+                            itemSize={3}
+                        />
+                        <bufferAttribute
+                            attach="index"
+                            count={3}
+                            array={new Uint16Array([0, 1, 2])}
+                            itemSize={1}
+                        />
+                    </bufferGeometry>
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                        side={THREE.DoubleSide}
+                        transparent
+                        opacity={0.9}
+                    />
+                </mesh>
+
+                {/* Right end cap - actual isosceles triangle */}
+                {/* <mesh
+                    position={[2, 4.83, 0]}
+                    rotation={[Math.PI / 2, Math.PI / 2, Math.PI]}
+                >
+                    <bufferGeometry>
+                        <bufferAttribute
+                            attach="attributes-position"
+                            count={3}
+                            array={
+                                new Float32Array([
+                                    -3,
+                                    -2,
+                                    0, // bottom left
+                                    0,
+                                    -2,
+                                    0, // bottom right
+                                    0,
+                                    0,
+                                    0, // top center
+                                ])
+                            }
+                            itemSize={3}
+                        />
+                        <bufferAttribute
+                            attach="index"
+                            count={3}
+                            array={new Uint16Array([0, 1, 2])}
+                            itemSize={1}
+                        />
+                    </bufferGeometry>
+                    <meshStandardMaterial
+                        color="#DEB887"
+                        roughness={0.9}
+                        map={null}
+                        side={THREE.DoubleSide}
+                        transparent
+                        opacity={0.9}
+                    />
+                </mesh> */}
+
+                {/* Small window on left triangle above door */}
+                <mesh position={[-1.99, 4.7, 0]} rotation={[0, Math.PI / 2, 0]}>
+                    <circleGeometry args={[0.3, 8]} />
+                    <meshStandardMaterial
+                        color="#87CEEB"
+                        transparent
+                        opacity={0.7}
+                        roughness={0.1}
+                    />
+                </mesh>
+
+                {/* Window frame */}
+                <mesh position={[-1.98, 4.7, 0]} rotation={[0, Math.PI / 2, 0]}>
+                    <ringGeometry args={[0.3, 0.35, 8]} />
+                    <meshStandardMaterial
+                        color="#654321"
+                        roughness={0.8}
+                        map={null}
+                    />
+                </mesh>
+
+                {/* Interior lighting to match the show's atmosphere */}
+                <pointLight
+                    position={[0, 3, 0]}
+                    intensity={0.8}
+                    distance={6}
+                    color="#FFE4B5"
+                />
+            </group>
 
             {/* "About Me" section with creative typography on wall */}
             <group position={[0, 3, -9.5]}>
