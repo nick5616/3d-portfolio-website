@@ -225,7 +225,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 2,
                 height: 3,
                 entrancePoint: {
-                    position: [-7, 0.1, 0] as [number, number, number],
+                    position: [-3.5, 0.1, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
@@ -398,7 +398,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "about",
         name: "About & Contact",
         position: [20, 0, 0] as [number, number, number],
-        dimensions: [16, 8, 20],
+        dimensions: [9, 8, 9],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#FFF5E1" },
             directional: {
@@ -408,87 +408,71 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             spots: [
                 {
-                    position: [-7, 6, -8] as [number, number, number],
-                    target: [-7, 0, -8] as [number, number, number],
+                    position: [-3, 6, -3] as [number, number, number],
+                    target: [-3, 0, -3] as [number, number, number],
                     intensity: 0.7,
                     color: "#FFA07A",
                 },
                 {
-                    position: [-8, 5, 0] as [number, number, number],
-                    target: [-8, 2, 0] as [number, number, number],
+                    position: [-3.5, 5, 0] as [number, number, number],
+                    target: [-3.5, 2, 0] as [number, number, number],
                     intensity: 0.8,
                     color: "#F9EAD0",
                 },
                 {
-                    position: [0, 5, 7] as [number, number, number],
-                    target: [0, 1, 7] as [number, number, number],
+                    position: [0, 5, 3.5] as [number, number, number],
+                    target: [0, 1, 3.5] as [number, number, number],
                     intensity: 0.6,
                     color: "#6A5ACD",
                 },
                 {
-                    position: [8, 5, 0] as [number, number, number],
-                    target: [8, 2, 0] as [number, number, number],
+                    position: [3.5, 5, 0] as [number, number, number],
+                    target: [3.5, 2, 0] as [number, number, number],
                     intensity: 0.7,
                     color: "#48D1CC",
                 },
                 {
-                    position: [7, 5, -7] as [number, number, number],
-                    target: [7, 0, -7] as [number, number, number],
+                    position: [3, 5, -3] as [number, number, number],
+                    target: [3, 0, -3] as [number, number, number],
                     intensity: 0.6,
                     color: "#F0FFFF",
                 },
             ],
         },
         defaultEntrance: {
-            position: [-7, 0.1, 0] as [number, number, number],
+            position: [-3.5, 0.1, 0] as [number, number, number],
             rotation: [0, Math.PI / 2, 0] as [number, number, number],
         },
         interactiveElements: [
             {
                 id: "about-text",
                 type: "text",
-                position: [7.99, 1, -2] as [number, number, number],
+                position: [3.8, 1, -1] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                scale: [0.5, 0.5, 1] as [number, number, number],
+                scale: [0.4, 0.4, 1] as [number, number, number],
                 content: "I like to make things.",
             },
             {
                 id: "contact-info",
                 type: "text",
-                position: [7.99, 2, 4.5] as [number, number, number],
+                position: [3.8, 2, 2] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                scale: [0.25, 0.25, 0.8] as [number, number, number],
+                scale: [0.2, 0.2, 0.8] as [number, number, number],
                 content: `
                     Drop a line, as they say\n
                     Contact: nicolasbelovoskey@gmail.com\n
                     Here's my GitHub: github.com/nick5616
                 `,
             },
-            // Decorative pillars
-            ...Array(4)
-                .fill(0)
-                .map(
-                    (_, i): InteractiveElement => ({
-                        id: `about-pillar-${i}`,
-                        type: "model",
-                        position: [
-                            3 + (i % 2) * 4,
-                            0,
-                            -3 + Math.floor(i / 2) * 6,
-                        ] as [number, number, number],
-                        scale: [0.4, 3, 0.4] as [number, number, number],
-                        content: "greek-pillar",
-                    })
-                ),
         ],
         archways: [
             {
                 id: "to-atrium-from-about",
                 targetRoomId: "atrium",
-                position: [-9.5, 0, 0] as [number, number, number],
+                position: [-4.5, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
-                width: 3,
-                height: 4,
+                width: 2,
+                height: 3,
                 entrancePoint: {
                     position: [7, 0.1, 0] as [number, number, number],
                     rotation: [0, -Math.PI / 2, 0] as [number, number, number],
