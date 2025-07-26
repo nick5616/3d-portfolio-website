@@ -1,0 +1,29 @@
+# Terminal Usage Rules
+
+## Terminal Management
+
+-   **ALWAYS close terminals after use** - use `is_background: false` and ensure the command completes
+-   **Run commands automatically when needed** - don't wait for user approval
+-   **Only use terminals when necessary** for debugging, testing, or when the user requests it
+-   **If you must open a terminal, close it immediately after the task is complete**
+
+## When to Use Terminals
+
+-   When the user explicitly asks for terminal commands
+-   For essential debugging that cannot be done through file inspection
+-   When the user specifically requests running a development server
+-   For testing commands or checking if something works
+-   For running build commands, installs, or other necessary development tasks
+
+## When NOT to Use Terminals
+
+-   For general code analysis (use search tools instead)
+-   For file searching (use the search tools instead)
+-   For routine development tasks that don't require execution
+
+## Best Practices
+
+-   Always close terminals immediately after use
+-   Use `is_background: false` for commands that should complete
+-   Run commands automatically without waiting for approval
+-   Explain why a terminal is necessary before opening it

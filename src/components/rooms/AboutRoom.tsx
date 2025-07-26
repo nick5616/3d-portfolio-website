@@ -105,6 +105,18 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             {/* Room annotation comments */}
             <RoomComments roomId={config.id} />
 
+            {/* Door frame/border */}
+            <mesh position={[-7.7, 2, 0.15]} rotation={[0, Math.PI / 2, 0]}>
+                <boxGeometry args={[3.4, 4.4, 0.01]} />
+                <meshStandardMaterial color="#654321" roughness={0.8} />
+            </mesh>
+
+            {/* Simple door rectangle */}
+            <mesh position={[-7.7, 2, 0.15]} rotation={[0, Math.PI / 2, 0]}>
+                <boxGeometry args={[3, 4, 0.05]} />
+                <meshStandardMaterial color="#FF0000" roughness={0.6} />
+            </mesh>
+
             {/* Interactive drawing easel */}
             <InteractiveEasel position={[0, 0, 9]} rotation={[0, Math.PI, 0]} />
 
@@ -819,6 +831,16 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     ))}
                 </group>
             </group>
+
+            {/* --- MAIN ROOM EXIT DOOR (rectangular prism) --- */}
+            <mesh position={[-9.5, 2, 0]}>
+                <boxGeometry args={[3, 4, 0.15]} />
+                <meshStandardMaterial
+                    color="#8B5C2A"
+                    roughness={0.5}
+                    metalness={0.2}
+                />
+            </mesh>
 
             {/* Ambient, more subtle room lighting with warm tones - reduced for smaller room */}
             <pointLight
