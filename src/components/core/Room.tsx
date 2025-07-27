@@ -113,10 +113,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             {config.id === "about" ? (
                 // About room (holodeck) handles its own walls and environment
                 <>
-                    {/* Just provide floor collision for about room */}
+                    {/* Floor collision for about room - covers entire 8x8 room */}
                     <RigidBody type="fixed" colliders="cuboid">
                         <mesh position={[0, -0.25, 0]} receiveShadow>
-                            <boxGeometry args={[width, 0.5, depth]} />
+                            <boxGeometry args={[8, 0.5, 8]} />
                             <meshStandardMaterial color="#444444" />
                         </mesh>
                     </RigidBody>

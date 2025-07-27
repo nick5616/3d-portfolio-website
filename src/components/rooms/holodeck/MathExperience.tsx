@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { MathGameHUD } from "./MathGameHUD";
+import { RigidBody, interactionGroups } from "@react-three/rapier";
 
 interface Meteor {
     id: number;
@@ -79,6 +80,40 @@ export const MathExperience: React.FC<MathExperienceProps> = () => {
 
     return (
         <group>
+            {/* Collision walls for space environment */}
+            {[
+                // Back wall (north)
+                {
+                    pos: [0, 2.5, -4] as [number, number, number],
+                    size: [8, 5, 0.1] as [number, number, number],
+                },
+                // Front wall (south)
+                {
+                    pos: [0, 2.5, 4] as [number, number, number],
+                    size: [8, 5, 0.1] as [number, number, number],
+                },
+                // Left wall (west)
+                {
+                    pos: [-4, 2.5, 0] as [number, number, number],
+                    size: [0.1, 5, 8] as [number, number, number],
+                },
+                // Right wall (east)
+                {
+                    pos: [4, 2.5, 0] as [number, number, number],
+                    size: [0.1, 5, 8] as [number, number, number],
+                },
+            ].map((wall, i) => (
+                <RigidBody
+                    key={`math-wall-${i}`}
+                    type="fixed"
+                    colliders="cuboid"
+                >
+                    <mesh position={wall.pos} visible={false}>
+                        <boxGeometry args={wall.size} />
+                    </mesh>
+                </RigidBody>
+            ))}
+
             {/* Space environment - center focus */}
 
             {/* Space floor */}

@@ -186,11 +186,14 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
             })}
 
             {/* Ambient lighting for the panel */}
-            <pointLight
-                position={[0, 0, 0.5]}
-                intensity={0.5}
-                distance={3}
+            <spotLight
+                position={[0, 0, 0.8]}
+                intensity={0.8}
+                distance={4}
+                angle={Math.PI / 3}
+                penumbra={0.5}
                 color="#00ffff"
+                target-position={[0, 0, 0]}
             />
         </group>
     );

@@ -1,10 +1,45 @@
 import React from "react";
 import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
+import { RigidBody, interactionGroups } from "@react-three/rapier";
 
 export const ArtExperience: React.FC = () => {
     return (
         <group>
+            {/* Collision walls for art classroom */}
+            {[
+                // Back wall (north)
+                {
+                    pos: [0, 2.5, -4] as [number, number, number],
+                    size: [8, 5, 0.1] as [number, number, number],
+                },
+                // Front wall (south)
+                {
+                    pos: [0, 2.5, 4] as [number, number, number],
+                    size: [8, 5, 0.1] as [number, number, number],
+                },
+                // Left wall (west)
+                {
+                    pos: [-4, 2.5, 0] as [number, number, number],
+                    size: [0.1, 5, 8] as [number, number, number],
+                },
+                // Right wall (east)
+                {
+                    pos: [4, 2.5, 0] as [number, number, number],
+                    size: [0.1, 5, 8] as [number, number, number],
+                },
+            ].map((wall, i) => (
+                <RigidBody
+                    key={`art-wall-${i}`}
+                    type="fixed"
+                    colliders="cuboid"
+                >
+                    <mesh position={wall.pos} visible={false}>
+                        <boxGeometry args={wall.size} />
+                    </mesh>
+                </RigidBody>
+            ))}
+
             {/* Classroom tile floor */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[8, 8]} />

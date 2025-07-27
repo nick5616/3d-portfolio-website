@@ -124,75 +124,45 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
         <>
             <RoomComments roomId={config.id} />
 
-            {/* Invisible collision walls - let HolodeckGrid handle visuals */}
-            {[
-                // North wall (back)
-                {
-                    pos: [0, height / 2, -depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    size: [width, height, wallThickness] as [
-                        number,
-                        number,
-                        number
-                    ],
-                },
-                // South wall (front) - with archway gap
-                {
-                    pos: [width / 4, height / 2, depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    size: [width / 2, height, wallThickness] as [
-                        number,
-                        number,
-                        number
-                    ],
-                },
-                // East wall (right)
-                {
-                    pos: [width / 2, height / 2, 0] as [number, number, number],
-                    size: [wallThickness, height, depth] as [
-                        number,
-                        number,
-                        number
-                    ],
-                },
-                // West wall (left) - with archway gap
-                {
-                    pos: [-width / 2, height / 2, depth / 4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    size: [wallThickness, height, depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                },
-                {
-                    pos: [-width / 2, height / 2, -depth / 4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    size: [wallThickness, height, depth / 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                },
-            ].map((wall, i) => (
-                <RigidBody key={`wall-${i}`} type="fixed" colliders="cuboid">
-                    <mesh position={wall.pos} visible={false}>
-                        <boxGeometry args={wall.size} />
-                    </mesh>
-                </RigidBody>
-            ))}
+            {/* Collision walls - only when no experience is active */}
+            {currentExperience === "off" &&
+                [
+                    // Back wall (north) - full width
+                    {
+                        pos: [0, 2.5, -4] as [number, number, number],
+                        size: [8, 5, 0.1] as [number, number, number],
+                    },
+                    // Front wall (south) - full width
+                    {
+                        pos: [0, 2.5, 4] as [number, number, number],
+                        size: [8, 5, 0.1] as [number, number, number],
+                    },
+                    // Left wall (west) top section - wider door gap from z=-1.5 to z=1.5
+                    {
+                        pos: [-4, 2.5, -2.75] as [number, number, number],
+                        size: [0.1, 5, 2.5] as [number, number, number],
+                    },
+                    // Left wall (west) bottom section
+                    {
+                        pos: [-4, 2.5, 2.75] as [number, number, number],
+                        size: [0.1, 5, 2.5] as [number, number, number],
+                    },
+                    // Right wall (east) - full depth
+                    {
+                        pos: [4, 2.5, 0] as [number, number, number],
+                        size: [0.1, 5, 8] as [number, number, number],
+                    },
+                ].map((wall, i) => (
+                    <RigidBody
+                        key={`wall-${i}`}
+                        type="fixed"
+                        colliders="cuboid"
+                    >
+                        <mesh position={wall.pos} visible={false}>
+                            <boxGeometry args={wall.size} />
+                        </mesh>
+                    </RigidBody>
+                ))}
 
             {/* Control panel (always visible) */}
             <HolodeckControlPanel

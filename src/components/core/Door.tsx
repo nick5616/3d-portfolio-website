@@ -219,123 +219,32 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     return (
         <group>
             {/* Themed Door */}
-            {theme.isArched ? (
-                // Arched door for classical/artistic rooms
-                <group
-                    ref={doorMeshRef as any}
-                    position={[
-                        archway.position[0],
-                        archway.position[1],
-                        archway.position[2],
-                    ]}
-                    rotation={archway.rotation}
-                    onClick={handleDoorClick}
-                    onPointerOver={(e) =>
-                        (document.body.style.cursor = "pointer")
+
+            <mesh
+                ref={doorMeshRef as any}
+                position={[
+                    archway.position[0],
+                    archway.position[1] + archway.height / 2,
+                    archway.position[2],
+                ]}
+                rotation={archway.rotation}
+                castShadow
+                receiveShadow
+                onClick={handleDoorClick}
+                onPointerOver={(e) => (document.body.style.cursor = "pointer")}
+                onPointerOut={(e) => (document.body.style.cursor = "default")}
+            >
+                <boxGeometry args={[archway.width, archway.height, 0.15]} />
+                <meshStandardMaterial
+                    color={isHoveringFromCenter ? theme.glowColor : theme.color}
+                    roughness={archway.targetRoomId === "projects" ? 0.1 : 0.6}
+                    metalness={archway.targetRoomId === "projects" ? 0.8 : 0.1}
+                    emissive={
+                        isHoveringFromCenter ? theme.glowColor : "#000000"
                     }
-                    onPointerOut={(e) =>
-                        (document.body.style.cursor = "default")
-                    }
-                >
-                    {/* Main door rectangle */}
-                    <mesh
-                        position={[0, archway.height * 0.4, 0]}
-                        castShadow
-                        receiveShadow
-                    >
-                        <boxGeometry
-                            args={[archway.width, archway.height * 0.8, 0.15]}
-                        />
-                        <meshStandardMaterial
-                            color={
-                                isHoveringFromCenter
-                                    ? theme.glowColor
-                                    : theme.color
-                            }
-                            roughness={0.6}
-                            metalness={0.1}
-                            emissive={
-                                isHoveringFromCenter
-                                    ? theme.glowColor
-                                    : "#000000"
-                            }
-                            emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
-                        />
-                    </mesh>
-                    {/* Arch top */}
-                    <mesh
-                        position={[0, archway.height * 0.85, 0]}
-                        rotation={[Math.PI / 2, 0, 0]} // Rotate 90 degrees around X to face upward
-                        castShadow
-                        receiveShadow
-                    >
-                        <cylinderGeometry
-                            args={[
-                                archway.width / 2,
-                                archway.width / 2,
-                                0.15,
-                                16,
-                                1,
-                                false,
-                                -Math.PI / 2,
-                                Math.PI,
-                            ]}
-                        />
-                        <meshStandardMaterial
-                            color={
-                                isHoveringFromCenter
-                                    ? theme.glowColor
-                                    : theme.color
-                            }
-                            roughness={0.6}
-                            metalness={0.1}
-                            emissive={
-                                isHoveringFromCenter
-                                    ? theme.glowColor
-                                    : "#000000"
-                            }
-                            emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
-                        />
-                    </mesh>
-                </group>
-            ) : (
-                // Rectangular door for modern rooms
-                <mesh
-                    ref={doorMeshRef as any}
-                    position={[
-                        archway.position[0],
-                        archway.position[1] + archway.height / 2,
-                        archway.position[2],
-                    ]}
-                    rotation={archway.rotation}
-                    castShadow
-                    receiveShadow
-                    onClick={handleDoorClick}
-                    onPointerOver={(e) =>
-                        (document.body.style.cursor = "pointer")
-                    }
-                    onPointerOut={(e) =>
-                        (document.body.style.cursor = "default")
-                    }
-                >
-                    <boxGeometry args={[archway.width, archway.height, 0.15]} />
-                    <meshStandardMaterial
-                        color={
-                            isHoveringFromCenter ? theme.glowColor : theme.color
-                        }
-                        roughness={
-                            archway.targetRoomId === "projects" ? 0.1 : 0.6
-                        }
-                        metalness={
-                            archway.targetRoomId === "projects" ? 0.8 : 0.1
-                        }
-                        emissive={
-                            isHoveringFromCenter ? theme.glowColor : "#000000"
-                        }
-                        emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
-                    />
-                </mesh>
-            )}
+                    emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
+                />
+            </mesh>
 
             {/* Invisible larger mesh for easier clicking/interaction */}
             <mesh
@@ -391,7 +300,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             {/* Room Label */}
             <group
                 position={[
-                    archway.position[0] + 0.2,
+                    archway.position[0],
                     archway.position[1] + archway.height * 1.2,
                     archway.position[2] + 0.08,
                 ]}
@@ -425,7 +334,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             <group
                 position={[
                     archway.position[0],
-                    archway.position[1] + archway.height * 0.15,
+                    archway.position[1] + archway.height * 0.8,
                     archway.position[2] + 0.08,
                 ]}
                 rotation={archway.rotation}
@@ -455,9 +364,9 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             {/* Door Handle */}
             <mesh
                 position={[
-                    archway.position[0] + archway.width * 0.08,
+                    archway.position[0] + archway.width * -0.3,
                     archway.position[1] + archway.height / 2,
-                    archway.position[2] + 0.5,
+                    archway.position[2] + 0.15,
                 ]}
                 rotation={archway.rotation}
             >
