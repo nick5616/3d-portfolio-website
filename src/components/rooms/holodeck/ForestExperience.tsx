@@ -6,7 +6,7 @@ export const ForestExperience: React.FC = () => {
         <group>
             {/* Forest floor */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshStandardMaterial color="#2F4F2F" roughness={0.9} />
             </mesh>
 

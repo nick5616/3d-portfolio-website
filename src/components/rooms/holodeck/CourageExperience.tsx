@@ -8,7 +8,7 @@ export const CourageExperience: React.FC = () => {
 
             {/* Wooden floorboards */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshStandardMaterial color="#8B4513" roughness={0.9} />
             </mesh>
 
@@ -19,7 +19,7 @@ export const CourageExperience: React.FC = () => {
                     position={[-0.5, 0.105, (i - 5.5) * 0.7]}
                     rotation={[-Math.PI / 2, 0, 0]}
                 >
-                    <planeGeometry args={[9, 0.02]} />
+                    <planeGeometry args={[8, 0.02]} />
                     <meshStandardMaterial color="#654321" />
                 </mesh>
             ))}
@@ -27,24 +27,24 @@ export const CourageExperience: React.FC = () => {
             {/* Wooden walls with vertical planks */}
             {[
                 {
-                    pos: [-0.5, 2.5, -3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, -4] as [number, number, number],
                     rot: [0, 0, 0] as [number, number, number],
                     width: 8,
                 },
                 {
-                    pos: [-0.5, 2.5, 3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, 4] as [number, number, number],
                     rot: [0, Math.PI, 0] as [number, number, number],
                     width: 8,
                 },
                 {
                     pos: [-4.5, 2.5, 0] as [number, number, number],
                     rot: [0, Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
+                    width: 8,
                 },
                 {
                     pos: [3.5, 2.5, 0] as [number, number, number],
                     rot: [0, -Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
+                    width: 8,
                 },
             ].map((wall, idx) => (
                 <group
@@ -77,7 +77,7 @@ export const CourageExperience: React.FC = () => {
 
             {/* Wooden ceiling with beams */}
             <mesh position={[-0.5, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshStandardMaterial color="#8B4513" roughness={0.9} />
             </mesh>
 
@@ -94,7 +94,7 @@ export const CourageExperience: React.FC = () => {
             ))}
 
             {/* The iconic wooden desk - positioned on left wall */}
-            <group position={[-2.5, 0, 0]}>
+            <group position={[0, 0, -3]} rotation={[0, Math.PI / 2, 0]}>
                 {/* Desktop */}
                 <mesh position={[0, 0.8, 0]}>
                     <boxGeometry args={[1.2, 0.1, 2.5]} />
@@ -130,7 +130,7 @@ export const CourageExperience: React.FC = () => {
             </group>
 
             {/* Wooden chair - facing the computer */}
-            <group position={[-1.2, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <group position={[0, 0, -2]} rotation={[0, Math.PI, 0]}>
                 {/* Seat */}
                 <mesh position={[0, 0.5, 0]}>
                     <boxGeometry args={[0.7, 0.08, 0.7]} />
@@ -138,7 +138,7 @@ export const CourageExperience: React.FC = () => {
                 </mesh>
 
                 {/* Backrest */}
-                <mesh position={[0, 1, -0.3]}>
+                <mesh position={[0, 0.9, -0.31]}>
                     <boxGeometry args={[0.7, 0.8, 0.08]} />
                     <meshStandardMaterial color="#8B4513" roughness={0.7} />
                 </mesh>
@@ -159,8 +159,8 @@ export const CourageExperience: React.FC = () => {
 
             {/* The Courage Computer on the desk */}
             <CourageComputer
-                position={[-2.5, 1.5, 0]}
-                rotation={[0, Math.PI / 2, 0]}
+                position={[0, 1.5, -3]}
+                rotation={[0, 0, 0]}
                 scale={[0.6, 0.6, 0.6]}
             />
 
@@ -180,7 +180,7 @@ export const CourageExperience: React.FC = () => {
             />
 
             {/* Window with countryside view - on right wall */}
-            <group position={[3.9, 2.5, -1]}>
+            <group position={[3.4, 2, -2.5]} rotation={[0, -Math.PI / 2, 0]}>
                 <mesh>
                     <planeGeometry args={[1.5, 1.2]} />
                     <meshBasicMaterial
@@ -190,10 +190,11 @@ export const CourageExperience: React.FC = () => {
                     />
                 </mesh>
                 {/* Window frame */}
-                <mesh position={[0, 0, 0.01]}>
-                    <ringGeometry args={[0.7, 0.8, 16]} />
+                {/* // TODO: add square window frame */}
+                {/* <mesh position={[0, 0, 0.01]}>
+                    <boxGeometry args={[0.7, 0.8, 0.02]} />
                     <meshStandardMaterial color="#654321" />
-                </mesh>
+                </mesh> */}
                 {/* Window cross */}
                 <mesh position={[0, 0, 0.02]}>
                     <boxGeometry args={[1.5, 0.04, 0.02]} />
@@ -206,7 +207,10 @@ export const CourageExperience: React.FC = () => {
             </group>
 
             {/* Old carpet under desk */}
-            <mesh position={[-2, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh
+                position={[0, 0.11, -2.5]}
+                rotation={[-Math.PI / 2, 0, Math.PI / 2]}
+            >
                 <planeGeometry args={[2.5, 3]} />
                 <meshStandardMaterial color="#800080" roughness={0.9} />
             </mesh>

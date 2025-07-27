@@ -10,19 +10,15 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
         <group ref={gridWallsRef}>
             {/* Floor grid - positioned to align with archway entrance */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
-                <meshStandardMaterial
-                    color="#f0f0f0"
-                    transparent
-                    opacity={0.8}
-                />
+                <planeGeometry args={[8, 8]} />
+                <meshStandardMaterial color="#f0f0f0" />
             </mesh>
 
             {/* Grid lines on floor */}
-            {Array.from({ length: 19 }).map((_, i) => (
+            {Array.from({ length: 17 }).map((_, i) => (
                 <React.Fragment key={`floor-${i}`}>
                     <mesh
-                        position={[(i - 9) * 0.5 - 0.5, 0.11, 0]}
+                        position={[(i - 8) * 0.5 - 0.5, 0.11, 0]}
                         rotation={[-Math.PI / 2, 0, 0]}
                     >
                         <planeGeometry args={[0.02, 8]} />
@@ -38,7 +34,7 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
                         position={[-0.5, 0.11, (i - 8) * 0.5]}
                         rotation={[-Math.PI / 2, 0, 0]}
                     >
-                        <planeGeometry args={[9, 0.02]} />
+                        <planeGeometry args={[8, 0.02]} />
                         <meshStandardMaterial
                             color="#00ffff"
                             emissive="#00ffff"
@@ -53,24 +49,24 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
             {/* Wall grids - floor to ceiling */}
             {[
                 {
-                    pos: [-0.5, 2.5, -3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, -4] as [number, number, number],
                     rot: [0, 0, 0] as [number, number, number],
                     width: 8,
                 }, // Back
                 {
-                    pos: [-0.5, 2.5, 3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, 4] as [number, number, number],
                     rot: [0, Math.PI, 0] as [number, number, number],
                     width: 8,
                 }, // Front
                 {
                     pos: [-4.5, 2.5, 0] as [number, number, number],
                     rot: [0, Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
+                    width: 8,
                 }, // Left
                 {
                     pos: [3.5, 2.5, 0] as [number, number, number],
                     rot: [0, -Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
+                    width: 8,
                 }, // Right
             ].map((wall, idx) => (
                 <group
@@ -115,20 +111,16 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
             ))}
 
             {/* Ceiling grid */}
-            <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[-0.5, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[8, 8]} />
-                <meshStandardMaterial
-                    color="#f0f0f0"
-                    transparent
-                    opacity={0.6}
-                />
+                <meshStandardMaterial color="#f0f0f0" />
             </mesh>
 
             {/* Grid lines on ceiling */}
             {Array.from({ length: 17 }).map((_, i) => (
                 <React.Fragment key={`ceiling-${i}`}>
                     <mesh
-                        position={[(i - 8) * 0.5, 4.99, 0]}
+                        position={[(i - 8) * 0.5 - 0.5, 4.99, 0]}
                         rotation={[Math.PI / 2, 0, 0]}
                     >
                         <planeGeometry args={[0.02, 8]} />
@@ -141,7 +133,7 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
                         />
                     </mesh>
                     <mesh
-                        position={[0, 4.99, (i - 8) * 0.5]}
+                        position={[-0.5, 4.99, (i - 8) * 0.5]}
                         rotation={[Math.PI / 2, 0, 0]}
                     >
                         <planeGeometry args={[8, 0.02]} />

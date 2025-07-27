@@ -88,7 +88,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                         config={config}
                         materials={materials}
                         wallThickness={wallThickness}
-                        width={width}
+                        width={8}
                         height={height}
                         depth={depth}
                     />
@@ -110,17 +110,32 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
     // Render room based on room type - always at origin since we only render current room
     return (
         <group position={[0, 0, 0]}>
-            <BaseRoom
-                config={config}
-                materials={materials}
-                wallThickness={wallThickness}
-                renderWall={renderWall}
-                width={width}
-                height={height}
-                depth={depth}
-            >
-                {renderRoomComponent()}
-            </BaseRoom>
+            {config.id === "about" ? (
+                // About room (holodeck) handles its own walls and environment
+                <>
+                    {/* Just provide floor collision for about room */}
+                    <RigidBody type="fixed" colliders="cuboid">
+                        <mesh position={[0, -0.25, 0]} receiveShadow>
+                            <boxGeometry args={[width, 0.5, depth]} />
+                            <meshStandardMaterial color="#444444" />
+                        </mesh>
+                    </RigidBody>
+                    {renderRoomComponent()}
+                </>
+            ) : (
+                // All other rooms use BaseRoom
+                <BaseRoom
+                    config={config}
+                    materials={materials}
+                    wallThickness={wallThickness}
+                    renderWall={renderWall}
+                    width={width}
+                    height={height}
+                    depth={depth}
+                >
+                    {renderRoomComponent()}
+                </BaseRoom>
+            )}
             <Preload all />
         </group>
     );

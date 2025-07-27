@@ -6,7 +6,7 @@ export const FitnessExperience: React.FC = () => {
         <group>
             {/* Dark industrial gym floor */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshStandardMaterial color="#2F2F2F" roughness={0.8} />
             </mesh>
 
@@ -22,41 +22,8 @@ export const FitnessExperience: React.FC = () => {
                 </mesh>
             ))}
 
-            {/* Mirror walls - all 4 walls */}
-            {[
-                {
-                    pos: [-0.5, 2.5, -3.5] as [number, number, number],
-                    rot: [0, 0, 0] as [number, number, number],
-                    width: 8,
-                },
-                {
-                    pos: [-0.5, 2.5, 3.5] as [number, number, number],
-                    rot: [0, Math.PI, 0] as [number, number, number],
-                    width: 8,
-                },
-                {
-                    pos: [-4.5, 2.5, 0] as [number, number, number],
-                    rot: [0, Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
-                },
-                {
-                    pos: [3.5, 2.5, 0] as [number, number, number],
-                    rot: [0, -Math.PI / 2, 0] as [number, number, number],
-                    width: 7,
-                },
-            ].map((wall, idx) => (
-                <mesh key={idx} position={wall.pos} rotation={wall.rot}>
-                    <planeGeometry args={[wall.width, 5]} />
-                    <meshStandardMaterial
-                        color="#E6E6FA"
-                        metalness={0.9}
-                        roughness={0.1}
-                    />
-                </mesh>
-            ))}
-
-            {/* Pull-up instructions poster - on front wall (opposite control panel) */}
-            <group position={[0, 3, 3.4]}>
+            {/* Pull-up instructions poster - on left wall */}
+            <group position={[-4.49, 3, 0]} rotation={[0, Math.PI / 2, 0]}>
                 <mesh>
                     <planeGeometry args={[3, 2]} />
                     <meshStandardMaterial color="#FFFFFF" roughness={0.8} />
@@ -68,71 +35,55 @@ export const FitnessExperience: React.FC = () => {
                     <meshStandardMaterial color="#000000" />
                 </mesh>
 
-                <Html position={[0, 0, 0.02]} center>
-                    <div
-                        style={{
-                            width: "300px",
-                            height: "200px",
-                            background: "white",
-                            padding: "10px",
-                            fontFamily: "Arial, sans-serif",
-                            fontSize: "11px",
-                            color: "#000",
-                            textAlign: "left",
-                            lineHeight: "1.3",
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: "14px",
-                                fontWeight: "bold",
-                                textAlign: "center",
-                                marginBottom: "8px",
-                                color: "#FF0000",
-                            }}
-                        >
-                            PERFECT PULL-UP TECHNIQUE
-                        </div>
-                        <div style={{ fontSize: "10px" }}>
-                            <div style={{ marginBottom: "4px" }}>
-                                <strong>GRIP:</strong> Hands shoulder-width
-                                apart. Grip like you're tearing a towel in half
-                                - firm but not crushing.
-                            </div>
-                            <div style={{ marginBottom: "4px" }}>
-                                <strong>SETUP:</strong> Start with bar behind
-                                your head/neck. Keep shoulders back and down.
-                            </div>
-                            <div style={{ marginBottom: "4px" }}>
-                                <strong>PULL:</strong> Drive elbows down and
-                                back. Think about straightening your spine, not
-                                just going up.
-                            </div>
-                            <div style={{ marginBottom: "4px" }}>
-                                <strong>SCAPULA:</strong> Keep shoulder blades
-                                tight and engaged throughout the entire
-                                movement.
-                            </div>
-                            <div style={{ marginBottom: "4px" }}>
-                                <strong>DESCENT:</strong> Control the negative.
-                                Feel your body's momentum. Master your own
-                                weight.
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: "9px",
-                                    fontStyle: "italic",
-                                    textAlign: "center",
-                                    marginTop: "6px",
-                                    color: "#666",
-                                }}
-                            >
-                                "Pull-ups are the ultimate test of functional
-                                strength - your body against gravity."
-                            </div>
-                        </div>
-                    </div>
-                </Html>
+                {/* Title */}
+                <Text
+                    position={[0, 0.7, 0.02]}
+                    rotation={[0, 0, 0]}
+                    fontSize={0.12}
+                    color="#FF0000"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={2.8}
+                >
+                    PERFECT PULL-UP TECHNIQUE
+                </Text>
+
+                {/* Instructions */}
+                <Text
+                    position={[0, 0.2, 0.02]}
+                    rotation={[0, 0, 0]}
+                    fontSize={0.06}
+                    color="#000000"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={2.6}
+                    textAlign="left"
+                >
+                    {`GRIP: Hands shoulder-width apart. Grip like you're tearing a towel in half - firm but not crushing.
+
+SETUP: Start with bar behind your head/neck. Keep shoulders back and down.
+
+PULL: Drive elbows down and back. Think about straightening your spine, not just going up.
+
+SCAPULA: Keep shoulder blades tight and engaged throughout the entire movement.
+
+DESCENT: Control the negative. Feel your body's momentum. Master your own weight.`}
+                </Text>
+
+                {/* Quote */}
+                <Text
+                    position={[0, -0.6, 0.02]}
+                    rotation={[0, 0, 0]}
+                    fontSize={0.05}
+                    color="#666666"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={2.6}
+                    fontStyle="italic"
+                >
+                    "Pull-ups are the ultimate test of functional strength -
+                    your body against gravity."
+                </Text>
             </group>
 
             {/* Weight rack - against back wall */}
@@ -226,7 +177,7 @@ export const FitnessExperience: React.FC = () => {
                 anchorX="center"
                 anchorY="middle"
             >
-                💪 NO PAIN, NO GAIN 💪
+                NO PAIN, NO GAIN
             </Text>
 
             {/* Gym lighting */}

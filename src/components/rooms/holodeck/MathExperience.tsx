@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Html } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { MathGameHUD } from "./MathGameHUD";
 
 interface Meteor {
@@ -13,12 +14,8 @@ interface Meteor {
     color?: string;
 }
 
-interface MathExperienceProps {
-    meteors: Meteor[];
-    score: number;
-    setScore: React.Dispatch<React.SetStateAction<number>>;
-    setMeteors: React.Dispatch<React.SetStateAction<Meteor[]>>;
-}
+// Remove the props interface since we're managing state internally now
+interface MathExperienceProps {}
 
 const METEOR_COLORS = [
     "#FF4500", // Red-Orange
@@ -29,12 +26,51 @@ const METEOR_COLORS = [
     "#00CED1", // Dark Turquoise
 ];
 
-export const MathExperience: React.FC<MathExperienceProps> = ({
-    meteors,
-    score,
-    setScore,
-    setMeteors,
-}) => {
+export const MathExperience: React.FC<MathExperienceProps> = () => {
+    // Move math game state here from AboutRoom
+    const [meteors, setMeteors] = useState<Meteor[]>([]);
+    const [score, setScore] = useState(0);
+    const meteorIdCounter = useRef(0);
+
+    // Animation loop with meteor spawning logic moved from AboutRoom
+    useFrame(() => {
+        // Update meteors
+        setMeteors((prev) =>
+            prev
+                .map((meteor) => ({
+                    ...meteor,
+                    y: meteor.y - 0.02,
+                }))
+                .filter((meteor) => meteor.y > -5)
+        );
+
+        // Spawn new meteor occasionally - support multiple meteors
+        if (Math.random() < 0.015 && meteors.length < 6) {
+            const num1 = Math.floor(Math.random() * 9) + 1;
+            const num2 = Math.floor(Math.random() * 9) + 1;
+            const answer = num1 * num2;
+            const choices = [answer];
+            while (choices.length < 4) {
+                const wrong = Math.floor(Math.random() * 81) + 1;
+                if (!choices.includes(wrong)) choices.push(wrong);
+            }
+            choices.sort(() => Math.random() - 0.5);
+
+            setMeteors((prev) => [
+                ...prev,
+                {
+                    id: meteorIdCounter.current++,
+                    x: (Math.random() - 0.5) * 8,
+                    y: 8,
+                    z: (Math.random() - 0.5) * 8,
+                    problem: `${num1} × ${num2}`,
+                    answer,
+                    choices,
+                },
+            ]);
+        }
+    });
+
     // Assign colors to meteors consistently
     const coloredMeteors = meteors.map((meteor, index) => ({
         ...meteor,
@@ -47,7 +83,7 @@ export const MathExperience: React.FC<MathExperienceProps> = ({
 
             {/* Space floor */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshBasicMaterial color="#000011" />
             </mesh>
 

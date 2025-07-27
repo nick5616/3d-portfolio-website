@@ -7,7 +7,7 @@ export const ArtExperience: React.FC = () => {
         <group>
             {/* Classroom tile floor */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[9, 8]} />
+                <planeGeometry args={[8, 8]} />
                 <meshStandardMaterial color="#F5F5DC" roughness={0.6} />
             </mesh>
 
@@ -33,13 +33,13 @@ export const ArtExperience: React.FC = () => {
             {/* Colorful walls */}
             {[
                 {
-                    pos: [-0.5, 2.5, -3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, -4] as [number, number, number],
                     rot: [0, 0, 0] as [number, number, number],
                     color: "#FFE4B5",
                     width: 8,
                 },
                 {
-                    pos: [-0.5, 2.5, 3.5] as [number, number, number],
+                    pos: [-0.5, 2.5, 4] as [number, number, number],
                     rot: [0, Math.PI, 0] as [number, number, number],
                     color: "#E0FFFF",
                     width: 8,
@@ -48,13 +48,13 @@ export const ArtExperience: React.FC = () => {
                     pos: [-4.5, 2.5, 0] as [number, number, number],
                     rot: [0, Math.PI / 2, 0] as [number, number, number],
                     color: "#F0FFF0",
-                    width: 7,
+                    width: 8,
                 },
                 {
                     pos: [3.5, 2.5, 0] as [number, number, number],
                     rot: [0, -Math.PI / 2, 0] as [number, number, number],
                     color: "#FFF0F5",
-                    width: 7,
+                    width: 8,
                 },
             ].map((wall, idx) => (
                 <mesh key={idx} position={wall.pos} rotation={wall.rot}>
@@ -63,14 +63,11 @@ export const ArtExperience: React.FC = () => {
                 </mesh>
             ))}
 
-            {/* Interactive easel - on right wall */}
-            <InteractiveEasel
-                position={[2.5, 0, 0]}
-                rotation={[0, -Math.PI / 2, 0]}
-            />
+            {/* Interactive easel - in center facing forward */}
+            <InteractiveEasel position={[0, 0, -3]} rotation={[0, 0, 0]} />
 
-            {/* Cork board for artwork display - on front wall (opposite control panel) */}
-            <group position={[0, 2.5, 3.4]}>
+            {/* Cork board for artwork display - on left wall */}
+            <group position={[0, 2.5, 3.9]} rotation={[0, Math.PI, 0]}>
                 <mesh>
                     <planeGeometry args={[6, 2.5]} />
                     <meshStandardMaterial color="#DEB887" roughness={0.9} />
@@ -95,13 +92,14 @@ export const ArtExperience: React.FC = () => {
 
             {/* Encouraging text - above cork board */}
             <Text
-                position={[0, 4, 3.3]}
+                position={[0, 4, 3.9]}
                 fontSize={0.3}
                 color="#FF69B4"
                 anchorX="center"
                 anchorY="middle"
+                rotation={[0, Math.PI, 0]}
             >
-                🌟 AMAZING ARTWORK! KEEP CREATING! 🌟
+                {"Teacher's Favorites"}
             </Text>
 
             {/* Art supplies scattered around - front area */}

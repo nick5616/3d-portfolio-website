@@ -398,7 +398,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "about",
         name: "About & Contact",
         position: [20, 0, 0] as [number, number, number],
-        dimensions: [9, 8, 9],
+        dimensions: [8, 8, 8],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#FFF5E1" },
             directional: {
@@ -469,7 +469,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-atrium-from-about",
                 targetRoomId: "atrium",
-                position: [-4.5, 0, 0] as [number, number, number],
+                position: [-4, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 2,
                 height: 3,

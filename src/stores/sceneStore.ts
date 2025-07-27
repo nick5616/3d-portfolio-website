@@ -79,7 +79,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     cameraRotation: undefined,
-    playerPosition: [0, 2.5, 5],
+    playerPosition: [0, 0.9, 5],
     shouldTeleportPlayer: false,
     spotlightsEnabled: false,
     isFirstPerson: true,
@@ -97,7 +97,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     flyMode: false,
     // Camera and scene data for UI components
     cameraData: {
-        position: { x: 0, y: 2.5, z: 5 },
+        position: { x: 0, y: 0.5, z: 5 },
         rotation: { x: 0, y: 0, z: 0 },
     },
     sceneData: {

@@ -391,8 +391,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             {/* Room Label */}
             <group
                 position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height * 0.85,
+                    archway.position[0] + 0.2,
+                    archway.position[1] + archway.height * 1.2,
                     archway.position[2] + 0.08,
                 ]}
                 rotation={archway.rotation}
@@ -455,9 +455,9 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             {/* Door Handle */}
             <mesh
                 position={[
-                    archway.position[0] + archway.width * 0.35,
+                    archway.position[0] + archway.width * 0.08,
                     archway.position[1] + archway.height / 2,
-                    archway.position[2] + 0.08,
+                    archway.position[2] + 0.5,
                 ]}
                 rotation={archway.rotation}
             >

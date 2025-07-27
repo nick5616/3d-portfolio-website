@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RoomComments } from "./RoomComments";
 import { useFrame } from "@react-three/fiber";
+import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 import {
     HolodeckControlPanel,
@@ -49,21 +50,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const gridWallsRef = useRef<THREE.Group>(null);
     const scanLineRef = useRef<THREE.Mesh>(null);
 
-    // Meteor game state
-    const [meteors, setMeteors] = useState<
-        Array<{
-            id: number;
-            x: number;
-            y: number;
-            z: number;
-            problem: string;
-            answer: number;
-            choices: number[];
-        }>
-    >([]);
-    const [score, setScore] = useState(0);
-    const meteorIdCounter = useRef(0);
-
     // Animation loop
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
@@ -105,44 +91,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     0.5 + Math.sin(elapsed * 6) * 0.3;
             }
         }
-
-        // Update meteors for math game
-        if (currentExperience === "math") {
-            setMeteors((prev) =>
-                prev
-                    .map((meteor) => ({
-                        ...meteor,
-                        y: meteor.y - 0.02,
-                    }))
-                    .filter((meteor) => meteor.y > -5)
-            );
-
-            // Spawn new meteor occasionally - support multiple meteors
-            if (Math.random() < 0.015 && meteors.length < 6) {
-                const num1 = Math.floor(Math.random() * 9) + 1;
-                const num2 = Math.floor(Math.random() * 9) + 1;
-                const answer = num1 * num2;
-                const choices = [answer];
-                while (choices.length < 4) {
-                    const wrong = Math.floor(Math.random() * 81) + 1;
-                    if (!choices.includes(wrong)) choices.push(wrong);
-                }
-                choices.sort(() => Math.random() - 0.5);
-
-                setMeteors((prev) => [
-                    ...prev,
-                    {
-                        id: meteorIdCounter.current++,
-                        x: (Math.random() - 0.5) * 8,
-                        y: 8,
-                        z: (Math.random() - 0.5) * 8,
-                        problem: `${num1} × ${num2}`,
-                        answer,
-                        choices,
-                    },
-                ]);
-            }
-        }
     });
 
     const switchExperience = (experience: HolodeckExperience) => {
@@ -164,14 +112,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             case "art":
                 return <ArtExperience />;
             case "math":
-                return (
-                    <MathExperience
-                        meteors={meteors}
-                        score={score}
-                        setScore={setScore}
-                        setMeteors={setMeteors}
-                    />
-                );
+                return <MathExperience />;
             case "forest":
                 return <ForestExperience />;
             default:
@@ -183,11 +124,75 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
         <>
             <RoomComments roomId={config.id} />
 
-            {/* Main exit door - aligned with archway */}
-            <mesh position={[-4.4, 2, 0]}>
-                <boxGeometry args={[0.2, 4, 2]} />
-                <meshStandardMaterial color="#8B5C2A" />
-            </mesh>
+            {/* Invisible collision walls - let HolodeckGrid handle visuals */}
+            {[
+                // North wall (back)
+                {
+                    pos: [0, height / 2, -depth / 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    size: [width, height, wallThickness] as [
+                        number,
+                        number,
+                        number
+                    ],
+                },
+                // South wall (front) - with archway gap
+                {
+                    pos: [width / 4, height / 2, depth / 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    size: [width / 2, height, wallThickness] as [
+                        number,
+                        number,
+                        number
+                    ],
+                },
+                // East wall (right)
+                {
+                    pos: [width / 2, height / 2, 0] as [number, number, number],
+                    size: [wallThickness, height, depth] as [
+                        number,
+                        number,
+                        number
+                    ],
+                },
+                // West wall (left) - with archway gap
+                {
+                    pos: [-width / 2, height / 2, depth / 4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    size: [wallThickness, height, depth / 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                },
+                {
+                    pos: [-width / 2, height / 2, -depth / 4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    size: [wallThickness, height, depth / 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                },
+            ].map((wall, i) => (
+                <RigidBody key={`wall-${i}`} type="fixed" colliders="cuboid">
+                    <mesh position={wall.pos} visible={false}>
+                        <boxGeometry args={wall.size} />
+                    </mesh>
+                </RigidBody>
+            ))}
 
             {/* Control panel (always visible) */}
             <HolodeckControlPanel
