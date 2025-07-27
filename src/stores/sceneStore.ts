@@ -26,6 +26,23 @@ interface SceneData {
     lightCount: number;
 }
 
+interface Meteor {
+    id: number;
+    x: number;
+    y: number;
+    z: number;
+    problem: string;
+    answer: number;
+    choices: number[];
+    color?: string;
+}
+
+interface MathGameState {
+    isActive: boolean;
+    meteors: Meteor[];
+    score: number;
+}
+
 interface SceneState {
     currentRoom: RoomConfig | null;
     controlMode: "firstPerson" | "pointAndClick";
@@ -49,11 +66,19 @@ interface SceneState {
     // Camera and scene data for UI components
     cameraData: CameraData;
     sceneData: SceneData;
+    // Math game state
+    mathGame: MathGameState;
     // Virtual controls for mobile
     virtualMovement: MovementState;
     virtualRotation: RotationState;
     setVirtualMovement: (movement: MovementState) => void;
     setVirtualRotation: (rotation: RotationState) => void;
+    // Math game actions
+    setMathGameActive: (active: boolean) => void;
+    updateMathGameMeteors: (
+        meteors: Meteor[] | ((prev: Meteor[]) => Meteor[])
+    ) => void;
+    setMathGameScore: (score: number | ((prev: number) => number)) => void;
     setIsInteracting: (interacting: boolean) => void;
     updateCameraData: (cameraData: CameraData) => void;
     updateSceneData: (sceneData: SceneData) => void;
@@ -104,6 +129,12 @@ export const useSceneStore = create<SceneState>((set) => ({
         objectCount: 0,
         lightCount: 0,
     },
+    // Math game initial state
+    mathGame: {
+        isActive: false,
+        meteors: [],
+        score: 0,
+    },
     // Virtual controls state
     virtualMovement: {
         forward: false,
@@ -117,6 +148,29 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     setVirtualMovement: (movement) => set({ virtualMovement: movement }),
     setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
+    // Math game actions
+    setMathGameActive: (active) =>
+        set((state) => ({ mathGame: { ...state.mathGame, isActive: active } })),
+    updateMathGameMeteors: (meteors) =>
+        set((state) => ({
+            mathGame: {
+                ...state.mathGame,
+                meteors:
+                    typeof meteors === "function"
+                        ? meteors(state.mathGame.meteors)
+                        : meteors,
+            },
+        })),
+    setMathGameScore: (score) =>
+        set((state) => ({
+            mathGame: {
+                ...state.mathGame,
+                score:
+                    typeof score === "function"
+                        ? score(state.mathGame.score)
+                        : score,
+            },
+        })),
     setIsInteracting: (interacting) => set({ isInteracting: interacting }),
     updateCameraData: (cameraData) => set({ cameraData }),
     updateSceneData: (sceneData) => set({ sceneData }),

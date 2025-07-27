@@ -6,6 +6,7 @@ import { EducationalModal } from "./EducationalModal";
 import { MouseStateIndicator } from "./MouseStateIndicator";
 import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
+import { MathGameOverlay } from "./MathGameOverlay";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { Archway } from "../../types/scene.types";
 
@@ -118,6 +119,9 @@ export default function Interface() {
 
             {/* Debug info */}
             <DebugInfo />
+
+            {/* Math Game Overlay */}
+            <MathGameOverlay />
         </div>
     );
 }

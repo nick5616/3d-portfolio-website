@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { MathGameHUD } from "./MathGameHUD";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
+import { useSceneStore } from "../../../stores/sceneStore";
 
 interface Meteor {
     id: number;
@@ -28,25 +28,49 @@ const METEOR_COLORS = [
 ];
 
 export const MathExperience: React.FC<MathExperienceProps> = () => {
-    // Move math game state here from AboutRoom
-    const [meteors, setMeteors] = useState<Meteor[]>([]);
-    const [score, setScore] = useState(0);
-    const meteorIdCounter = useRef(0);
+    // Use store for math game state
+    const {
+        mathGame,
+        setMathGameActive,
+        updateMathGameMeteors,
+        setMathGameScore,
+    } = useSceneStore();
+    const meteorIdCounter = useRef(Date.now()); // Use timestamp for unique IDs
+    const gameStartTime = useRef<number>(0);
+
+    // Activate math game when component mounts
+    useEffect(() => {
+        setMathGameActive(true);
+        setMathGameScore(0); // Reset score when starting
+        gameStartTime.current = Date.now();
+        return () => {
+            setMathGameActive(false);
+            updateMathGameMeteors([]); // Clear meteors when unmounting
+        };
+    }, [setMathGameActive, updateMathGameMeteors, setMathGameScore]);
 
     // Animation loop with meteor spawning logic moved from AboutRoom
     useFrame(() => {
-        // Update meteors
-        setMeteors((prev) =>
-            prev
-                .map((meteor) => ({
-                    ...meteor,
-                    y: meteor.y - 0.02,
-                }))
-                .filter((meteor) => meteor.y > -5)
-        );
+        // Don't spawn meteors until 4 seconds have passed (instructions period)
+        const timeSinceStart = Date.now() - gameStartTime.current;
+        const gameHasStarted = timeSinceStart > 4000;
 
-        // Spawn new meteor occasionally - support multiple meteors
-        if (Math.random() < 0.015 && meteors.length < 6) {
+        // Update meteors
+        const updatedMeteors = mathGame.meteors
+            .map((meteor) => ({
+                ...meteor,
+                y: meteor.y - 0.02,
+            }))
+            .filter((meteor) => meteor.y > -5);
+
+        updateMathGameMeteors(updatedMeteors);
+
+        // Spawn new meteor occasionally - limited to 2 for stability, only after game starts
+        if (
+            gameHasStarted &&
+            Math.random() < 0.01 &&
+            mathGame.meteors.length < 2
+        ) {
             const num1 = Math.floor(Math.random() * 9) + 1;
             const num2 = Math.floor(Math.random() * 9) + 1;
             const answer = num1 * num2;
@@ -57,23 +81,22 @@ export const MathExperience: React.FC<MathExperienceProps> = () => {
             }
             choices.sort(() => Math.random() - 0.5);
 
-            setMeteors((prev) => [
-                ...prev,
-                {
-                    id: meteorIdCounter.current++,
-                    x: (Math.random() - 0.5) * 8,
-                    y: 8,
-                    z: (Math.random() - 0.5) * 8,
-                    problem: `${num1} × ${num2}`,
-                    answer,
-                    choices,
-                },
-            ]);
+            const newMeteor = {
+                id: meteorIdCounter.current++,
+                x: (Math.random() - 0.5) * 8,
+                y: 8,
+                z: (Math.random() - 0.5) * 8,
+                problem: `${num1} × ${num2}`,
+                answer,
+                choices,
+            };
+
+            updateMathGameMeteors([...mathGame.meteors, newMeteor]);
         }
     });
 
     // Assign colors to meteors consistently
-    const coloredMeteors = meteors.map((meteor, index) => ({
+    const coloredMeteors = mathGame.meteors.map((meteor, index) => ({
         ...meteor,
         color: meteor.color || METEOR_COLORS[index % METEOR_COLORS.length],
     }));
@@ -188,7 +211,7 @@ export const MathExperience: React.FC<MathExperienceProps> = () => {
                     </mesh>
 
                     {/* Fire trail - bigger, positioned at widest part, color-matched */}
-                    <mesh position={[0, 0.35, 0]}>
+                    <mesh position={[0, 0.7, 0]}>
                         <coneGeometry args={[0.3, 1.2]} />
                         <meshBasicMaterial
                             color={meteor.color}
@@ -220,13 +243,7 @@ export const MathExperience: React.FC<MathExperienceProps> = () => {
                 </group>
             ))}
 
-            {/* New HUD System */}
-            <MathGameHUD
-                meteors={coloredMeteors}
-                score={score}
-                setScore={setScore}
-                setMeteors={setMeteors}
-            />
+            {/* HUD is now handled by the Interface component */}
 
             {/* Space lighting */}
             <ambientLight intensity={0.2} color="#4444ff" />

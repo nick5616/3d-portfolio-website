@@ -53,12 +53,12 @@ export const ArtExperience: React.FC = () => {
                 return (
                     <mesh
                         key={i}
-                        position={[x, 0.101, z]}
+                        position={[x, 0.11, z]}
                         rotation={[-Math.PI / 2, 0, 0]}
                     >
                         <planeGeometry args={[0.9, 0.9]} />
                         <meshStandardMaterial
-                            color={Math.random() > 0.9 ? "#FFE4E1" : "#F5F5DC"}
+                            color={i % 2 === 0 ? "#aa3344" : "#4433aa"}
                             roughness={0.7}
                         />
                     </mesh>
