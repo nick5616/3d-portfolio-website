@@ -30,8 +30,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 return {
                     color: "#F4E4BC", // Warm gold
                     frameColor: "#DAA520", // Golden
-                    label: "ATRIUM",
-                    icon: "⚱️",
+                    label: "Atrium",
                     description: "Central Hub",
                     glowColor: "#FFD700",
                     isArched: false, // Keep it simple
@@ -40,8 +39,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 return {
                     color: "#F8F8FF", // Gallery white
                     frameColor: "#2F2F2F", // Elegant dark frame
-                    label: "GALLERY",
-                    icon: "🎨",
+                    label: "Art Gallery",
                     description: "Art Collection",
                     glowColor: "#E6E6FA",
                     isArched: false, // Modern rectangular
@@ -50,9 +48,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 return {
                     color: "#1E3A8A", // Tech blue
                     frameColor: "#00FFFF", // Cyan
-                    label: "PROJECTS",
-                    icon: "💻",
-                    description: "Software Portfolio",
+                    label: "Software Projects",
                     glowColor: "#00BFFF",
                     isArched: false, // Sleek rectangular
                 };
@@ -60,9 +56,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 return {
                     color: "#FF6B6B", // Warm coral
                     frameColor: "#FFB347", // Peach
-                    label: "ABOUT",
-                    icon: "👨‍💻",
-                    description: "Personal Info",
+                    label: "Play Place",
                     glowColor: "#FF69B4",
                     isArched: false, // Keep it simple
                 };
@@ -71,8 +65,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     color: "#8B4513",
                     frameColor: "#654321",
                     label: "UNKNOWN",
-                    icon: "🚪",
-                    description: "Room",
                     glowColor: "#FFFFFF",
                     isArched: false,
                 };
@@ -81,41 +73,34 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
     const theme = getRoomTheme(archway.targetRoomId);
 
-    const handleTeleport = useCallback(
-        (source: "click" | "collision") => {
-            console.log(
-                `🚪 Door ${source}: ${archway.id} -> ${archway.targetRoomId}`
-            );
+    const handleTeleport = useCallback(() => {
+        // Use entrance point if available, otherwise use archway position
+        const entrancePosition = archway.entrancePoint?.position || [
+            archway.position[0],
+            3,
+            archway.position[2],
+        ];
 
-            // Use entrance point if available, otherwise use archway position
-            const entrancePosition = archway.entrancePoint?.position || [
-                archway.position[0],
-                3,
-                archway.position[2],
-            ];
+        // Add 180-degree rotation to the entrance rotation
+        const baseRotation = archway.entrancePoint?.rotation || [0, 0, 0];
+        const entranceRotation = [
+            baseRotation[0],
+            baseRotation[1] + Math.PI, // 180 degrees
+            baseRotation[2],
+        ];
 
-            // Add 180-degree rotation to the entrance rotation
-            const baseRotation = archway.entrancePoint?.rotation || [0, 0, 0];
-            const entranceRotation = [
-                baseRotation[0],
-                baseRotation[1] + Math.PI, // 180 degrees
-                baseRotation[2],
-            ];
+        console.log(`📍 Teleporting to:`, entrancePosition);
+        console.log(`🔄 With 180° rotation:`, entranceRotation);
 
-            console.log(`📍 Teleporting to:`, entrancePosition);
-            console.log(`🔄 With 180° rotation:`, entranceRotation);
-
-            teleportToRoom(
-                archway.targetRoomId,
-                entrancePosition as [number, number, number],
-                entranceRotation as [number, number, number]
-            );
-        },
-        [archway, teleportToRoom]
-    );
+        teleportToRoom(
+            archway.targetRoomId,
+            entrancePosition as [number, number, number],
+            entranceRotation as [number, number, number]
+        );
+    }, [archway, teleportToRoom]);
 
     const handleDoorClick = () => {
-        handleTeleport("click");
+        handleTeleport();
     };
 
     // Handle collision events
@@ -125,7 +110,11 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         }
     };
 
-    const handleCollisionExit = () => {
+    const handleCollisionExit = (event: any) => {
+        console.log(
+            `🔴 COLLISION EXIT: Door ${archway.id} (${archway.targetRoomId}) - Green trigger area deactivated`,
+            event
+        );
         setIsInTrigger(false);
     };
 
@@ -135,12 +124,15 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         const now = Date.now();
         if (now - lastTransitionTime.current < 1000) return;
 
+        console.log(
+            `🚪 AUTO-TELEPORT TRIGGERED: Door ${archway.id} (${archway.targetRoomId}) - Starting transition`
+        );
         lastTransitionTime.current = now;
         setIsTransitioning(true);
 
         // Short delay for smooth transition
         setTimeout(() => {
-            handleTeleport("collision");
+            handleTeleport();
             setIsTransitioning(false);
         }, 100);
     }, [isInTrigger, isTransitioning, handleTeleport]);
@@ -150,7 +142,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         const handleUIClick = (event: CustomEvent) => {
             if (event.detail.doorId === archway.id) {
                 console.log(`🖱️ UI Click received for door: ${archway.id}`);
-                handleTeleport("click");
+                handleTeleport();
             }
         };
 
@@ -218,8 +210,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
     return (
         <group>
-            {/* Themed Door */}
-
+            {/* Themed Door - VISIBLE DOOR MESH */}
             <mesh
                 ref={doorMeshRef as any}
                 position={[
@@ -246,7 +237,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </mesh>
 
-            {/* Invisible larger mesh for easier clicking/interaction */}
             <mesh
                 position={[
                     archway.position[0],
@@ -254,31 +244,29 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     archway.position[2],
                 ]}
                 rotation={archway.rotation}
-                visible={false}
+                visible={true}
             >
                 <boxGeometry
                     args={[archway.width * 2, archway.height * 1.5, 1]}
                 />
-                <meshBasicMaterial transparent opacity={0} />
+                <meshBasicMaterial color="#ff00ff" transparent opacity={0} />
             </mesh>
 
-            {/* Collision trigger for walking into door */}
             <RigidBody
                 type="fixed"
                 position={archway.position}
                 rotation={archway.rotation}
                 sensor
                 collisionGroups={interactionGroups(1, [0])}
-                onCollisionEnter={handleCollisionEnter}
-                onCollisionExit={handleCollisionExit}
+                onIntersectionEnter={handleCollisionEnter}
+                onIntersectionExit={handleCollisionExit}
             >
                 <CuboidCollider
-                    args={[archway.width / 2, archway.height / 2, 0.5]}
+                    args={[archway.width / 2, archway.height / 2, 1]}
                     sensor
                 />
             </RigidBody>
 
-            {/* Themed Door Frame */}
             <mesh
                 position={[
                     archway.position[0],
@@ -297,7 +285,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </mesh>
 
-            {/* Room Label */}
             <group
                 position={[
                     archway.position[0],
@@ -308,9 +295,11 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             >
                 {/* Label Background */}
                 <mesh position={[0, 0, 0]}>
-                    <planeGeometry args={[2.2, 0.6]} />
+                    <planeGeometry
+                        args={[Math.max(archway.width + 0.2, 2.2), 0.6]}
+                    />
                     <meshStandardMaterial
-                        color={theme.frameColor}
+                        color="#ffff00"
                         transparent
                         opacity={0.9}
                     />
@@ -320,63 +309,15 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 <Text
                     position={[0, 0, 0.01]}
                     fontSize={0.25}
-                    color="white"
+                    color="black"
                     anchorX="center"
                     anchorY="middle"
-                    maxWidth={2}
+                    maxWidth={Math.max(archway.width, 2)}
                     fontWeight="bold"
                 >
-                    {theme.icon} {theme.label}
+                    {theme.label}
                 </Text>
             </group>
-
-            {/* Room Description Label */}
-            <group
-                position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height * 0.8,
-                    archway.position[2] + 0.08,
-                ]}
-                rotation={archway.rotation}
-            >
-                <mesh position={[0, 0, 0]}>
-                    <planeGeometry args={[2.4, 0.4]} />
-                    <meshStandardMaterial
-                        color="black"
-                        transparent
-                        opacity={0.7}
-                    />
-                </mesh>
-
-                {/* Description Text */}
-                <Text
-                    position={[0, 0, 0.01]}
-                    fontSize={0.15}
-                    color="white"
-                    anchorX="center"
-                    anchorY="middle"
-                    maxWidth={2.2}
-                >
-                    {theme.description}
-                </Text>
-            </group>
-
-            {/* Door Handle */}
-            <mesh
-                position={[
-                    archway.position[0] + archway.width * -0.3,
-                    archway.position[1] + archway.height / 2,
-                    archway.position[2] + 0.15,
-                ]}
-                rotation={archway.rotation}
-            >
-                <sphereGeometry args={[0.08, 8, 8]} />
-                <meshStandardMaterial
-                    color={theme.frameColor}
-                    metalness={0.8}
-                    roughness={0.2}
-                />
-            </mesh>
         </group>
     );
 };

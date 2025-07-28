@@ -8,10 +8,13 @@ import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
 import { MathGameOverlay } from "./MathGameOverlay";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
 
 export default function Interface() {
     const { isMobile } = useDeviceDetection();
+    const { isHardwareAccelerationDisabled, isDetecting } =
+        useHardwareAcceleration();
     const [isHoveringDoor, setIsHoveringDoor] = useState(false);
     const [currentDoorData, setCurrentDoorData] = useState<{
         archway: Archway;
@@ -76,6 +79,11 @@ export default function Interface() {
             );
         }
     };
+
+    // Hide all UI when hardware acceleration is disabled or still detecting
+    if (isDetecting || isHardwareAccelerationDisabled) {
+        return null;
+    }
 
     return (
         <div className="fixed inset-0 pointer-events-none">

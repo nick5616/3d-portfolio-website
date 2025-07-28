@@ -225,7 +225,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 2,
                 height: 3,
                 entrancePoint: {
-                    position: [-3.5, 0.1, 0] as [number, number, number],
+                    position: [-2.5, 0.1, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },

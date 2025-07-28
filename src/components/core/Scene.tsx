@@ -7,10 +7,13 @@ import { PlayerBody } from "./PlayerBody";
 import { SceneDataBridge } from "./SceneDataBridge";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 
 export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
     const { isMobile } = useDeviceDetection();
+    const { isHardwareAccelerationDisabled, isDetecting } =
+        useHardwareAcceleration();
 
     // Configure rendering parameters based on quality setting and device
     const glParams = useMemo(() => {
@@ -51,6 +54,73 @@ export const Scene: React.FC = () => {
         }
         return { min: 0.5 };
     }, [isMobile]);
+
+    // Show fallback when hardware acceleration is disabled or still detecting
+    if (isDetecting || isHardwareAccelerationDisabled) {
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#1a1a1a",
+                }}
+            >
+                <div
+                    style={{
+                        textAlign: "center",
+                        color: "white",
+                        padding: "2rem",
+                    }}
+                >
+                    {isDetecting ? (
+                        <div>
+                            <h2 style={{ marginBottom: "1rem" }}>
+                                Checking System Requirements...
+                            </h2>
+                            <p>
+                                Please wait while we verify your system can run
+                                this 3D experience.
+                            </p>
+                        </div>
+                    ) : (
+                        <div>
+                            <h2
+                                style={{
+                                    marginBottom: "1rem",
+                                    color: "#ef4444",
+                                }}
+                            >
+                                Hardware Acceleration Required
+                            </h2>
+                            <p style={{ marginBottom: "1rem" }}>
+                                This 3D portfolio requires hardware acceleration
+                                to run properly. Please enable hardware
+                                acceleration in your browser settings and
+                                refresh the page.
+                            </p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                style={{
+                                    backgroundColor: "#ef4444",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "0.75rem 1.5rem",
+                                    borderRadius: "0.375rem",
+                                    cursor: "pointer",
+                                    fontSize: "1rem",
+                                }}
+                            >
+                                Refresh Page
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ width: "100%", height: "100%" }}>

@@ -1,6 +1,5 @@
 import React from "react";
 import { CourageComputer } from "../../models/CourageComputer";
-import { RigidBody, interactionGroups } from "@react-three/rapier";
 
 export const CourageExperience: React.FC = () => {
     return (
@@ -23,40 +22,6 @@ export const CourageExperience: React.FC = () => {
                     <planeGeometry args={[8, 0.02]} />
                     <meshStandardMaterial color="#654321" />
                 </mesh>
-            ))}
-
-            {/* Collision walls for wooden walls */}
-            {[
-                // Back wall (north)
-                {
-                    pos: [0, 2.5, -4] as [number, number, number],
-                    size: [8, 5, 0.1] as [number, number, number],
-                },
-                // Front wall (south)
-                {
-                    pos: [0, 2.5, 4] as [number, number, number],
-                    size: [8, 5, 0.1] as [number, number, number],
-                },
-                // Left wall (west)
-                {
-                    pos: [-4, 2.5, 0] as [number, number, number],
-                    size: [0.1, 5, 8] as [number, number, number],
-                },
-                // Right wall (east)
-                {
-                    pos: [4, 2.5, 0] as [number, number, number],
-                    size: [0.1, 5, 8] as [number, number, number],
-                },
-            ].map((wall, i) => (
-                <RigidBody
-                    key={`courage-wall-${i}`}
-                    type="fixed"
-                    colliders="cuboid"
-                >
-                    <mesh position={wall.pos} visible={false}>
-                        <boxGeometry args={wall.size} />
-                    </mesh>
-                </RigidBody>
             ))}
 
             {/* Wooden walls with vertical planks */}
