@@ -111,7 +111,7 @@ export default function Interface() {
                         onTouchStart={handleDoorTouchStart}
                         style={{ touchAction: "manipulation" }}
                     >
-                        {isMobile ? "Tap to Open" : "[Click] Open"}
+                        {"Keep Moving Forward"}
                     </div>
                 </div>
             )}

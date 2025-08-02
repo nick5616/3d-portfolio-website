@@ -123,7 +123,7 @@ export const Minimap: React.FC = () => {
     if (!minimap.visible) return null;
 
     return (
-        <div className="fixed top-2 right-16 z-40">
+        <div className="fixed top-[4rem] right-16 z-40">
             <div className="bg-black/60 rounded-lg p-2 border border-gray-600">
                 <div className="text-white text-xs mb-1 text-center">
                     Minimap
@@ -132,8 +132,8 @@ export const Minimap: React.FC = () => {
                     ref={canvasRef}
                     className="rounded border border-gray-500"
                     style={{
-                        width: "120px",
-                        height: "120px",
+                        maxWidth: "220px",
+                        maxHeight: "220px",
                         backgroundColor: "rgba(0, 0, 0, 0.8)",
                     }}
                 />

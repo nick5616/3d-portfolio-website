@@ -161,7 +161,7 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
                 anchorX="center"
                 anchorY="middle"
             >
-                HOLODECK CONTROL
+                Environment Control Panel
             </Text>
 
             {/* Buttons arranged in 2 rows */}
