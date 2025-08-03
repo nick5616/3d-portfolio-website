@@ -33,7 +33,7 @@ export const Minimap: React.FC = () => {
         ctx.fillRect(0, 0, size, size);
 
         // Draw room layout
-        const scale = 4; // Scale factor for minimap
+        const scale = 1; // Scale factor for minimap - reduced to fit all rooms
         const centerX = size / 2;
         const centerY = size / 2;
 
@@ -45,17 +45,14 @@ export const Minimap: React.FC = () => {
             about: "#F5A623",
         };
 
-        // Draw rooms
+        // Draw rooms at their actual positions
         Object.values(roomConfigs).forEach((room) => {
             const [roomWidth, , roomDepth] = room.dimensions;
             const [roomX, , roomZ] = room.position;
 
-            // Adjust position if current room (since current room renders at origin)
-            const displayX = room.id === currentRoom?.id ? 0 : roomX;
-            const displayZ = room.id === currentRoom?.id ? 0 : roomZ;
-
-            const x = centerX + displayX / scale;
-            const y = centerY + displayZ / scale;
+            // Convert room position to minimap coordinates
+            const x = centerX + roomX / scale;
+            const y = centerY + roomZ / scale;
             const w = roomWidth / scale;
             const h = roomDepth / scale;
 
@@ -74,42 +71,50 @@ export const Minimap: React.FC = () => {
 
             // Draw room label
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "10px Arial";
+            ctx.font = "7px Arial";
             ctx.textAlign = "center";
-            ctx.fillText(room.name, x, y + 3);
+            ctx.fillText(room.name, x, y + 1);
 
             // Draw doors/archways
             room.archways.forEach((archway) => {
-                const archX =
-                    centerX + (displayX + archway.position[0]) / scale;
-                const archY =
-                    centerY + (displayZ + archway.position[2]) / scale;
+                const archX = x + archway.position[0] / scale;
+                const archY = y + archway.position[2] / scale;
 
                 ctx.fillStyle = "#FFD700";
                 ctx.fillRect(archX - 2, archY - 2, 4, 4);
             });
         });
 
-        // Draw player position (always in center for current room)
-        const playerMapX = centerX + playerPosition.x / scale;
-        const playerMapY = centerY + playerPosition.z / scale;
+        // Draw player position relative to current room
+        if (currentRoom) {
+            const [roomX, , roomZ] = currentRoom.position;
+            const relativePlayerX = playerPosition.x - roomX;
+            const relativePlayerZ = playerPosition.z - roomZ;
 
-        // Player dot
-        ctx.beginPath();
-        ctx.arc(playerMapX, playerMapY, 3, 0, 2 * Math.PI);
-        ctx.fillStyle = "#FF0000";
-        ctx.fill();
+            const playerMapX = centerX + relativePlayerX / scale;
+            const playerMapY = centerY + relativePlayerZ / scale;
 
-        // Player direction indicator
-        ctx.beginPath();
-        ctx.moveTo(playerMapX, playerMapY);
-        ctx.lineTo(
-            playerMapX + Math.sin(cameraData.rotation.y) * 8,
-            playerMapY + Math.cos(cameraData.rotation.y) * 8
-        );
-        ctx.strokeStyle = "#FF0000";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+            // Player dot
+            ctx.beginPath();
+            ctx.arc(playerMapX, playerMapY, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = "#FF0000";
+            ctx.fill();
+
+            // Player direction indicator - calculate from rotation
+            // cameraData.rotation.y is the Y rotation (left/right)
+            const yRotation = cameraData.rotation.y;
+            const indicatorLength = 6;
+
+            ctx.beginPath();
+            ctx.moveTo(playerMapX, playerMapY);
+            ctx.lineTo(
+                playerMapX + Math.sin(yRotation) * indicatorLength,
+                playerMapY - Math.cos(yRotation) * indicatorLength
+            );
+            ctx.strokeStyle = "#FF0000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
 
         // Draw coordinates
         ctx.fillStyle = "#FFFFFF";
