@@ -40,20 +40,20 @@ export const useHardwareAcceleration = (): HardwareAccelerationInfo => {
                         debugInfo.UNMASKED_VENDOR_WEBGL
                     );
 
-                    // Check for software renderer indicators
+                    console.log("WebGL Renderer:", renderer);
+                    console.log("WebGL Vendor:", vendor);
+
+                    // Updated software renderer list - more specific to avoid false positives
                     const softwareRenderers = [
                         "llvmpipe",
                         "swiftshader",
-                        "software",
-                        "mesa",
                         "virgl",
-                        "llvmpipe",
                         "softpipe",
                         "swr",
-                        "d3d11",
-                        "d3d12",
-                        "opengl",
-                        "vulkan",
+                        "mesa llvmpipe",
+                        "mesa softpipe",
+                        "software rasterizer",
+                        "software renderer",
                     ];
 
                     const isSoftwareRenderer = softwareRenderers.some(
@@ -77,16 +77,16 @@ export const useHardwareAcceleration = (): HardwareAccelerationInfo => {
                     }
                 }
 
-                // Method 3: Check for specific browser flags
+                // Method 3: Check for specific browser flags (improved for Edge)
                 const userAgent = navigator.userAgent.toLowerCase();
-                const isChrome = userAgent.includes("chrome");
+                const isChrome = userAgent.includes("chrome") && !userAgent.includes("edge");
                 const isFirefox = userAgent.includes("firefox");
                 const isSafari =
                     userAgent.includes("safari") &&
                     !userAgent.includes("chrome");
                 const isEdge = userAgent.includes("edge");
 
-                // Check for common hardware acceleration disable flags
+                // More specific flag detection to avoid false positives
                 const hasDisableFlag =
                     (isChrome &&
                         (userAgent.includes("--disable-gpu") ||
@@ -96,15 +96,19 @@ export const useHardwareAcceleration = (): HardwareAccelerationInfo => {
                     (isFirefox &&
                         userAgent.includes("layers.acceleration.disabled")) ||
                     (isSafari && userAgent.includes("webgl")) ||
-                    (isEdge && userAgent.includes("disable-gpu"));
+                    // Edge-specific: only check for explicit disable flags
+                    (isEdge && 
+                        (userAgent.includes("--disable-gpu") ||
+                         userAgent.includes("--disable-software-rasterizer")));
 
                 if (hasDisableFlag) {
+                    console.log("Hardware acceleration detection: DISABLED (browser flag detected)");
                     setIsHardwareAccelerationDisabled(true);
                     setIsDetecting(false);
                     return;
                 }
 
-                // Method 4: Performance-based detection
+                // Method 4: Performance-based detection (adjusted for Edge)
                 const testCanvas = document.createElement("canvas");
                 testCanvas.width = 100;
                 testCanvas.height = 100;
@@ -124,12 +128,71 @@ export const useHardwareAcceleration = (): HardwareAccelerationInfo => {
                     const endTime = performance.now();
                     const renderTime = endTime - startTime;
 
-                    // If rendering takes too long, it might indicate software rendering
-                    if (renderTime > 50) {
-                        // 50ms threshold
+                    // Increased threshold for Edge to reduce false positives
+                    const threshold = isEdge ? 100 : 50; // 100ms for Edge, 50ms for others
+                    
+                    if (renderTime > threshold) {
+                        console.log(`Hardware acceleration detection: DISABLED (performance threshold exceeded: ${renderTime.toFixed(2)}ms)`);
                         setIsHardwareAccelerationDisabled(true);
                         setIsDetecting(false);
                         return;
+                    }
+                }
+
+                // Method 5: Additional Edge-specific checks
+                if (isEdge) {
+                    // Check if WebGL is working properly in Edge
+                    try {
+                        const testCanvas = document.createElement("canvas");
+                        const testGl = testCanvas.getContext("webgl");
+                        if (testGl) {
+                            // Test basic WebGL operations
+                            const program = testGl.createProgram();
+                            if (program) {
+                                testGl.deleteProgram(program);
+                            }
+                            
+                            // Additional Edge-specific WebGL tests
+                            const maxTextureSize = testGl.getParameter(testGl.MAX_TEXTURE_SIZE);
+                            const maxViewportDims = testGl.getParameter(testGl.MAX_VIEWPORT_DIMS);
+                            
+                            console.log("Edge WebGL capabilities:", {
+                                maxTextureSize,
+                                maxViewportDims,
+                                hasWebGL: true
+                            });
+                            
+                            // If Edge has reasonable WebGL capabilities, assume hardware acceleration is working
+                            if (maxTextureSize >= 2048 && maxViewportDims[0] >= 2048) {
+                                console.log("Edge WebGL capabilities look good - hardware acceleration likely enabled");
+                            }
+                        }
+                    } catch (error) {
+                        console.log("Hardware acceleration detection: DISABLED (Edge WebGL test failed)");
+                        setIsHardwareAccelerationDisabled(true);
+                        setIsDetecting(false);
+                        return;
+                    }
+                }
+
+                // Method 6: Check for specific Edge hardware acceleration issues
+                if (isEdge) {
+                    // Edge sometimes reports hardware acceleration as disabled even when it's enabled
+                    // This is a known issue with certain Edge versions
+                    const edgeVersion = userAgent.match(/edge\/(\d+)/i);
+                    if (edgeVersion) {
+                        const version = parseInt(edgeVersion[1]);
+                        console.log(`Edge version detected: ${version}`);
+                        
+                        // For newer Edge versions, be more lenient with detection
+                        if (version >= 79) {
+                            console.log("Modern Edge detected - using more lenient hardware acceleration detection");
+                            // If we've made it this far in a modern Edge, assume hardware acceleration is working
+                            console.log("Hardware acceleration detection: ENABLED (modern Edge)");
+                            setIsHardwareAccelerationDisabled(false);
+                            setIsDetecting(false);
+                            return;
+                        }
                     }
                 }
 

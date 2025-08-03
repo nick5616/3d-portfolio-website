@@ -8,6 +8,7 @@ import { SceneDataBridge } from "./SceneDataBridge";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
+import { logEdgeDebugInfo } from "../../utils/edgeDebug";
 
 export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
@@ -57,6 +58,8 @@ export const Scene: React.FC = () => {
 
     // Show fallback when hardware acceleration is disabled or still detecting
     if (isDetecting || isHardwareAccelerationDisabled) {
+        const isEdge = navigator.userAgent.toLowerCase().includes("edge");
+        
         return (
             <div
                 style={{
@@ -73,6 +76,7 @@ export const Scene: React.FC = () => {
                         textAlign: "center",
                         color: "white",
                         padding: "2rem",
+                        maxWidth: "600px",
                     }}
                 >
                     {isDetecting ? (
@@ -101,20 +105,82 @@ export const Scene: React.FC = () => {
                                 acceleration in your browser settings and
                                 refresh the page.
                             </p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                style={{
-                                    backgroundColor: "#ef4444",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "0.75rem 1.5rem",
+                            
+                            {isEdge && (
+                                <div style={{ 
+                                    marginBottom: "1rem", 
+                                    padding: "1rem", 
+                                    backgroundColor: "#374151", 
                                     borderRadius: "0.375rem",
-                                    cursor: "pointer",
-                                    fontSize: "1rem",
-                                }}
-                            >
-                                Refresh Page
-                            </button>
+                                    textAlign: "left"
+                                }}>
+                                    <h3 style={{ marginBottom: "0.5rem", color: "#60a5fa" }}>
+                                        Microsoft Edge Instructions:
+                                    </h3>
+                                    <ol style={{ margin: 0, paddingLeft: "1.5rem" }}>
+                                        <li>Open Edge Settings (Ctrl+,)</li>
+                                        <li>Go to System and performance</li>
+                                        <li>Enable "Use hardware acceleration when available"</li>
+                                        <li>Restart Edge completely</li>
+                                        <li>Refresh this page</li>
+                                    </ol>
+                                </div>
+                            )}
+                            
+                            <div style={{ marginBottom: "1rem" }}>
+                                <button
+                                    onClick={() => {
+                                        console.log("User clicked refresh - checking hardware acceleration again");
+                                        window.location.reload();
+                                    }}
+                                    style={{
+                                        backgroundColor: "#ef4444",
+                                        color: "white",
+                                        border: "none",
+                                        padding: "0.75rem 1.5rem",
+                                        borderRadius: "0.375rem",
+                                        cursor: "pointer",
+                                        fontSize: "1rem",
+                                        marginRight: "0.5rem",
+                                    }}
+                                >
+                                    Refresh Page
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        console.log("Hardware acceleration detection debug info:");
+                                        console.log("User Agent:", navigator.userAgent);
+                                        console.log("WebGL Available:", !!document.createElement("canvas").getContext("webgl"));
+                                        const canvas = document.createElement("canvas");
+                                        const gl = canvas.getContext("webgl");
+                                        if (gl) {
+                                            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+                                            if (debugInfo) {
+                                                console.log("WebGL Renderer:", gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+                                                console.log("WebGL Vendor:", gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+                                            }
+                                        }
+                                        
+                                        // Use the new Edge debug utility
+                                        logEdgeDebugInfo();
+                                    }}
+                                    style={{
+                                        backgroundColor: "#6b7280",
+                                        color: "white",
+                                        border: "none",
+                                        padding: "0.75rem 1.5rem",
+                                        borderRadius: "0.375rem",
+                                        cursor: "pointer",
+                                        fontSize: "1rem",
+                                    }}
+                                >
+                                    Debug Info
+                                </button>
+                            </div>
+                            
+                            <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                                If you're still having issues, try opening this page in Chrome or Firefox.
+                            </p>
                         </div>
                     )}
                 </div>
