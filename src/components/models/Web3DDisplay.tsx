@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useDisplayManager } from "../../stores/displayManager";
 
@@ -21,7 +21,7 @@ export interface Web3DDisplayProps {
     height?: number;
     screenshotUrl?: string;
     description?: string;
-    crtStyle?: boolean; // Enable 3D CRT monitor styling
+    crtStyle?: boolean;
     responsive?: {
         desktop: { width: number; height: number };
         mobile: { width: number; height: number };
@@ -32,8 +32,448 @@ interface CRTGlassPanelProps {
     displayWidth: number;
     displayHeight: number;
     isMobileDisplay: boolean;
-    position: [number, number, number]; // Individual positioning for each display
+    position: [number, number, number];
 }
+
+// Custom hook for proximity detection and timer
+const useProximityDetection = (
+    displayRef: React.RefObject<THREE.Group>,
+    onProximityComplete: () => void
+) => {
+    const { camera } = useThree();
+    const [isInProximity, setIsInProximity] = useState(false);
+    const [proximityStartTime, setProximityStartTime] = useState<number | null>(
+        null
+    );
+    const [isProximityLoading, setIsProximityLoading] = useState(false);
+    const [showProximityOverlay, setShowProximityOverlay] = useState(false);
+    const [timerProgress, setTimerProgress] = useState(0);
+
+    const PROXIMITY_THRESHOLD = 3.0;
+    const PROXIMITY_TIMER_DURATION = 4.0;
+
+    useFrame((state) => {
+        if (!displayRef.current || !camera) return;
+
+        const displayPosition = new THREE.Vector3();
+        displayRef.current.getWorldPosition(displayPosition);
+
+        const cameraPosition = camera.position;
+        const distance = displayPosition.distanceTo(cameraPosition);
+
+        const wasInProximity = isInProximity;
+        const nowInProximity = distance <= PROXIMITY_THRESHOLD;
+
+        setIsInProximity(nowInProximity);
+
+        // Start timer when entering proximity
+        if (!wasInProximity && nowInProximity) {
+            setProximityStartTime(state.clock.elapsedTime);
+            setShowProximityOverlay(true);
+            setIsProximityLoading(true);
+        }
+
+        // Reset when leaving proximity
+        if (wasInProximity && !nowInProximity) {
+            setProximityStartTime(null);
+            setShowProximityOverlay(false);
+            setIsProximityLoading(false);
+        }
+
+        // Timer logic
+        if (
+            isInProximity &&
+            isProximityLoading &&
+            proximityStartTime !== null
+        ) {
+            const elapsed = state.clock.elapsedTime - proximityStartTime;
+            const progress = Math.min(elapsed / PROXIMITY_TIMER_DURATION, 1.0);
+            setTimerProgress(progress);
+
+            if (elapsed >= PROXIMITY_TIMER_DURATION) {
+                onProximityComplete();
+            }
+        } else {
+            setTimerProgress(0);
+        }
+    });
+
+    const cancelProximity = useCallback(() => {
+        setProximityStartTime(null);
+        setShowProximityOverlay(false);
+        setIsProximityLoading(false);
+    }, []);
+
+    const resetProximity = useCallback(() => {
+        setProximityStartTime(null);
+        setShowProximityOverlay(false);
+        setIsProximityLoading(false);
+        setTimerProgress(0);
+    }, []);
+
+    return {
+        isInProximity,
+        showProximityOverlay,
+        timerProgress,
+        cancelProximity,
+        resetProximity,
+    };
+};
+
+// Custom hook for iframe management
+const useIframeManager = (url: string, title: string) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showFallback, setShowFallback] = useState(false);
+    const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+    const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+    const handleIframeLoad = useCallback(() => {
+        // Clear any existing timeout
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            setTimeoutId(null);
+        }
+        setIsLoading(false);
+        setError(null);
+        setShowFallback(false);
+    }, [timeoutId]);
+
+    const handleIframeError = useCallback(() => {
+        // Clear any existing timeout
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            setTimeoutId(null);
+        }
+        setIsLoading(false);
+        setError("Failed to load website");
+        setShowFallback(true);
+    }, [timeoutId]);
+
+    const startLoading = useCallback(() => {
+        // Clear any existing timeout
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
+        setIframeUrl(url);
+        setIsLoading(true);
+        setError(null);
+        setShowFallback(false);
+
+        // Set new timeout
+        const newTimeoutId = setTimeout(() => {
+            console.log(`⏰ Timeout reached for ${title}`);
+            setError("Website may not allow embedding");
+            setShowFallback(true);
+            setIsLoading(false);
+            setTimeoutId(null);
+        }, 15000); // Increased to 15 seconds for better reliability
+
+        setTimeoutId(newTimeoutId);
+    }, [url, timeoutId, title]);
+
+    const unloadIframe = useCallback(() => {
+        // Clear any existing timeout
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            setTimeoutId(null);
+        }
+        setIframeUrl(null);
+        setIsLoading(false);
+        setError(null);
+        setShowFallback(false);
+    }, [timeoutId]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+    }, [timeoutId]);
+
+    const retryLoading = useCallback(() => {
+        console.log(`🔄 Retrying load for ${title}`);
+        startLoading();
+    }, [startLoading, title]);
+
+    return {
+        isLoading,
+        error,
+        showFallback,
+        iframeUrl,
+        handleIframeLoad,
+        handleIframeError,
+        startLoading,
+        unloadIframe,
+        retryLoading,
+    };
+};
+
+// Component for display header
+const DisplayHeader: React.FC<{
+    isMobileDisplay: boolean;
+    displayWidth: number;
+    url: string;
+    currentTime: string;
+    showScreenshotOverlay: boolean;
+    showProximityOverlay: boolean;
+    onReturnToScreenshot: () => void;
+}> = ({
+    isMobileDisplay,
+    displayWidth,
+    url,
+    currentTime,
+    showScreenshotOverlay,
+    showProximityOverlay,
+    onReturnToScreenshot,
+}) => (
+    <div
+        style={{
+            height: isMobileDisplay ? "44px" : "40px",
+            backgroundColor: isMobileDisplay ? "#000000" : "#f5f5f5",
+            borderBottom: isMobileDisplay ? "none" : "1px solid #ddd",
+            display: "flex",
+            alignItems: "center",
+            padding: isMobileDisplay ? "0 16px" : "0 12px",
+            fontSize: isMobileDisplay
+                ? "13px"
+                : displayWidth > 400
+                ? "14px"
+                : "12px",
+            fontFamily: "system-ui, sans-serif",
+            borderTopLeftRadius: isMobileDisplay ? "12px" : "4px",
+            borderTopRightRadius: isMobileDisplay ? "12px" : "4px",
+        }}
+    >
+        {/* Desktop browser controls */}
+        {!isMobileDisplay && (
+            <div
+                style={{
+                    display: "flex",
+                    gap: "6px",
+                    marginRight: "12px",
+                }}
+            >
+                <div
+                    style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        backgroundColor: "#ff5f57",
+                    }}
+                />
+                <div
+                    style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        backgroundColor: "#ffbd2e",
+                    }}
+                />
+                <div
+                    style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        backgroundColor: "#28ca42",
+                    }}
+                />
+            </div>
+        )}
+
+        {/* Mobile status bar */}
+        {isMobileDisplay && (
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                    color: "#ffffff",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                }}
+            >
+                <div>{currentTime}</div>
+                <div
+                    style={{
+                        fontSize: "12px",
+                        opacity: 0.8,
+                        textAlign: "center",
+                        flex: 1,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        margin: "0 12px",
+                    }}
+                >
+                    {new URL(url).hostname}
+                </div>
+                <div
+                    style={{
+                        display: "flex",
+                        gap: "2px",
+                        alignItems: "center",
+                    }}
+                >
+                    <div style={{ fontSize: "12px" }}>●●●</div>
+                    <div style={{ fontSize: "12px" }}>📶</div>
+                    <div style={{ fontSize: "12px" }}>🔋</div>
+                </div>
+            </div>
+        )}
+
+        {/* Desktop URL bar */}
+        {!isMobileDisplay && (
+            <div
+                style={{
+                    flex: 1,
+                    backgroundColor: "#ffffff",
+                    borderRadius: "4px",
+                    padding: "4px 8px",
+                    border: "1px solid #ddd",
+                    fontSize: displayWidth > 400 ? "12px" : "10px",
+                    color: "#666",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minWidth: 0,
+                }}
+                title={url}
+            >
+                {url}
+            </div>
+        )}
+
+        {/* Back to screenshot button when live display is active */}
+        {!showScreenshotOverlay && !showProximityOverlay && (
+            <button
+                onClick={onReturnToScreenshot}
+                style={{
+                    marginLeft: "8px",
+                    backgroundColor: "#6c757d",
+                    color: "white",
+                    border: "none",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "10px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                }}
+                title="Return to screenshot mode"
+            >
+                📷
+            </button>
+        )}
+    </div>
+);
+
+// Component for proximity loading overlay
+const ProximityLoadingOverlay: React.FC<{
+    isMobileDisplay: boolean;
+    displayWidth: number;
+    title: string;
+    timerProgress: number;
+    onCancel: () => void;
+}> = ({ isMobileDisplay, displayWidth, title, timerProgress, onCancel }) => (
+    <div
+        style={{
+            position: "absolute",
+            top: isMobileDisplay ? "44px" : "40px",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 20,
+            backdropFilter: "blur(10px)",
+        }}
+    >
+        <div
+            style={{
+                textAlign: "center",
+                color: "white",
+                fontFamily: "system-ui, sans-serif",
+                padding: "20px",
+                maxWidth: "80%",
+            }}
+        >
+            {/* Progress bar */}
+            <div
+                style={{
+                    width: "100%",
+                    height: "4px",
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    borderRadius: "2px",
+                    marginBottom: "20px",
+                    overflow: "hidden",
+                }}
+            >
+                <div
+                    style={{
+                        width: `${timerProgress * 100}%`,
+                        height: "100%",
+                        backgroundColor: "#007bff",
+                        transition: "width 0.1s ease",
+                    }}
+                />
+            </div>
+
+            {/* Loading message */}
+            <div
+                style={{
+                    fontSize: displayWidth > 400 ? "18px" : "16px",
+                    fontWeight: "600",
+                    marginBottom: "12px",
+                }}
+            >
+                Loading {title}...
+            </div>
+
+            <div
+                style={{
+                    fontSize: displayWidth > 400 ? "14px" : "12px",
+                    opacity: 0.8,
+                    marginBottom: "20px",
+                    lineHeight: "1.4",
+                }}
+            >
+                Walk away if you don't want this
+            </div>
+
+            {/* Cancel button */}
+            <button
+                onClick={onCancel}
+                style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    fontSize: displayWidth > 400 ? "14px" : "12px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                    transition: "all 0.2s ease",
+                }}
+                onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                        "rgba(255, 255, 255, 0.2)";
+                }}
+                onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                        "rgba(255, 255, 255, 0.1)";
+                }}
+            >
+                Cancel
+            </button>
+        </div>
+    </div>
+);
 
 const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
     displayWidth,
@@ -45,18 +485,18 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
     const glassMaterial = useMemo(() => {
         const material = new THREE.MeshPhysicalMaterial({
             transparent: true,
-            opacity: 0.25, // More visible opacity for better glass effect
-            transmission: 0.75, // Balanced transmission
-            roughness: 0.02, // Very smooth glass
+            opacity: 0.25,
+            transmission: 0.75,
+            roughness: 0.02,
             metalness: 0.0,
-            clearcoat: 1.0, // Full clearcoat for glass shine
-            clearcoatRoughness: 0.005, // Very smooth clearcoat
-            ior: 1.52, // Standard glass IOR
-            thickness: 0.08, // Thicker for more visible effect
-            color: new THREE.Color(0.88, 1.0, 0.92), // Slight green tint like CRT glass
-            side: THREE.DoubleSide, // Render both sides
-            depthWrite: false, // Don't write to depth buffer
-            reflectivity: 0.15, // More reflection for visibility
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.005,
+            ior: 1.52,
+            thickness: 0.08,
+            color: new THREE.Color(0.88, 1.0, 0.92),
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            reflectivity: 0.15,
         });
 
         return material;
@@ -67,42 +507,31 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
         const width = displayWidth / 400;
         const height = displayHeight / 400;
 
-        // Create a thick, convex CRT glass that bulges outward (like real CRTs)
-        // Use a much smaller radius and larger arc to create noticeable curvature
-        const radius = Math.max(width, height) * 0.8; // Smaller radius for more pronounced curve
+        const radius = Math.max(width, height) * 0.8;
 
         const geometry = new THREE.SphereGeometry(
             radius,
-            64, // High resolution for smooth curve
+            64,
             32,
-            Math.PI * 0.4, // Start further back for more curve
-            Math.PI * 0.2, // Larger arc for visible 3D bulge
-            Math.PI * 0.4, // Vertical start
-            Math.PI * 0.2 // Larger vertical arc
+            Math.PI * 0.4,
+            Math.PI * 0.2,
+            Math.PI * 0.4,
+            Math.PI * 0.2
         );
 
-        // Scale to match display dimensions while preserving the 3D bulge
         const scaleX = width / (radius * Math.PI * 0.2);
         const scaleY = height / (radius * Math.PI * 0.2);
-        const scaleZ = 1.5; // Amplify the Z depth for visible convex bulge
+        const scaleZ = 1.5;
 
         geometry.scale(scaleX, scaleY, scaleZ);
-
-        // Move the geometry forward so the bulge extends toward the viewer
         geometry.translate(0, 0, 0.08);
 
         return geometry;
     }, [displayWidth, displayHeight]);
 
-    // Reference for the mesh
     const meshRef = useRef<THREE.Mesh>(null);
 
-    // Position glass flush with the display surface
-    const glassPosition: [number, number, number] = [
-        0, // Centered on display
-        0, // Centered on display
-        0.02, // Just slightly in front of display surface
-    ];
+    const glassPosition: [number, number, number] = [0, 0, 0.02];
 
     return (
         <group>
@@ -112,13 +541,13 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
                 <mesh position={[0, 0, -0.3]}>
                     <boxGeometry
                         args={[
-                            displayWidth / 400 + 0.3, // Much wider than display
-                            displayHeight / 400 + 0.3, // Much taller than display
-                            0.6, // Deep CRT tube depth
+                            displayWidth / 400 + 0.3,
+                            displayHeight / 400 + 0.3,
+                            0.6,
                         ]}
                     />
                     <meshStandardMaterial
-                        color="#e8e8e8" // Classic beige/off-white
+                        color="#e8e8e8"
                         roughness={0.4}
                         metalness={0.1}
                     />
@@ -134,7 +563,7 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
                         ]}
                     />
                     <meshStandardMaterial
-                        color="#f0f0f0" // Slightly lighter front
+                        color="#f0f0f0"
                         roughness={0.3}
                         metalness={0.05}
                     />
@@ -175,8 +604,8 @@ const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
                 geometry={glassGeometry}
                 material={glassMaterial}
                 ref={meshRef}
-                renderOrder={-5} // Render before HTML content
-                raycast={() => null} // Disable raycasting to prevent interaction interference
+                renderOrder={-5}
+                raycast={() => null}
             />
         </group>
     );
@@ -206,29 +635,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         ?.replace(/\s+/g, "-")
         .toLowerCase()}`;
 
-    // Iframe loading states
-    const [isLoading, setIsLoading] = useState(false); // Start as false since iframe doesn't load until clicked
-    const [error, setError] = useState<string | null>(null);
-    const [showFallback, setShowFallback] = useState(false);
-    const [iframeUrl, setIframeUrl] = useState<string | null>(null); // Only set when user clicks "View in Display"
-
-    // Screenshot overlay state
-    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(
-        !!screenshotUrl
-    ); // Show overlay if screenshot exists
-    const [screenshotLoaded, setScreenshotLoaded] = useState(false);
-
-    // Calculate responsive dimensions - ALWAYS use desktop dimensions
-    const dimensions = responsive
-        ? responsive.desktop // Always use desktop dimensions for consistent display sizes
-        : { width, height };
-
+    // Calculate responsive dimensions
+    const dimensions = responsive ? responsive.desktop : { width, height };
     const displayWidth = dimensions.width;
     const displayHeight = dimensions.height;
-
-    // Determine if this display should look like a mobile device
     const isMobileDisplay =
-        title?.toLowerCase().includes("mobile") || displayWidth <= 400; // Consider narrow displays as mobile
+        title?.toLowerCase().includes("mobile") || displayWidth <= 400;
 
     // Real-time clock for mobile displays
     const [currentTime, setCurrentTime] = useState(
@@ -239,7 +651,11 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         })
     );
 
-    // State to track if screenshot appears light (for dynamic contrast)
+    // Screenshot overlay state
+    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(
+        !!screenshotUrl
+    );
+    const [screenshotLoaded, setScreenshotLoaded] = useState(false);
     const [isLightScreenshot, setIsLightScreenshot] = useState(false);
 
     // Update time every minute for mobile displays
@@ -256,83 +672,71 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             );
         };
 
-        const interval = setInterval(updateTime, 60000); // Update every minute
+        const interval = setInterval(updateTime, 60000);
         return () => clearInterval(interval);
     }, [isMobileDisplay]);
 
-    // Eviction callback that forces display back to screenshot mode
+    // Custom hooks
+    const iframeManager = useIframeManager(url, title);
+
+    // Create a ref to store the proximity detection reset function
+    const proximityResetRef = useRef<(() => void) | null>(null);
+
+    const handleProximityComplete = useCallback(() => {
+        const { registerDisplay } = useDisplayManager.getState();
+        registerDisplay(displayId, title, handleEviction);
+        iframeManager.startLoading();
+        setShowScreenshotOverlay(false);
+        // Call the reset function if it exists
+        if (proximityResetRef.current) {
+            proximityResetRef.current();
+        }
+        console.log(`📺 Proximity loading ${title} in display`);
+    }, [displayId, title, iframeManager]);
+
+    const proximityDetection = useProximityDetection(
+        displayRef,
+        handleProximityComplete
+    );
+
+    // Store the reset function in the ref
+    useEffect(() => {
+        proximityResetRef.current = proximityDetection.resetProximity;
+    }, [proximityDetection.resetProximity]);
+
+    // Eviction callback
     const handleEviction = useCallback(() => {
         setShowScreenshotOverlay(true);
-        // CRITICAL FIX: Actually unload the iframe to prevent performance issues
-        setIframeUrl(null);
-        setIsLoading(false);
-        setError(null);
-        setShowFallback(false);
+        iframeManager.unloadIframe();
+        proximityDetection.resetProximity();
         console.log(`🔄 Display evicted and iframe unloaded: ${title}`);
-    }, [title]);
+    }, [title, iframeManager, proximityDetection]);
 
-    // Original working iframe handlers
-    const handleIframeLoad = () => {
-        setIsLoading(false);
-        setError(null);
-    };
-
-    const handleIframeError = () => {
-        setIsLoading(false);
-        setError("Failed to load website");
-        setShowFallback(true);
-    };
-
-    // Updated handler for viewing in display with display manager integration
+    // Manual view in display handler
     const handleViewInDisplay = useCallback(() => {
-        // Start loading iframe content for the first time
-        if (!iframeUrl) {
-            setIframeUrl(url);
-            setIsLoading(true);
-            setError(null);
-            setShowFallback(false);
+        const { registerDisplay } = useDisplayManager.getState();
+        registerDisplay(displayId, title, handleEviction);
+
+        if (!iframeManager.iframeUrl) {
+            iframeManager.startLoading();
         }
-
-        // Hide screenshot overlay to reveal iframe
         setShowScreenshotOverlay(false);
-
         console.log(`📺 Viewing ${title} in display`);
-    }, [displayId, title, handleEviction, iframeUrl, url]);
+    }, [displayId, title, handleEviction, iframeManager]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
     };
 
-    // Handle returning to screenshot mode
     const handleReturnToScreenshot = useCallback(() => {
         setShowScreenshotOverlay(true);
-        // CRITICAL FIX: Actually unload the iframe to prevent performance issues
-        setIframeUrl(null);
-        setIsLoading(false);
-        setError(null);
-        setShowFallback(false);
-    }, [displayId, title]);
-
-    // Timeout logic - only runs when iframe is actually loading
-    useEffect(() => {
-        if (!isLoading || !iframeUrl) return;
-
-        const timer = setTimeout(() => {
-            if (isLoading) {
-                setError("Website may not allow embedding");
-                setShowFallback(true);
-                setIsLoading(false);
-            }
-        }, 10000); // 10 second timeout
-
-        return () => clearTimeout(timer);
-    }, [isLoading, iframeUrl]);
+        iframeManager.unloadIframe();
+    }, [iframeManager]);
 
     // Holographic animation loop for Nicolas display
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
 
-        // Animate holographic scan line
         if (scanLineRef.current) {
             scanLineRef.current.position.y =
                 Math.sin(elapsed * 3) * (displayHeight / 400) * 0.3;
@@ -341,7 +745,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             ).emissiveIntensity = 0.3 + Math.sin(elapsed * 5) * 0.2;
         }
 
-        // Animate holographic frame effects
         if (hologramFrameRef.current) {
             hologramFrameRef.current.children.forEach((child, i) => {
                 if (child instanceof THREE.Mesh) {
@@ -365,10 +768,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 <mesh>
                     <boxGeometry
                         args={[
-                            displayWidth / 400 + (isMobileDisplay ? 0.05 : 0.1), // Ultra-thin frame for mobile
+                            displayWidth / 400 + (isMobileDisplay ? 0.05 : 0.1),
                             displayHeight / 400 +
                                 (isMobileDisplay ? 0.05 : 0.1),
-                            0.02, // Much thinner depth
+                            0.02,
                         ]}
                     />
                     <meshStandardMaterial
@@ -382,7 +785,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             {/* Stand and base - only for non-CRT displays */}
             {!crtStyle && (
                 <>
-                    {/* Stand - adjusted for thinner display frame */}
                     <mesh
                         position={[
                             0,
@@ -396,12 +798,10 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         ]}
                         rotation={[-Math.PI / 6, 0, 0]}
                     >
-                        <boxGeometry args={[0.4, 1.2, 0.05]} />{" "}
-                        {/* Made taller to reach thinner frame */}
+                        <boxGeometry args={[0.4, 1.2, 0.05]} />
                         <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
                     </mesh>
 
-                    {/* Base - adjusted positioning */}
                     <mesh
                         position={[
                             0,
@@ -423,28 +823,28 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
             {/* Web content using Html component */}
             <Html
                 transform
-                position={[0, 0, 0.015]} // Much closer to frame for flush look
+                position={[0, 0, 0.015]}
                 distanceFactor={1}
                 style={{
                     width: `${displayWidth}px`,
                     height: `${displayHeight}px`,
-                    borderRadius: isMobileDisplay ? "12px" : "4px", // More rounded corners for mobile
+                    borderRadius: isMobileDisplay ? "12px" : "4px",
                     overflow: "hidden",
                     backgroundColor: "#ffffff",
-                    border: "none", // Remove border for flush display
+                    border: "none",
                     boxShadow: isMobileDisplay
-                        ? "0 8px 24px rgba(0,0,0,0.4)" // Deeper shadow for mobile
-                        : "0 4px 12px rgba(0,0,0,0.2)", // Subtle shadow for desktop
+                        ? "0 8px 24px rgba(0,0,0,0.4)"
+                        : "0 4px 12px rgba(0,0,0,0.2)",
                     ...(crtStyle && {
-                        filter: "brightness(0.95) contrast(1.1) blur(0.3px)", // CRT effect with slight blur
-                        transform: "perspective(1000px) rotateX(0.5deg)", // Subtle perspective for CRT curvature
+                        filter: "brightness(0.95) contrast(1.1) blur(0.3px)",
+                        transform: "perspective(1000px) rotateX(0.5deg)",
                         background: `
                             radial-gradient(ellipse at center, 
                                 transparent 0%, 
                                 transparent 85%, 
                                 rgba(0,0,0,0.1) 100%
                             )
-                        `, // Barrel distortion edge darkening
+                        `,
                         backgroundBlendMode: "multiply",
                     }),
                 }}
@@ -457,158 +857,20 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         backgroundColor: "#ffffff",
                     }}
                 >
-                    {/* Header bar */}
-                    <div
-                        style={{
-                            height: isMobileDisplay ? "44px" : "40px", // Taller for mobile
-                            backgroundColor: isMobileDisplay
-                                ? "#000000"
-                                : "#f5f5f5",
-                            borderBottom: isMobileDisplay
-                                ? "none"
-                                : "1px solid #ddd",
-                            display: "flex",
-                            alignItems: "center",
-                            padding: isMobileDisplay ? "0 16px" : "0 12px",
-                            fontSize: isMobileDisplay
-                                ? "13px"
-                                : displayWidth > 400
-                                ? "14px"
-                                : "12px",
-                            fontFamily: "system-ui, sans-serif",
-                            borderTopLeftRadius: isMobileDisplay
-                                ? "12px"
-                                : "4px",
-                            borderTopRightRadius: isMobileDisplay
-                                ? "12px"
-                                : "4px",
-                        }}
-                    >
-                        {/* Desktop browser controls */}
-                        {!isMobileDisplay && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: "6px",
-                                    marginRight: "12px",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: "12px",
-                                        height: "12px",
-                                        borderRadius: "50%",
-                                        backgroundColor: "#ff5f57",
-                                    }}
-                                />
-                                <div
-                                    style={{
-                                        width: "12px",
-                                        height: "12px",
-                                        borderRadius: "50%",
-                                        backgroundColor: "#ffbd2e",
-                                    }}
-                                />
-                                <div
-                                    style={{
-                                        width: "12px",
-                                        height: "12px",
-                                        borderRadius: "50%",
-                                        backgroundColor: "#28ca42",
-                                    }}
-                                />
-                            </div>
-                        )}
+                    <DisplayHeader
+                        isMobileDisplay={isMobileDisplay}
+                        displayWidth={displayWidth}
+                        url={url}
+                        currentTime={currentTime}
+                        showScreenshotOverlay={showScreenshotOverlay}
+                        showProximityOverlay={
+                            proximityDetection.showProximityOverlay
+                        }
+                        onReturnToScreenshot={handleReturnToScreenshot}
+                    />
 
-                        {/* Mobile status bar */}
-                        {isMobileDisplay && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    width: "100%",
-                                    color: "#ffffff",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                }}
-                            >
-                                <div>{currentTime}</div>
-                                <div
-                                    style={{
-                                        fontSize: "12px",
-                                        opacity: 0.8,
-                                        textAlign: "center",
-                                        flex: 1,
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        margin: "0 12px",
-                                    }}
-                                >
-                                    {new URL(url).hostname}
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        gap: "2px",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <div style={{ fontSize: "12px" }}>●●●</div>
-                                    <div style={{ fontSize: "12px" }}>📶</div>
-                                    <div style={{ fontSize: "12px" }}>🔋</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Desktop URL bar */}
-                        {!isMobileDisplay && (
-                            <div
-                                style={{
-                                    flex: 1,
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: "4px",
-                                    padding: "4px 8px",
-                                    border: "1px solid #ddd",
-                                    fontSize:
-                                        displayWidth > 400 ? "12px" : "10px",
-                                    color: "#666",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    minWidth: 0, // Allow shrinking
-                                }}
-                                title={url} // Show full URL on hover
-                            >
-                                {url}
-                            </div>
-                        )}
-
-                        {/* Back to screenshot button when live display is active */}
-                        {!showScreenshotOverlay && (
-                            <button
-                                onClick={handleReturnToScreenshot}
-                                style={{
-                                    marginLeft: "8px",
-                                    backgroundColor: "#6c757d",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontSize: "10px",
-                                    cursor: "pointer",
-                                    fontWeight: "500",
-                                }}
-                                title="Return to screenshot mode"
-                            >
-                                📷
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Loading overlay (original working version) */}
-                    {isLoading && !showFallback && (
+                    {/* Loading overlay */}
+                    {iframeManager.isLoading && !iframeManager.showFallback && (
                         <div
                             style={{
                                 position: "absolute",
@@ -629,8 +891,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Fallback content (original working version) */}
-                    {showFallback && (
+                    {/* Fallback content */}
+                    {iframeManager.showFallback && (
                         <div
                             style={{
                                 position: "absolute",
@@ -692,38 +954,77 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         {description}
                                     </p>
                                 )}
-                                <button
-                                    onClick={handleOpenInNewTab}
+                                <div
                                     style={{
-                                        backgroundColor: "#007bff",
-                                        color: "white",
-                                        border: "none",
-                                        padding:
-                                            displayWidth > 400
-                                                ? "10px 18px"
-                                                : "8px 14px",
-                                        borderRadius: "6px",
-                                        fontSize:
-                                            displayWidth > 400
-                                                ? "14px"
-                                                : "12px",
-                                        cursor: "pointer",
-                                        fontWeight: "500",
-                                        transition: "background-color 0.2s",
-                                    }}
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.backgroundColor =
-                                            "#0056b3";
-                                    }}
-                                    onMouseOut={(e) => {
-                                        e.currentTarget.style.backgroundColor =
-                                            "#007bff";
+                                        display: "flex",
+                                        gap: "8px",
+                                        flexWrap: "wrap",
+                                        justifyContent: "center",
                                     }}
                                 >
-                                    Visit {title} →
-                                </button>
+                                    <button
+                                        onClick={iframeManager.retryLoading}
+                                        style={{
+                                            backgroundColor: "#28a745",
+                                            color: "white",
+                                            border: "none",
+                                            padding:
+                                                displayWidth > 400
+                                                    ? "10px 18px"
+                                                    : "8px 14px",
+                                            borderRadius: "6px",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "14px"
+                                                    : "12px",
+                                            cursor: "pointer",
+                                            fontWeight: "500",
+                                            transition: "background-color 0.2s",
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#218838";
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#28a745";
+                                        }}
+                                    >
+                                        🔄 Retry
+                                    </button>
+                                    <button
+                                        onClick={handleOpenInNewTab}
+                                        style={{
+                                            backgroundColor: "#007bff",
+                                            color: "white",
+                                            border: "none",
+                                            padding:
+                                                displayWidth > 400
+                                                    ? "10px 18px"
+                                                    : "8px 14px",
+                                            borderRadius: "6px",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "14px"
+                                                    : "12px",
+                                            cursor: "pointer",
+                                            fontWeight: "500",
+                                            transition: "background-color 0.2s",
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#0056b3";
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#007bff";
+                                        }}
+                                    >
+                                        Visit {title} →
+                                    </button>
+                                </div>
                             </div>
-                            {error && (
+                            {iframeManager.error && (
                                 <div
                                     style={{
                                         fontSize:
@@ -734,13 +1035,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         marginTop: "8px",
                                     }}
                                 >
-                                    {error}
+                                    {iframeManager.error}
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* Screenshot overlay (shows on top when available) */}
+                    {/* Screenshot overlay */}
                     {showScreenshotOverlay && screenshotUrl && (
                         <div
                             style={{
@@ -752,7 +1053,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 backgroundColor: "#ffffff",
                                 display: "flex",
                                 flexDirection: "column",
-                                zIndex: 10, // Above iframe
+                                zIndex: 10,
                             }}
                         >
                             <img
@@ -768,7 +1069,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 }}
                                 onLoad={(e) => {
                                     setScreenshotLoaded(true);
-                                    // Analyze image brightness for dynamic contrast
                                     const img = e.target as HTMLImageElement;
                                     const canvas =
                                         document.createElement("canvas");
@@ -778,7 +1078,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         canvas.height = img.naturalHeight;
                                         ctx.drawImage(img, 0, 0);
 
-                                        // Sample pixels to determine brightness
                                         const imageData = ctx.getImageData(
                                             0,
                                             0,
@@ -803,13 +1102,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                             brightness / (data.length / 4);
                                         setIsLightScreenshot(
                                             avgBrightness > 180
-                                        ); // Threshold for "light" images
+                                        );
                                     }
                                 }}
                                 onError={() => setScreenshotLoaded(true)}
                             />
 
-                            {/* Loading placeholder for screenshot */}
                             {!screenshotLoaded && (
                                 <div
                                     style={{
@@ -839,18 +1137,18 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     left: "10px",
                                     right: "10px",
                                     backgroundColor: isLightScreenshot
-                                        ? "rgba(0, 0, 0, 0.4)" // Dark background for light screenshots
-                                        : "rgba(255, 255, 255, 0.15)", // Light background for dark screenshots
+                                        ? "rgba(0, 0, 0, 0.4)"
+                                        : "rgba(255, 255, 255, 0.15)",
                                     color: "white",
                                     padding:
                                         displayWidth > 400 ? "16px" : "12px",
                                     borderRadius: "12px",
                                     textAlign: "center",
                                     fontFamily: "system-ui, sans-serif",
-                                    backdropFilter: "blur(20px)", // Strong blur for glass effect
+                                    backdropFilter: "blur(20px)",
                                     border: isLightScreenshot
-                                        ? "1px solid rgba(0, 0, 0, 0.3)" // Dark border for light screenshots
-                                        : "1px solid rgba(255, 255, 255, 0.2)", // Light border for dark screenshots
+                                        ? "1px solid rgba(0, 0, 0, 0.3)"
+                                        : "1px solid rgba(255, 255, 255, 0.2)",
                                 }}
                             >
                                 <div
@@ -881,7 +1179,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     </div>
                                 )}
 
-                                {/* Button container */}
                                 <div
                                     style={{
                                         display: "flex",
@@ -890,12 +1187,11 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         flexWrap: "wrap",
                                     }}
                                 >
-                                    {/* View in Display button */}
                                     <button
                                         onClick={handleViewInDisplay}
                                         style={{
                                             backgroundColor:
-                                                "rgba(40, 167, 69, 0.15)", // Even more transparent green
+                                                "rgba(40, 167, 69, 0.15)",
                                             color: "white",
                                             border: "2px solid rgba(40, 167, 69, 0.6)",
                                             padding:
@@ -930,61 +1226,63 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         }}
                                     >
                                         📺{" "}
-                                        {iframeUrl
+                                        {iframeManager.iframeUrl
                                             ? "Reload Display"
                                             : "View in Display"}
                                     </button>
 
-                                    {/* Unload iframe button - only show if iframe is loaded but hidden */}
-                                    {iframeUrl && showScreenshotOverlay && (
-                                        <button
-                                            onClick={handleReturnToScreenshot}
-                                            style={{
-                                                backgroundColor:
-                                                    "rgba(255, 193, 7, 0.15)", // Yellow for unload action
-                                                color: "white",
-                                                border: "2px solid rgba(255, 193, 7, 0.6)",
-                                                padding:
-                                                    displayWidth > 400
-                                                        ? "10px 16px"
-                                                        : "8px 12px",
-                                                borderRadius: "8px",
-                                                fontSize:
-                                                    displayWidth > 400
-                                                        ? "13px"
-                                                        : "11px",
-                                                cursor: "pointer",
-                                                fontWeight: "600",
-                                                transition: "all 0.3s ease",
-                                                minWidth:
-                                                    displayWidth > 400
-                                                        ? "120px"
-                                                        : "100px",
-                                                backdropFilter: "blur(10px)",
-                                            }}
-                                            onMouseOver={(e) => {
-                                                e.currentTarget.style.backgroundColor =
-                                                    "rgba(255, 193, 7, 0.3)";
-                                                e.currentTarget.style.borderColor =
-                                                    "rgba(255, 193, 7, 0.9)";
-                                            }}
-                                            onMouseOut={(e) => {
-                                                e.currentTarget.style.backgroundColor =
-                                                    "rgba(255, 193, 7, 0.15)";
-                                                e.currentTarget.style.borderColor =
-                                                    "rgba(255, 193, 7, 0.6)";
-                                            }}
-                                        >
-                                            🗑️ Unload Content
-                                        </button>
-                                    )}
+                                    {iframeManager.iframeUrl &&
+                                        showScreenshotOverlay && (
+                                            <button
+                                                onClick={
+                                                    handleReturnToScreenshot
+                                                }
+                                                style={{
+                                                    backgroundColor:
+                                                        "rgba(255, 193, 7, 0.15)",
+                                                    color: "white",
+                                                    border: "2px solid rgba(255, 193, 7, 0.6)",
+                                                    padding:
+                                                        displayWidth > 400
+                                                            ? "10px 16px"
+                                                            : "8px 12px",
+                                                    borderRadius: "8px",
+                                                    fontSize:
+                                                        displayWidth > 400
+                                                            ? "13px"
+                                                            : "11px",
+                                                    cursor: "pointer",
+                                                    fontWeight: "600",
+                                                    transition: "all 0.3s ease",
+                                                    minWidth:
+                                                        displayWidth > 400
+                                                            ? "120px"
+                                                            : "100px",
+                                                    backdropFilter:
+                                                        "blur(10px)",
+                                                }}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.backgroundColor =
+                                                        "rgba(255, 193, 7, 0.3)";
+                                                    e.currentTarget.style.borderColor =
+                                                        "rgba(255, 193, 7, 0.9)";
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.backgroundColor =
+                                                        "rgba(255, 193, 7, 0.15)";
+                                                    e.currentTarget.style.borderColor =
+                                                        "rgba(255, 193, 7, 0.6)";
+                                                }}
+                                            >
+                                                🗑️ Unload Content
+                                            </button>
+                                        )}
 
-                                    {/* Open in New Tab button */}
                                     <button
                                         onClick={handleOpenInNewTab}
                                         style={{
                                             backgroundColor:
-                                                "rgba(0, 123, 255, 0.15)", // Even more transparent blue
+                                                "rgba(0, 123, 255, 0.15)",
                                             color: "white",
                                             border: "2px solid rgba(0, 123, 255, 0.6)",
                                             padding:
@@ -1025,32 +1323,49 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Placeholder when no iframe content has been loaded */}
-                    {!showFallback && !iframeUrl && !showScreenshotOverlay && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: isMobileDisplay ? "44px" : "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: "#f8f9fa",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: displayWidth > 400 ? "16px" : "14px",
-                                color: "#666",
-                                fontFamily: "system-ui, sans-serif",
-                                flexDirection: "column",
-                                gap: "12px",
-                            }}
-                        >
-                            <div style={{ fontSize: "32px", opacity: 0.6 }}>
-                                📺
-                            </div>
-                            <div>Click "View in Display" to load content</div>
-                        </div>
+                    {/* Proximity loading overlay */}
+                    {proximityDetection.showProximityOverlay && (
+                        <ProximityLoadingOverlay
+                            isMobileDisplay={isMobileDisplay}
+                            displayWidth={displayWidth}
+                            title={title}
+                            timerProgress={proximityDetection.timerProgress}
+                            onCancel={proximityDetection.cancelProximity}
+                        />
                     )}
+
+                    {/* Placeholder when no iframe content has been loaded */}
+                    {!iframeManager.showFallback &&
+                        !iframeManager.iframeUrl &&
+                        !showScreenshotOverlay &&
+                        !proximityDetection.showProximityOverlay && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: isMobileDisplay ? "44px" : "40px",
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: "#f8f9fa",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize:
+                                        displayWidth > 400 ? "16px" : "14px",
+                                    color: "#666",
+                                    fontFamily: "system-ui, sans-serif",
+                                    flexDirection: "column",
+                                    gap: "12px",
+                                }}
+                            >
+                                <div style={{ fontSize: "32px", opacity: 0.6 }}>
+                                    📺
+                                </div>
+                                <div>
+                                    Click "View in Display" to load content
+                                </div>
+                            </div>
+                        )}
 
                     {/* CRT Barrel Distortion Overlay */}
                     {crtStyle && (
@@ -1061,7 +1376,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 left: 0,
                                 right: 0,
                                 bottom: 0,
-                                pointerEvents: "none", // Don't block interactions
+                                pointerEvents: "none",
                                 background: `
                                     radial-gradient(ellipse 100% 100% at center,
                                         transparent 0%,
@@ -1077,10 +1392,9 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 borderRadius: isMobileDisplay
                                     ? "0 0 12px 12px"
                                     : "0 0 4px 4px",
-                                zIndex: 1000, // On top of everything
+                                zIndex: 1000,
                             }}
                         >
-                            {/* Scanlines effect */}
                             <div
                                 style={{
                                     position: "absolute",
@@ -1101,7 +1415,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 }}
                             />
 
-                            {/* Corner reflections */}
                             <div
                                 style={{
                                     position: "absolute",
@@ -1132,11 +1445,11 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         </div>
                     )}
 
-                    {/* Iframe for web content - only loads after "View in Display" is clicked */}
-                    {!showFallback && iframeUrl && (
+                    {/* Iframe for web content */}
+                    {!iframeManager.showFallback && iframeManager.iframeUrl && (
                         <iframe
                             ref={iframeRef}
-                            src={iframeUrl}
+                            src={iframeManager.iframeUrl}
                             style={{
                                 width: "100%",
                                 height: isMobileDisplay
@@ -1145,10 +1458,13 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                 border: "none",
                                 backgroundColor: "#ffffff",
                                 display:
-                                    error && !showFallback ? "none" : "block",
+                                    iframeManager.error &&
+                                    !iframeManager.showFallback
+                                        ? "none"
+                                        : "block",
                             }}
-                            onLoad={handleIframeLoad}
-                            onError={handleIframeError}
+                            onLoad={iframeManager.handleIframeLoad}
+                            onError={iframeManager.handleIframeError}
                             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                             referrerPolicy="strict-origin-when-cross-origin"
                             allowFullScreen

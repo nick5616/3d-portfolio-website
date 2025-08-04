@@ -139,6 +139,16 @@ canvas {
     }
 
     /* Exception for loading animations that should remain smooth */
+    /* Loading animation for proximity detection */
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
     .loading-spinner,
     .ripple-animation {
         animation-duration: 0.3s !important;
