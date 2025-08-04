@@ -16,7 +16,10 @@ export const PerformanceControls: React.FC = () => {
         <div className="absolute bottom-4 left-4 z-50 pointer-events-auto">
             {/* Toggle button */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(!isOpen);
+                }}
                 className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm text-white transition-all hover:bg-black/30"
                 aria-label="Performance Settings"
             >

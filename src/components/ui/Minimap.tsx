@@ -7,7 +7,7 @@ export const Minimap: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [playerPosition, setPlayerPosition] = useState({ x: 0, z: 0 });
 
-    // Track player position
+    // Track player position from camera data
     useEffect(() => {
         setPlayerPosition({
             x: cameraData.position.x,
@@ -24,7 +24,7 @@ export const Minimap: React.FC = () => {
         if (!ctx) return;
 
         // Set canvas size - smaller to match FPS indicator height
-        const size = 120;
+        const size = 220;
         canvas.width = size;
         canvas.height = size;
 
@@ -33,7 +33,7 @@ export const Minimap: React.FC = () => {
         ctx.fillRect(0, 0, size, size);
 
         // Draw room layout
-        const scale = 1; // Scale factor for minimap - reduced to fit all rooms
+        const scale = 0.25; // Scale factor for minimap - reduced to fit all rooms
         const centerX = size / 2;
         const centerY = size / 2;
 
@@ -85,50 +85,34 @@ export const Minimap: React.FC = () => {
             });
         });
 
-        // Draw player position relative to current room
+        // Draw player position accounting for room offset
         if (currentRoom) {
             const [roomX, , roomZ] = currentRoom.position;
-            const relativePlayerX = playerPosition.x - roomX;
-            const relativePlayerZ = playerPosition.z - roomZ;
+            // Camera position is relative to room, so add room offset for absolute position
+            const absoluteX = cameraData.position.x + roomX;
+            const absoluteZ = cameraData.position.z + roomZ;
 
-            const playerMapX = centerX + relativePlayerX / scale;
-            const playerMapY = centerY + relativePlayerZ / scale;
+            const playerMapX = centerX + absoluteX / scale;
+            const playerMapY = centerY + absoluteZ / scale;
 
             // Player dot
             ctx.beginPath();
             ctx.arc(playerMapX, playerMapY, 3, 0, 2 * Math.PI);
             ctx.fillStyle = "#FF0000";
             ctx.fill();
-
-            // Player direction indicator - calculate from rotation
-            // cameraData.rotation.y is the Y rotation (left/right)
-            const yRotation = cameraData.rotation.y;
-            const indicatorLength = 6;
-
-            ctx.beginPath();
-            ctx.moveTo(playerMapX, playerMapY);
-            ctx.lineTo(
-                playerMapX + Math.sin(yRotation) * indicatorLength,
-                playerMapY - Math.cos(yRotation) * indicatorLength
-            );
-            ctx.strokeStyle = "#FF0000";
-            ctx.lineWidth = 2;
-            ctx.stroke();
         }
 
         // Draw coordinates
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "9px monospace";
         ctx.textAlign = "left";
-        ctx.fillText(`X: ${playerPosition.x.toFixed(1)}`, 5, size - 25);
-        ctx.fillText(`Z: ${playerPosition.z.toFixed(1)}`, 5, size - 15);
         ctx.fillText(`Room: ${currentRoom?.name || "None"}`, 5, size - 5);
-    }, [minimap.visible, currentRoom, playerPosition, cameraData.rotation.y]);
+    }, [minimap.visible, currentRoom, playerPosition]);
 
     if (!minimap.visible) return null;
 
     return (
-        <div className="fixed top-[120px] right-[45px] z-40">
+        <div className="fixed top-[120px] right-[160px] z-40">
             <div className="bg-black/60 rounded-lg p-2 border border-gray-600">
                 <div className="text-white text-xs mb-1 text-center">
                     Minimap
@@ -142,9 +126,6 @@ export const Minimap: React.FC = () => {
                         backgroundColor: "rgba(40, 40, 40, 0.8)",
                     }}
                 />
-                <div className="text-white text-xs mt-1 text-center">
-                    Red dot = You | Gold = Doors
-                </div>
             </div>
         </div>
     );
