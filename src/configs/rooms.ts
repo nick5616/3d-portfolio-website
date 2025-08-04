@@ -315,7 +315,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [-7, 0.1, 0] as [number, number, number],
+                    position: [-7, 0.1, 0] as [number, number, number], // Clearly in front of gallery, away from play room
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },

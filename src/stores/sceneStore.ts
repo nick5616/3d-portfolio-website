@@ -54,6 +54,7 @@ interface SceneState {
     flyMode: boolean;
     isFirstPerson: boolean;
     isInteracting: boolean;
+    lastTeleportTime: number; // Add global teleportation debounce
     performance: {
         showStats: boolean;
         monitoring: boolean;
@@ -109,6 +110,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     spotlightsEnabled: false,
     isFirstPerson: true,
     isInteracting: false,
+    lastTeleportTime: 0,
 
     performance: {
         showStats: false,
@@ -204,6 +206,7 @@ export const useSceneStore = create<SceneState>((set) => ({
                 cameraRotation: rotation,
                 playerPosition: position,
                 shouldTeleportPlayer: true,
+                lastTeleportTime: Date.now(),
             });
             console.log(`🔄 Store: State updated - shouldTeleportPlayer: true`);
         } else {

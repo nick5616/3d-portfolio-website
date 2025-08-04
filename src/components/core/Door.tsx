@@ -15,7 +15,7 @@ interface DoorProps {
 }
 
 export const Door: React.FC<DoorProps> = ({ archway }) => {
-    const { teleportToRoom } = useSceneStore();
+    const { teleportToRoom, lastTeleportTime } = useSceneStore();
     const { camera, raycaster } = useThree();
     const [isInTrigger, setIsInTrigger] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -122,7 +122,9 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         if (!isInTrigger || isTransitioning) return;
 
         const now = Date.now();
+        // Check both local and global debounce (1 second each)
         if (now - lastTransitionTime.current < 1000) return;
+        if (now - lastTeleportTime < 1000) return;
 
         console.log(
             `🚪 AUTO-TELEPORT TRIGGERED: Door ${archway.id} (${archway.targetRoomId}) - Starting transition`
@@ -135,7 +137,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             handleTeleport();
             setIsTransitioning(false);
         }, 100);
-    }, [isInTrigger, isTransitioning, handleTeleport]);
+    }, [isInTrigger, isTransitioning, handleTeleport, lastTeleportTime]);
 
     // Listen for UI click events
     useEffect(() => {
