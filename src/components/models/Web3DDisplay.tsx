@@ -201,17 +201,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const scanLineRef = useRef<THREE.Mesh>(null);
     const { isMobile } = useDeviceDetection();
 
-    // Check if this is the nicolasbelovoskey.com display for holographic effects
-    const isNicolasDisplay =
-        url.includes("nicolasbelovoskey.com") ||
-        title?.includes("Nicolas Belovoskey");
-    const {
-        registerDisplay,
-        unregisterDisplay,
-        updateDisplayActivity,
-        isDisplayActive,
-    } = useDisplayManager();
-
     // Generate unique ID for this display based on position and title
     const displayId = `display-${position.join("-")}-${title
         ?.replace(/\s+/g, "-")
@@ -296,9 +285,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
     // Updated handler for viewing in display with display manager integration
     const handleViewInDisplay = useCallback(() => {
-        // Register with display manager (this may evict another display)
-        registerDisplay(displayId, title, handleEviction);
-
         // Start loading iframe content for the first time
         if (!iframeUrl) {
             setIframeUrl(url);
@@ -311,23 +297,11 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         setShowScreenshotOverlay(false);
 
         console.log(`📺 Viewing ${title} in display`);
-    }, [displayId, title, registerDisplay, handleEviction, iframeUrl, url]);
+    }, [displayId, title, handleEviction, iframeUrl, url]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
     };
-
-    // Handle iframe interaction to update activity
-    const handleIframeInteraction = useCallback(() => {
-        if (!showScreenshotOverlay && isDisplayActive(displayId)) {
-            updateDisplayActivity(displayId);
-        }
-    }, [
-        showScreenshotOverlay,
-        displayId,
-        isDisplayActive,
-        updateDisplayActivity,
-    ]);
 
     // Handle returning to screenshot mode
     const handleReturnToScreenshot = useCallback(() => {
@@ -337,11 +311,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         setIsLoading(false);
         setError(null);
         setShowFallback(false);
-        unregisterDisplay(displayId);
-        console.log(
-            `📷 Returned to screenshot mode and iframe unloaded: ${title}`
-        );
-    }, [displayId, title, unregisterDisplay]);
+    }, [displayId, title]);
 
     // Timeout logic - only runs when iframe is actually loading
     useEffect(() => {
@@ -358,17 +328,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         return () => clearTimeout(timer);
     }, [isLoading, iframeUrl]);
 
-    // Cleanup: unregister display when component unmounts
-    useEffect(() => {
-        return () => {
-            unregisterDisplay(displayId);
-        };
-    }, [displayId, unregisterDisplay]);
-
     // Holographic animation loop for Nicolas display
     useFrame((state) => {
-        if (!isNicolasDisplay) return;
-
         const elapsed = state.clock.elapsedTime;
 
         // Animate holographic scan line
@@ -457,96 +418,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
                     </mesh>
                 </>
-            )}
-
-            {/* Holographic Effects for Nicolas Display */}
-            {isNicolasDisplay && (
-                <group position={[0, 0, -0.05]}>
-                    {/* Holographic backdrop */}
-                    <mesh>
-                        <planeGeometry
-                            args={[
-                                (displayWidth / 400) * 1.1,
-                                (displayHeight / 400) * 1.1,
-                            ]}
-                        />
-                        <meshBasicMaterial
-                            transparent
-                            opacity={0.3}
-                            color="#00ffff"
-                            side={THREE.DoubleSide}
-                        />
-                    </mesh>
-
-                    {/* Bright holographic frame */}
-                    <mesh>
-                        <ringGeometry
-                            args={[
-                                (displayWidth / 400) * 0.45,
-                                (displayWidth / 400) * 0.52,
-                                32,
-                            ]}
-                        />
-                        <meshStandardMaterial
-                            color="#00ffff"
-                            emissive="#00ffff"
-                            emissiveIntensity={1.0}
-                            transparent
-                            opacity={0.9}
-                        />
-                    </mesh>
-
-                    {/* Holographic frame effects */}
-                    <group ref={hologramFrameRef}>
-                        {/* Corner projectors */}
-                        {[
-                            [-1, -1],
-                            [1, -1],
-                            [1, 1],
-                            [-1, 1],
-                        ].map(([x, y], i) => (
-                            <mesh
-                                key={i}
-                                position={[
-                                    ((x * displayWidth) / 400) * 0.6,
-                                    ((y * displayHeight) / 400) * 0.5,
-                                    0.1,
-                                ]}
-                            >
-                                <sphereGeometry args={[0.02, 8, 8]} />
-                                <meshStandardMaterial
-                                    color="#00ffff"
-                                    emissive="#00ffff"
-                                    emissiveIntensity={1.2}
-                                />
-                            </mesh>
-                        ))}
-
-                        {/* Scanning line */}
-                        <mesh ref={scanLineRef} position={[0, 0, 0.05]}>
-                            <planeGeometry
-                                args={[(displayWidth / 400) * 0.9, 0.01]}
-                            />
-                            <meshStandardMaterial
-                                color="#00ffff"
-                                transparent
-                                opacity={0.8}
-                                emissive="#00ffff"
-                                emissiveIntensity={0.6}
-                            />
-                        </mesh>
-                    </group>
-                </group>
-            )}
-
-            {/* CRT Glass Panel with Barrel Distortion - only if CRT style is enabled */}
-            {crtStyle && (
-                <CRTGlassPanel
-                    displayWidth={displayWidth}
-                    displayHeight={displayHeight}
-                    isMobileDisplay={isMobileDisplay}
-                    position={position}
-                />
             )}
 
             {/* Web content using Html component */}
@@ -1278,8 +1149,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                             }}
                             onLoad={handleIframeLoad}
                             onError={handleIframeError}
-                            onMouseEnter={handleIframeInteraction}
-                            onFocus={handleIframeInteraction}
                             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                             referrerPolicy="strict-origin-when-cross-origin"
                             allowFullScreen
