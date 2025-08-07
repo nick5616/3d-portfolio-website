@@ -24,18 +24,19 @@ export const Minimap: React.FC = () => {
         if (!ctx) return;
 
         // Set canvas size - smaller to match FPS indicator height
-        const size = 220;
-        canvas.width = size;
-        canvas.height = size;
+        const width = 280;
+        const height = 250;
+        canvas.width = width;
+        canvas.height = height;
 
         // Clear canvas
-        ctx.fillStyle = "rgba(40, 40, 40, 0.8)";
-        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = "rgba(40, 26, 40, 0.8)";
+        ctx.fillRect(0, 0, width, height);
 
         // Draw room layout
         const scale = 0.25; // Scale factor for minimap - reduced to fit all rooms
-        const centerX = size / 2;
-        const centerY = size / 2;
+        const centerX = width / 2;
+        const centerY = height / 2;
 
         // Define room colors
         const roomColors: { [key: string]: string } = {
@@ -71,7 +72,7 @@ export const Minimap: React.FC = () => {
 
             // Draw room label
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "7px Arial";
+            ctx.font = "9px Arial";
             ctx.textAlign = "center";
             ctx.fillText(room.name, x, y + 1);
 
@@ -103,10 +104,10 @@ export const Minimap: React.FC = () => {
         }
 
         // Draw coordinates
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "#FFFF00";
         ctx.font = "9px monospace";
         ctx.textAlign = "left";
-        ctx.fillText(`Room: ${currentRoom?.name || "None"}`, 5, size - 5);
+        ctx.fillText(`Room: ${currentRoom?.name || "None"}`, 5, height - 5);
     }, [minimap.visible, currentRoom, playerPosition]);
 
     if (!minimap.visible) return null;

@@ -396,7 +396,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         // my body, fashion, and generally moving in the direction I want. I have a beautiful partner who is an amazing artist, and my
         // inspiration to be my best, so that I may be worth being her one and only. I love you, Alicia.
         id: "about",
-        name: "About & Contact",
+        name: "Play Place",
         position: [20, 0, 0] as [number, number, number],
         dimensions: [8, 8, 8],
         lightPreset: {
