@@ -49,6 +49,7 @@ interface SceneState {
     cameraTarget: THREE.Vector3;
     cameraRotation?: [number, number, number];
     playerPosition: [number, number, number];
+    playerVelocity: [number, number, number]; // Add player velocity
     shouldTeleportPlayer: boolean;
     spotlightsEnabled: boolean;
     flyMode: boolean;
@@ -83,6 +84,7 @@ interface SceneState {
     setIsInteracting: (interacting: boolean) => void;
     updateCameraData: (cameraData: CameraData) => void;
     updateSceneData: (sceneData: SceneData) => void;
+    updatePlayerVelocity: (velocity: [number, number, number]) => void; // Add velocity update function
     clearTeleportFlag: () => void;
     toggleFlyMode: () => void;
     loadRoom: (roomId: string) => void;
@@ -106,6 +108,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     cameraTarget: new THREE.Vector3(0, 2, 5),
     cameraRotation: undefined,
     playerPosition: [0, 0.9, 5],
+    playerVelocity: [0, 0, 0], // Initialize player velocity
     shouldTeleportPlayer: false,
     spotlightsEnabled: false,
     isFirstPerson: true,
@@ -176,6 +179,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     setIsInteracting: (interacting) => set({ isInteracting: interacting }),
     updateCameraData: (cameraData) => set({ cameraData }),
     updateSceneData: (sceneData) => set({ sceneData }),
+    updatePlayerVelocity: (velocity) => set({ playerVelocity: velocity }), // Update player velocity
     clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),
     toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
     loadRoom: (roomId) => {

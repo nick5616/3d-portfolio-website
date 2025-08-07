@@ -15,7 +15,8 @@ interface DoorProps {
 }
 
 export const Door: React.FC<DoorProps> = ({ archway }) => {
-    const { teleportToRoom, lastTeleportTime } = useSceneStore();
+    const { teleportToRoom, lastTeleportTime, playerVelocity } =
+        useSceneStore();
     const { camera, raycaster } = useThree();
     const [isInTrigger, setIsInTrigger] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -73,7 +74,47 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
     const theme = getRoomTheme(archway.targetRoomId);
 
+    // Helper function to check if player is moving toward the door
+    const isMovingTowardDoor = useCallback(() => {
+        // If player is not moving, allow teleportation
+        const velocityMagnitude = Math.sqrt(
+            playerVelocity[0] ** 2 + playerVelocity[2] ** 2
+        );
+        if (velocityMagnitude < 0.1) return true;
+
+        // Calculate door normal (perpendicular to door face)
+        const doorNormal = new THREE.Vector3();
+        const doorRotation = new THREE.Euler(
+            archway.rotation[0],
+            archway.rotation[1],
+            archway.rotation[2]
+        );
+        doorNormal.set(0, 0, 1).applyEuler(doorRotation);
+
+        // Get player velocity as a vector (ignore Y component)
+        const playerVelVector = new THREE.Vector3(
+            playerVelocity[0],
+            0,
+            playerVelocity[2]
+        ).normalize();
+
+        // Calculate angle between player velocity and door normal
+        const angle = Math.acos(Math.abs(playerVelVector.dot(doorNormal)));
+
+        // Allow teleportation if angle is less than 45 degrees (π/4 radians)
+        const maxAngle = Math.PI / 4; // 45 degrees
+        return angle <= maxAngle;
+    }, [playerVelocity, archway.rotation]);
+
     const handleTeleport = useCallback(() => {
+        // Check velocity direction before teleporting
+        if (!isMovingTowardDoor()) {
+            console.log(
+                `🚫 Teleportation blocked: Player moving sideways relative to door ${archway.id}`
+            );
+            return;
+        }
+
         // Use entrance point if available, otherwise use archway position
         const entrancePosition = archway.entrancePoint?.position || [
             archway.position[0],
@@ -97,7 +138,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             entrancePosition as [number, number, number],
             entranceRotation as [number, number, number]
         );
-    }, [archway, teleportToRoom]);
+    }, [archway, teleportToRoom, isMovingTowardDoor]);
 
     const handleDoorClick = () => {
         handleTeleport();

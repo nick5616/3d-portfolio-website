@@ -17,8 +17,13 @@ const JUMP_COOLDOWN = 500; // milliseconds
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
-    const { flyMode, shouldTeleportPlayer, playerPosition, clearTeleportFlag } =
-        useSceneStore();
+    const {
+        flyMode,
+        shouldTeleportPlayer,
+        playerPosition,
+        clearTeleportFlag,
+        updatePlayerVelocity, // Add this
+    } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
     const velocity = useRef(new THREE.Vector3());
@@ -116,6 +121,12 @@ export const PlayerBody: React.FC = () => {
 
             // Apply the velocity
             playerRef.current.setLinvel(velocity.current, true);
+        }
+
+        // Update player velocity in scene store
+        if (playerRef.current) {
+            const currentVel = playerRef.current.linvel();
+            updatePlayerVelocity([currentVel.x, currentVel.y, currentVel.z]);
         }
 
         // Update camera position to follow player
