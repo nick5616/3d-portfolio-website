@@ -2,8 +2,9 @@ import React from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
-import { RoomComments } from "./RoomComments";
 import { ArtFrame } from "../models/ArtFrame";
+import { AzureArtFrame } from "../models/AzureArtFrame";
+import { AzureArtFrameByIndex } from "../models/AzureArtFrameByIndex";
 import { getArtImageUrl } from "../../configs/artConfig";
 
 interface GalleryRoomProps {
@@ -25,9 +26,6 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 }) => {
     return (
         <>
-            {/* Room annotation comments */}
-            <RoomComments roomId={config.id} />
-
             {/* Vertical dividers */}
             <RigidBody type="fixed" colliders="cuboid">
                 <mesh position={new THREE.Vector3(-width / 4, height / 2, 0)}>
@@ -60,11 +58,14 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 
             {/* Art pieces along left vertical divider */}
             {/* Left side of left divider */}
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[-width / 4 + 0.5, 2.5, -3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(22)} // marvin martian
+                artPieceIndex={22} // Use the same index as before
+                fallbackImageUrl={getArtImageUrl(22)} // fallback to local image
+                useAzureStorage={true}
+                showPlaque={true}
             />
             <ArtFrame
                 position={[-width / 4 + 0.5, 2.5, 3]}
