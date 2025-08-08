@@ -25,7 +25,9 @@ export class ArtPieceMapper {
             // If index is out of bounds, return a random piece
             const randomIndex = Math.floor(Math.random() * mapping.length);
             console.log(
-                `Index ${index} out of bounds, using random piece at index ${randomIndex}`
+                `Index ${index} out of bounds (max: ${
+                    mapping.length - 1
+                }), using random piece`
             );
             return mapping[randomIndex];
         } catch (error) {
@@ -76,13 +78,11 @@ export class ArtPieceMapper {
                 return ["sprites"]; // Fallback to the piece you have
             }
 
-            console.log(
-                `Found ${availablePieces.length} art pieces in Azure Storage:`,
-                availablePieces
-            );
-
             // Sort pieces alphabetically for consistent ordering
             const sortedPieces = availablePieces.sort();
+            console.log(
+                `Art piece mapping created with ${sortedPieces.length} pieces`
+            );
 
             return sortedPieces;
         } catch (error) {

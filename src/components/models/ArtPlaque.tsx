@@ -1,5 +1,6 @@
 import React from "react";
 import * as THREE from "three";
+import { Text } from "@react-three/drei";
 import { getArtPieceDisplayInfo } from "../../configs/artMetadata";
 
 interface ArtPlaqueProps {
@@ -31,10 +32,20 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
     const hasMetadata =
         displayInfo.date || displayInfo.description || displayInfo.medium;
 
+    // Only show plaque if there's actual metadata
+    if (!hasMetadata) {
+        return null;
+    }
+
+    console.log("displayInfo", displayInfo);
+    console.log("artPieceName", artPieceName);
+    console.log("showPlaque", showPlaque);
+    console.log("hasMetadata", hasMetadata);
+
     return (
         <group position={position} rotation={rotation} scale={scale}>
             {/* Plaque background */}
-            <mesh castShadow receiveShadow>
+            <mesh castShadow>
                 <boxGeometry
                     args={[PLAQUE_WIDTH, PLAQUE_HEIGHT, PLAQUE_DEPTH]}
                 />
@@ -52,61 +63,61 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
             {/* Text content */}
             <group position={[0, 0, PLAQUE_DEPTH / 2 + 0.002]}>
                 {/* Title */}
-                <mesh position={[0, 0.12, 0]}>
-                    <planeGeometry args={[PLAQUE_WIDTH - 0.04, 0.04]} />
-                    <meshBasicMaterial
-                        color="#ffffff"
-                        transparent
-                        opacity={0.9}
-                    />
-                </mesh>
+                <Text
+                    position={[0, 0.12, 0]}
+                    fontSize={0.04}
+                    color="#ffffff"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={PLAQUE_WIDTH - 0.04}
+                    textAlign="center"
+                >
+                    {displayInfo.name}
+                </Text>
 
                 {/* Date */}
                 {displayInfo.date && (
-                    <mesh position={[0, 0.06, 0]}>
-                        <planeGeometry args={[PLAQUE_WIDTH - 0.04, 0.03]} />
-                        <meshBasicMaterial
-                            color="#cccccc"
-                            transparent
-                            opacity={0.8}
-                        />
-                    </mesh>
+                    <Text
+                        position={[0, 0.06, 0]}
+                        fontSize={0.03}
+                        color="#cccccc"
+                        anchorX="center"
+                        anchorY="middle"
+                        maxWidth={PLAQUE_WIDTH - 0.04}
+                        textAlign="center"
+                    >
+                        {displayInfo.date}
+                    </Text>
                 )}
 
                 {/* Description */}
                 {displayInfo.description && (
-                    <mesh position={[0, 0, 0]}>
-                        <planeGeometry args={[PLAQUE_WIDTH - 0.04, 0.06]} />
-                        <meshBasicMaterial
-                            color="#ffffff"
-                            transparent
-                            opacity={0.7}
-                        />
-                    </mesh>
+                    <Text
+                        position={[0, 0, 0]}
+                        fontSize={0.025}
+                        color="#ffffff"
+                        anchorX="center"
+                        anchorY="middle"
+                        maxWidth={PLAQUE_WIDTH - 0.04}
+                        textAlign="center"
+                    >
+                        {displayInfo.description}
+                    </Text>
                 )}
 
                 {/* Medium */}
                 {displayInfo.medium && (
-                    <mesh position={[0, -0.06, 0]}>
-                        <planeGeometry args={[PLAQUE_WIDTH - 0.04, 0.03]} />
-                        <meshBasicMaterial
-                            color="#cccccc"
-                            transparent
-                            opacity={0.6}
-                        />
-                    </mesh>
-                )}
-
-                {/* Dimensions */}
-                {displayInfo.dimensions && (
-                    <mesh position={[0, -0.12, 0]}>
-                        <planeGeometry args={[PLAQUE_WIDTH - 0.04, 0.03]} />
-                        <meshBasicMaterial
-                            color="#cccccc"
-                            transparent
-                            opacity={0.6}
-                        />
-                    </mesh>
+                    <Text
+                        position={[0, -0.06, 0]}
+                        fontSize={0.03}
+                        color="#ffffff"
+                        anchorX="center"
+                        anchorY="middle"
+                        maxWidth={PLAQUE_WIDTH - 0.04}
+                        textAlign="center"
+                    >
+                        {displayInfo.medium}
+                    </Text>
                 )}
             </group>
         </group>

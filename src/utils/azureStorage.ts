@@ -11,8 +11,6 @@ interface AzureStorageConfig {
     maxRetries: number;
     retryDelayMs: number;
     supportedExtensions: string[];
-    fallbackToLocal: boolean;
-    placeholderImage: string;
 }
 
 // Cache for blob URLs to avoid repeated API calls
@@ -50,9 +48,12 @@ export class AzureStorageService {
             return blobUrlCache.get(artPieceName)!;
         }
 
+        // Only log once per art piece to avoid spam
+        console.log(`Fetching art piece: "${artPieceName}"`);
+
         try {
-            // Try different image extensions
-            const extensions = this.config.supportedExtensions;
+            // Try JPG first, then PNG
+            const extensions = [".jpg", ".png"];
 
             for (const ext of extensions) {
                 const blobName = `${artPieceName}${ext}`;
@@ -61,9 +62,11 @@ export class AzureStorageService {
                 try {
                     // Check if blob exists
                     const exists = await blobClient.exists();
+
                     if (exists) {
                         const url = blobClient.url;
                         blobUrlCache.set(artPieceName, url);
+                        console.log(`✓ Found "${artPieceName}" (${ext})`);
                         return url;
                     }
                 } catch (error) {
@@ -77,7 +80,7 @@ export class AzureStorageService {
                         error.message.includes("CORS")
                     ) {
                         console.log(
-                            `CORS error detected, trying direct URL for ${blobName}`
+                            `CORS detected, using direct URL for ${blobName}`
                         );
                         const directUrl = blobClient.url;
                         blobUrlCache.set(artPieceName, directUrl);
@@ -87,20 +90,13 @@ export class AzureStorageService {
                 }
             }
 
-            // If no blob found, try to get a random available art piece
-            console.warn(
-                `Art piece "${artPieceName}" not found in Azure Storage, trying to get a random piece`
+            // If no blob found with either extension, throw an error
+            throw new Error(
+                `Art piece "${artPieceName}" not found in Azure Storage (tried .jpg and .png)`
             );
-
-            const randomPiece = await this.getRandomArtPiece();
-            if (randomPiece) {
-                return randomPiece;
-            }
-
-            return this.config.placeholderImage;
         } catch (error) {
-            console.error(`Error fetching art piece "${artPieceName}":`, error);
-            return this.config.placeholderImage;
+            console.error(`✗ Failed to fetch "${artPieceName}":`, error);
+            throw error;
         }
     }
 
@@ -145,6 +141,7 @@ export class AzureStorageService {
                 }
             }
 
+            console.log(`Azure Storage: Found ${artPieces.length} art pieces`);
             return artPieces;
         } catch (error) {
             console.error("Error listing art pieces:", error);

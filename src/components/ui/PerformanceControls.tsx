@@ -5,10 +5,12 @@ export const PerformanceControls: React.FC = () => {
     const {
         performance,
         minimap,
+        flyMode,
         setPerformanceQuality,
         toggleStats,
         togglePerformanceMonitoring,
         toggleMinimap,
+        toggleFlyMode,
     } = useSceneStore();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -126,6 +128,24 @@ export const PerformanceControls: React.FC = () => {
                                 <div
                                     className={`w-3 h-3 rounded-full bg-white transform transition-transform ${
                                         minimap.visible
+                                            ? "translate-x-4"
+                                            : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs">Flight</label>
+                            <button
+                                onClick={toggleFlyMode}
+                                className={`w-8 h-4 rounded-full transition-colors ${
+                                    flyMode ? "bg-blue-500" : "bg-gray-600"
+                                }`}
+                            >
+                                <div
+                                    className={`w-3 h-3 rounded-full bg-white transform transition-transform ${
+                                        flyMode
                                             ? "translate-x-4"
                                             : "translate-x-1"
                                     }`}

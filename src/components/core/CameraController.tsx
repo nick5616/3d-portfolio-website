@@ -14,6 +14,7 @@ export const CameraController: React.FC = () => {
         virtualMovement,
         virtualRotation,
         performance,
+        flyMode,
     } = useSceneStore();
 
     const { camera } = useThree();
@@ -102,18 +103,27 @@ export const CameraController: React.FC = () => {
             // Reuse vectors to reduce allocations
             forward.current.set(0, 0, -1);
             right.current.set(1, 0, 0);
+            const up = new THREE.Vector3(0, 1, 0);
 
             // Apply camera rotation to get proper directions
             forward.current.applyQuaternion(camera.quaternion);
             right.current.applyQuaternion(camera.quaternion);
+            up.applyQuaternion(camera.quaternion);
 
-            // Keep movement on horizontal plane
-            forward.current.y = 0;
-            right.current.y = 0;
+            if (!flyMode) {
+                // Keep movement on horizontal plane for normal mode
+                forward.current.y = 0;
+                right.current.y = 0;
 
-            // Normalize after removing y component
-            forward.current.normalize();
-            right.current.normalize();
+                // Normalize after removing y component
+                forward.current.normalize();
+                right.current.normalize();
+            } else {
+                // In flight mode, allow full 3D movement
+                forward.current.normalize();
+                right.current.normalize();
+                up.normalize();
+            }
 
             // Reset direction vector
             direction.current.set(0, 0, 0);
@@ -149,6 +159,21 @@ export const CameraController: React.FC = () => {
             if (activeMovement.right) {
                 direction.current.add(right.current);
                 hasMovement = true;
+            }
+
+            // Add vertical movement for flight mode
+            if (flyMode) {
+                if (activeMovement.jumping) {
+                    direction.current.add(up);
+                    hasMovement = true;
+                }
+                // Use backward for downward movement in flight mode
+                if (activeMovement.backward && !activeMovement.forward) {
+                    // Remove the backward movement we added above and add downward movement
+                    direction.current.add(forward.current); // Cancel out the backward
+                    direction.current.sub(up);
+                    hasMovement = true;
+                }
             }
 
             // Apply movement if we have any direction

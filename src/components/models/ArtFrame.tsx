@@ -74,7 +74,7 @@ const Frame: React.FC<ArtFrameProps> = ({
     return (
         <group position={mountPosition} rotation={rotation} scale={scale}>
             {/* Main frame box */}
-            <mesh castShadow receiveShadow>
+            <mesh castShadow>
                 <boxGeometry
                     args={[dimensions.width, dimensions.height, FRAME_DEPTH]}
                 />

@@ -40,7 +40,7 @@ export const PlayerBody: React.FC = () => {
     };
 
     useFrame(() => {
-        if (!playerRef.current || flyMode) return;
+        if (!playerRef.current) return;
 
         // Handle teleportation
         if (shouldTeleportPlayer) {
@@ -57,6 +57,9 @@ export const PlayerBody: React.FC = () => {
             clearTeleportFlag();
             return; // Skip normal movement this frame
         }
+
+        // Skip normal physics-based movement if in flight mode
+        if (flyMode) return;
 
         const currentTime = Date.now();
         const isGrounded = checkIfGrounded();

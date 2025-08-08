@@ -2,10 +2,7 @@ import React from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
-import { ArtFrame } from "../models/ArtFrame";
-import { AzureArtFrame } from "../models/AzureArtFrame";
 import { AzureArtFrameByIndex } from "../models/AzureArtFrameByIndex";
-import { getArtImageUrl } from "../../configs/artConfig";
 
 interface GalleryRoomProps {
     config: RoomConfig;
@@ -62,62 +59,59 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[-width / 4 + 0.5, 2.5, -3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                artPieceIndex={22} // Use the same index as before
-                fallbackImageUrl={getArtImageUrl(22)} // fallback to local image
-                useAzureStorage={true}
-                showPlaque={true}
+                artPieceIndex={22} // marvin-martian
             />
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[-width / 4 + 0.5, 2.5, 3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(23)} // monster under
+                artPieceIndex={23} // monster-under
             />
 
             {/* Left side of right divider */}
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[width / 4 - 0.5, 2.5, -3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(5)} // fuzzy
+                artPieceIndex={5} // teemo
             />
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[width / 4 - 0.5, 2.5, 3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                imageUrl={getArtImageUrl(3)} // chaos bird
+                artPieceIndex={3} // chaos-bird
             />
 
             {/* Art pieces along horizontal connector */}
             {/* Front side of horizontal divider */}
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[-3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(6)} // tree night
+                artPieceIndex={6} // tree-night
             />
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                imageUrl={getArtImageUrl(7)} // wispette
+                artPieceIndex={7} // wispette
             />
 
             {/* Additional smaller art pieces at different heights */}
 
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[-width / 4 + 0.5, 3.8, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(11)} // link botw
+                artPieceIndex={11} // link-botw
             />
 
             {/* Right divider - higher pieces */}
-            <ArtFrame
+            <AzureArtFrameByIndex
                 position={[width / 4 - 0.5, 3.8, 0]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                imageUrl={getArtImageUrl(12)} // okay blue heron
+                artPieceIndex={12} // okay-blue-heron
             />
         </>
     );

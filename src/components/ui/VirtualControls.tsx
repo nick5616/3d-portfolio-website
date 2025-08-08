@@ -237,6 +237,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 backward: keysToPress.s,
                 left: keysToPress.a,
                 right: keysToPress.d,
+                running: false, // Virtual controls don't support running
+                jumping: false, // Virtual controls don't support jumping
             });
 
             // Simulate keyboard events based on current state
@@ -656,6 +658,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                                 backward: false,
                                 left: false,
                                 right: false,
+                                running: false,
+                                jumping: false,
                             });
 
                             // Stop continuous movement (this will cancel animation frames)
@@ -825,6 +829,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                     backward: false,
                     left: false,
                     right: false,
+                    running: false,
+                    jumping: false,
                 });
                 setVirtualRotation({ x: 0, y: 0 });
 
@@ -866,6 +872,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 backward: false,
                 left: false,
                 right: false,
+                running: false,
+                jumping: false,
             });
             setVirtualRotation({ x: 0, y: 0 });
 

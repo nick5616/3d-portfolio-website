@@ -21,10 +21,6 @@ export const azureStorageConfig = {
 
     // Supported image formats
     supportedExtensions: [".jpg", ".jpeg", ".png", ".webp"],
-
-    // Fallback settings
-    fallbackToLocal: true,
-    placeholderImage: "/images/art/placeholder.jpg",
 };
 
 // Helper function to check if Azure Storage is properly configured

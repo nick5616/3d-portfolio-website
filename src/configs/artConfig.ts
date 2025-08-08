@@ -38,7 +38,7 @@ export const artPieces = [
 export const getArtImageUrl = (index: number): string => {
     if (index < 0 || index >= artPieces.length) {
         console.error(`Art piece index ${index} out of bounds`);
-        return "/images/art/placeholder.jpg";
+        return "";
     }
     return `/images/art/${artPieces[index]}.jpg`;
 };

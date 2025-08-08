@@ -9,6 +9,8 @@ interface MovementState {
     backward: boolean;
     left: boolean;
     right: boolean;
+    running: boolean;
+    jumping: boolean;
 }
 
 interface RotationState {
@@ -122,7 +124,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     },
     minimap: {
         enabled: true,
-        visible: false,
+        visible: true,
     },
     flyMode: false,
     // Camera and scene data for UI components
@@ -146,6 +148,8 @@ export const useSceneStore = create<SceneState>((set) => ({
         backward: false,
         left: false,
         right: false,
+        running: false,
+        jumping: false,
     },
     virtualRotation: {
         x: 0,

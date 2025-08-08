@@ -48,14 +48,14 @@ export const useAzureArtByIndex = (artPieceIndex: number) => {
                 // If Azure Storage is disabled, don't set a placeholder URL
                 if (errorMessage === "Azure Storage is disabled") {
                     console.log(
-                        `useAzureArtByIndex: Azure Storage disabled for index ${artPieceIndex}`
+                        `useAzureArtByIndex: Azure Storage disabled for index ${artPieceIndex} (${artPieceName}) - no image displayed`
                     );
                     setImageUrl("");
                 } else {
                     console.log(
-                        `useAzureArtByIndex: Error loading index ${artPieceIndex} - ${errorMessage}`
+                        `useAzureArtByIndex: Error loading index ${artPieceIndex} (${artPieceName}) - ${errorMessage} - no image displayed`
                     );
-                    setImageUrl("/images/art/placeholder.jpg");
+                    setImageUrl("");
                 }
             } finally {
                 setIsLoading(false);

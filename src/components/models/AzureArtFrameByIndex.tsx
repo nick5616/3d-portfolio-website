@@ -10,7 +10,6 @@ interface AzureArtFrameByIndexProps {
     rotation?: [number, number, number];
     scale?: [number, number, number];
     artPieceIndex: number; // Index of the art piece (0, 1, 2, etc.)
-    fallbackImageUrl?: string; // Optional fallback to local image
     useAzureStorage?: boolean; // Whether to use Azure Storage (default: true)
     showPlaque?: boolean; // Whether to show the plaque (default: true)
 }
@@ -30,7 +29,6 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     artPieceIndex,
-    fallbackImageUrl,
     useAzureStorage = true,
     showPlaque = true,
 }) => {
@@ -42,19 +40,24 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         artPieceName,
     } = useAzureArtByIndex(artPieceIndex);
 
-    // Determine which image URL to use
+    // Determine which image URL to use - only use Azure Storage, no fallbacks
     const finalImageUrl =
-        useAzureStorage && azureImageUrl && !error
-            ? azureImageUrl
-            : fallbackImageUrl || `/images/art/placeholder.jpg`;
+        useAzureStorage && azureImageUrl && !error ? azureImageUrl : null;
 
-    // Log if fallback is being used
+    // If no valid image URL, don't render anything
+    if (!finalImageUrl) {
+        console.log(
+            `AzureArtFrameByIndex: No frame displayed for index ${artPieceIndex} (${artPieceName}) - no valid image URL`
+        );
+        return null;
+    }
+
+    // Log if Azure Storage fails
     if (useAzureStorage && (!azureImageUrl || error)) {
         console.log(
-            `AzureArtFrameByIndex: Using fallback for index ${artPieceIndex} (${artPieceName}) - ${
-                fallbackImageUrl || `/images/art/placeholder.jpg`
-            }`
+            `AzureArtFrameByIndex: No image available for index ${artPieceIndex} (${artPieceName}) - no frame displayed`
         );
+        return null;
     }
 
     const texture = useLoader(TextureLoader, finalImageUrl);
@@ -107,7 +110,7 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         return (
             <group position={mountPosition} rotation={rotation} scale={scale}>
                 {/* Loading placeholder frame */}
-                <mesh castShadow receiveShadow>
+                <mesh castShadow>
                     <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
                     <meshStandardMaterial color="#8b7355" roughness={0.8} />
                 </mesh>
@@ -126,7 +129,7 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     return (
         <group position={mountPosition} rotation={rotation} scale={scale}>
             {/* Main frame box */}
-            <mesh castShadow receiveShadow>
+            <mesh castShadow>
                 <boxGeometry
                     args={[dimensions.width, dimensions.height, FRAME_DEPTH]}
                 />

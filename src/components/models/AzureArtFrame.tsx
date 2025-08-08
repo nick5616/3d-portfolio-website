@@ -103,7 +103,7 @@ const AzureFrame: React.FC<AzureArtFrameProps> = ({
         return (
             <group position={mountPosition} rotation={rotation} scale={scale}>
                 {/* Loading placeholder frame */}
-                <mesh castShadow receiveShadow>
+                <mesh castShadow>
                     <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
                     <meshStandardMaterial color="#8b7355" roughness={0.8} />
                 </mesh>
@@ -122,7 +122,7 @@ const AzureFrame: React.FC<AzureArtFrameProps> = ({
     return (
         <group position={mountPosition} rotation={rotation} scale={scale}>
             {/* Main frame box */}
-            <mesh castShadow receiveShadow>
+            <mesh castShadow>
                 <boxGeometry
                     args={[dimensions.width, dimensions.height, FRAME_DEPTH]}
                 />

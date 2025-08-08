@@ -115,7 +115,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 <>
                     {/* Floor collision for about room - covers entire 8x8 room */}
                     <RigidBody type="fixed" colliders="cuboid">
-                        <mesh position={[0, -0.25, 0]} receiveShadow>
+                        <mesh position={[0, -0.25, 0]}>
                             <boxGeometry args={[8, 0.5, 8]} />
                             <meshStandardMaterial color="#444444" />
                         </mesh>

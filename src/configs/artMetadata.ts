@@ -3,10 +3,9 @@
 
 export interface ArtPieceMetadata {
     name: string; // Display name of the art piece
-    date: string; // Date created (e.g., "2024", "March 2024", "2024-03-15")
+    date?: string; // Date created (e.g., "2024", "March 2024", "2024-03-15")
     description?: string; // Optional description
     medium?: string; // Optional medium (e.g., "Digital Art", "Watercolor", "Pencil Sketch")
-    dimensions?: string; // Optional dimensions (e.g., "1920x1080", "A4")
 }
 
 // Metadata map - add entries here for art pieces you want to display with plaques
@@ -17,14 +16,18 @@ export const artPieceMetadata: Record<string, ArtPieceMetadata> = {
         description: "Some sprites in their natural habitat",
         medium: "Digital Art",
     },
-    // Add more entries as you add art pieces to Azure
-    // Example:
-    // "marvin-martian": {
-    //     name: "Marvin the Martian",
-    //     date: "2023",
-    //     description: "A digital painting inspired by classic cartoons",
-    //     medium: "Digital Art"
-    // }
+    "marvin-martian": {
+        name: "Marvin the Martian",
+        date: "December 20, 2024",
+        description: "A digital painting inspired by classic cartoons",
+        medium: "Digital Art",
+    },
+    "animal-sketches": {
+        name: "Animal Sketches",
+        date: "",
+        description: "Some animal sketches",
+        medium: "Digital Art",
+    },
 };
 
 /**
@@ -62,10 +65,9 @@ export const getArtPieceDisplayInfo = (
     artPieceName: string
 ): {
     name: string;
-    date: string;
+    date?: string;
     description?: string;
     medium?: string;
-    dimensions?: string;
 } => {
     const metadata = getArtPieceMetadata(artPieceName);
 

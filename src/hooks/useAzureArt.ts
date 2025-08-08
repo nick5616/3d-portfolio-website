@@ -38,14 +38,14 @@ export const useAzureArt = (artPieceName: string) => {
                 // The component will use the fallback URL instead
                 if (errorMessage === "Azure Storage is disabled") {
                     console.log(
-                        `useAzureArt: Azure Storage disabled for "${artPieceName}"`
+                        `useAzureArt: Azure Storage disabled for "${artPieceName}" - no image displayed`
                     );
                     setImageUrl("");
                 } else {
                     console.log(
-                        `useAzureArt: Error loading "${artPieceName}" - ${errorMessage}`
+                        `useAzureArt: Error loading "${artPieceName}" - ${errorMessage} - no image displayed`
                     );
-                    setImageUrl("/images/art/placeholder.jpg");
+                    setImageUrl("");
                 }
             } finally {
                 setIsLoading(false);
