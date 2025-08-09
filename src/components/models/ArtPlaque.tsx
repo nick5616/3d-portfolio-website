@@ -1,7 +1,6 @@
 import React from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
-import { getArtPieceDisplayInfo } from "../../configs/artMetadata";
 
 interface ArtPlaqueProps {
     position: [number, number, number];
@@ -28,7 +27,12 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
         return null;
     }
 
-    const displayInfo = getArtPieceDisplayInfo(artPieceName);
+    const displayInfo = {
+        name: "test",
+        date: "2025",
+        description: "test",
+        medium: "test",
+    };
     const hasMetadata =
         displayInfo.date || displayInfo.description || displayInfo.medium;
 

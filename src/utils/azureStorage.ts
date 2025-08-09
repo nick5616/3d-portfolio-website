@@ -5,7 +5,6 @@ import { azureStorageConfig } from "../configs/azureConfig";
 interface AzureStorageConfig {
     sasUrl: string;
     containerName: string;
-    enabled: boolean;
     cacheEnabled: boolean;
     cacheExpiryMs: number;
     maxRetries: number;
@@ -27,32 +26,67 @@ export class AzureStorageService {
     constructor(config: AzureStorageConfig) {
         this.config = config;
         this.blobServiceClient = new BlobServiceClient(config.sasUrl);
-        this.containerClient = this.blobServiceClient.getContainerClient(
-            config.containerName
-        );
+        // The SAS URL already points to the container, so we use empty string
+        this.containerClient = this.blobServiceClient.getContainerClient("");
     }
 
     /**
      * Get the URL for a specific art piece by name
      * @param artPieceName - The name of the art piece (without extension)
+     * @param fileName - The actual file name with extension
      * @returns Promise<string> - The blob URL
      */
-    async getArtPieceUrl(artPieceName: string): Promise<string> {
-        // Check if Azure Storage is enabled
-        if (!this.config.enabled) {
-            throw new Error("Azure Storage is disabled");
-        }
-
+    async getArtPieceUrl(
+        artPieceName: string,
+        fileName?: string
+    ): Promise<string> {
         // Check cache first
         if (blobUrlCache.has(artPieceName)) {
             return blobUrlCache.get(artPieceName)!;
         }
 
-        // Only log once per art piece to avoid spam
         console.log(`Fetching art piece: "${artPieceName}"`);
 
         try {
-            // Try JPG first, then PNG
+            // If fileName is provided, use it directly (it already includes the extension)
+            if (fileName) {
+                const blobClient = this.containerClient.getBlobClient(fileName);
+
+                try {
+                    // Check if blob exists
+                    const exists = await blobClient.exists();
+
+                    if (exists) {
+                        const url = blobClient.url;
+                        blobUrlCache.set(artPieceName, url);
+                        console.log(`✓ Found "${artPieceName}" (${fileName})`);
+                        return url;
+                    }
+                } catch (error) {
+                    console.warn(`Error checking blob ${fileName}:`, error);
+
+                    // If it's a CORS error, try to construct the URL directly
+                    if (
+                        error instanceof Error &&
+                        error.message &&
+                        error.message.includes("CORS")
+                    ) {
+                        console.log(
+                            `CORS detected, using direct URL for ${fileName}`
+                        );
+                        const directUrl = blobClient.url;
+                        blobUrlCache.set(artPieceName, directUrl);
+                        return directUrl;
+                    }
+                }
+
+                // If the exact fileName doesn't exist, throw an error
+                throw new Error(
+                    `Art piece "${artPieceName}" not found in Azure Storage (tried ${fileName})`
+                );
+            }
+
+            // Fallback: Try JPG first, then PNG if no fileName provided
             const extensions = [".jpg", ".png"];
 
             for (const ext of extensions) {

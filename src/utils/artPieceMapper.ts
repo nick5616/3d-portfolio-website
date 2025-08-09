@@ -1,12 +1,15 @@
-import { azureStorageService } from "./azureStorage";
+import {
+    getAllArtPieces,
+    getArtPieceByIndex,
+    ArtPiece,
+} from "../configs/artMetadata";
 
-// Cache for the mapping to avoid repeated API calls
-let artPieceMapping: string[] | null = null;
-let mappingPromise: Promise<string[]> | null = null;
+// Cache for the mapping to avoid repeated lookups
+let artPieceMapping: ArtPiece[] | null = null;
 
 /**
- * Maps art piece indices to available Azure blob names
- * This allows the frontend to use indices (0, 1, 2, etc.) while Azure has different names
+ * Maps art piece indices to available art pieces from the metadata
+ * This allows the frontend to use indices (0, 1, 2, etc.) while having rich metadata
  */
 export class ArtPieceMapper {
     /**
@@ -19,84 +22,68 @@ export class ArtPieceMapper {
             const mapping = await this.getArtPieceMapping();
 
             if (index >= 0 && index < mapping.length) {
-                return mapping[index];
+                return mapping[index].fileName;
             }
 
             // If index is out of bounds, return a random piece
             const randomIndex = Math.floor(Math.random() * mapping.length);
-            console.log(
-                `Index ${index} out of bounds (max: ${
-                    mapping.length - 1
-                }), using random piece`
-            );
-            return mapping[randomIndex];
+            return mapping[randomIndex].fileName;
         } catch (error) {
-            console.error(
-                `Error getting art piece name for index ${index}:`,
-                error
-            );
             // Fallback to a default piece name
-            return "sprites"; // Use the piece you have in Azure
+            return "marvin-martian.jpg";
         }
     }
 
     /**
-     * Get the mapping of indices to art piece names
-     * @returns Promise<string[]> - Array of art piece names indexed by position
+     * Get the art piece object for a given index
+     * @param index - The art piece index (0, 1, 2, etc.)
+     * @returns Promise<ArtPiece | undefined> - The art piece object
      */
-    static async getArtPieceMapping(): Promise<string[]> {
+    static async getArtPieceByIndex(
+        index: number
+    ): Promise<ArtPiece | undefined> {
+        try {
+            const mapping = await this.getArtPieceMapping();
+
+            if (index >= 0 && index < mapping.length) {
+                return mapping[index];
+            }
+
+            return undefined;
+        } catch (error) {
+            return undefined;
+        }
+    }
+
+    /**
+     * Get the mapping of indices to art piece objects
+     * @returns Promise<ArtPiece[]> - Array of art piece objects indexed by position
+     */
+    static async getArtPieceMapping(): Promise<ArtPiece[]> {
         // Return cached mapping if available
         if (artPieceMapping) {
             return artPieceMapping;
         }
 
-        // If a mapping request is already in progress, wait for it
-        if (mappingPromise) {
-            return mappingPromise;
-        }
-
-        // Create new mapping request
-        mappingPromise = this.createArtPieceMapping();
-        try {
-            artPieceMapping = await mappingPromise;
-            return artPieceMapping;
-        } finally {
-            mappingPromise = null;
-        }
+        // Create new mapping from metadata
+        artPieceMapping = getAllArtPieces();
+        return artPieceMapping;
     }
 
     /**
-     * Create the art piece mapping by fetching available pieces from Azure
+     * Get art piece names as a simple array
      * @returns Promise<string[]> - Array of art piece names
      */
-    private static async createArtPieceMapping(): Promise<string[]> {
-        try {
-            const availablePieces = await azureStorageService.listArtPieces();
-
-            if (availablePieces.length === 0) {
-                console.warn("No art pieces found in Azure Storage");
-                return ["sprites"]; // Fallback to the piece you have
-            }
-
-            // Sort pieces alphabetically for consistent ordering
-            const sortedPieces = availablePieces.sort();
-            console.log(
-                `Art piece mapping created with ${sortedPieces.length} pieces`
-            );
-
-            return sortedPieces;
-        } catch (error) {
-            console.error("Error creating art piece mapping:", error);
-            return ["sprites"]; // Fallback to the piece you have
-        }
+    static async getArtPieceNames(): Promise<string[]> {
+        const mapping = await this.getArtPieceMapping();
+        return mapping.map((piece) => piece.fileName);
     }
 
     /**
-     * Clear the cached mapping (useful for testing or when Azure content changes)
+     * Clear the cached mapping (useful for testing or when metadata changes)
      */
     static clearCache(): void {
         artPieceMapping = null;
-        mappingPromise = null;
     }
 
     /**

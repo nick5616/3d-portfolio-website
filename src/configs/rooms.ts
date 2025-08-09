@@ -1,6 +1,5 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
-import { getArtImageUrl } from "./artConfig";
 
 const createArtLayout = (): InteractiveElement[] => [
     // North wall (-x)
@@ -12,7 +11,7 @@ const createArtLayout = (): InteractiveElement[] => [
         scale: [1.5, 1.5, 1] as [number, number, number],
         content: {
             type: "art-frame",
-            imageUrl: getArtImageUrl(0),
+            imageUrl: "", // Removed old art config usage
         },
     },
 
@@ -26,7 +25,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.8, 0.8, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 1),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),
@@ -41,7 +40,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.9, 0.9, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 3),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),
@@ -56,7 +55,7 @@ const createArtLayout = (): InteractiveElement[] => [
         scale: [1.5, 1.5, 1] as [number, number, number],
         content: {
             type: "art-frame",
-            imageUrl: getArtImageUrl(6),
+            imageUrl: "", // Removed old art config usage
         },
     },
 
@@ -70,7 +69,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1.2, 1.2, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 7),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),
@@ -85,7 +84,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.9, 0.9, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 9),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),
@@ -104,7 +103,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1.1, 1.1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 12),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),
@@ -126,7 +125,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1, 1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: getArtImageUrl(i + 18),
+                imageUrl: "", // Removed old art config usage
             },
         })
     ),

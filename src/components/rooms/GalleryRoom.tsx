@@ -59,13 +59,13 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[-width / 4 + 0.5, 2.5, -3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                artPieceIndex={22} // marvin-martian
+                artPieceIndex={0} // marvin-martian
             />
             <AzureArtFrameByIndex
                 position={[-width / 4 + 0.5, 2.5, 3]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                artPieceIndex={23} // monster-under
+                artPieceIndex={1} // monster-under
             />
 
             {/* Left side of right divider */}
@@ -73,13 +73,13 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[width / 4 - 0.5, 2.5, -3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                artPieceIndex={5} // teemo
+                artPieceIndex={3} // teemo
             />
             <AzureArtFrameByIndex
                 position={[width / 4 - 0.5, 2.5, 3]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[1.2, 1.2, 1]}
-                artPieceIndex={3} // chaos-bird
+                artPieceIndex={2} // chaos-bird
             />
 
             {/* Art pieces along horizontal connector */}
@@ -88,13 +88,13 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[-3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                artPieceIndex={6} // tree-night
+                artPieceIndex={4} // tree-night
             />
             <AzureArtFrameByIndex
                 position={[3, 2.5, -0.001]}
                 rotation={[0, Math.PI, 0]}
                 scale={[1.1, 1.1, 1]}
-                artPieceIndex={7} // wispette
+                artPieceIndex={5} // wispette
             />
 
             {/* Additional smaller art pieces at different heights */}
@@ -103,7 +103,7 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[-width / 4 + 0.5, 3.8, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                artPieceIndex={11} // link-botw
+                artPieceIndex={6} // link-botw
             />
 
             {/* Right divider - higher pieces */}
@@ -111,7 +111,7 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                 position={[width / 4 - 0.5, 3.8, 0]}
                 rotation={[0, Math.PI / 2, 0]}
                 scale={[0.8, 0.8, 1]}
-                artPieceIndex={12} // okay-blue-heron
+                artPieceIndex={7} // okay-blue-heron
             />
         </>
     );

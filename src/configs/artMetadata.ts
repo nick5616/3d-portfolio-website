@@ -1,83 +1,72 @@
-// Art piece metadata configuration
-// Maps art piece names (from Azure blob names) to metadata objects
-
-export interface ArtPieceMetadata {
-    name: string; // Display name of the art piece
-    date?: string; // Date created (e.g., "2024", "March 2024", "2024-03-15")
-    description?: string; // Optional description
-    medium?: string; // Optional medium (e.g., "Digital Art", "Watercolor", "Pencil Sketch")
+export interface ArtPiece {
+    name: string;
+    description: string;
+    date: string;
+    fileName: string; // File name in Azure storage (e.g., "marvin-martian.jpg")
 }
 
-// Metadata map - add entries here for art pieces you want to display with plaques
-export const artPieceMetadata: Record<string, ArtPieceMetadata> = {
-    sprites: {
-        name: "Sprite Collection",
-        date: "July 30, 2025",
-        description: "Some sprites in their natural habitat",
-        medium: "Digital Art",
+export const artPieces: ArtPiece[] = [
+    {
+        name: "Marvin Martian",
+        description:
+            "A whimsical portrait of Marvin the Martian in a futuristic style",
+        date: "2024-01-15",
+        fileName: "marvin-martian.jpg",
     },
-    "marvin-martian": {
-        name: "Marvin the Martian",
-        date: "December 20, 2024",
-        description: "A digital painting inspired by classic cartoons",
-        medium: "Digital Art",
+    {
+        name: "Monster Under the Bed",
+        description:
+            "A playful interpretation of childhood fears with a friendly monster",
+        date: "2024-02-03",
+        fileName: "monster-under.jpg",
     },
-    "animal-sketches": {
-        name: "Animal Sketches",
-        date: "",
-        description: "Some animal sketches",
-        medium: "Digital Art",
+    {
+        name: "Chaos Bird",
+        description:
+            "An abstract representation of chaos and freedom in avian form",
+        date: "2024-01-28",
+        fileName: "chaos-bird.jpg",
     },
+    {
+        name: "Teemo Portrait",
+        description: "A detailed character study of Teemo in a fantasy setting",
+        date: "2024-03-10",
+        fileName: "teemo.jpg",
+    },
+    {
+        name: "Tree at Night",
+        description: "A serene nocturnal landscape featuring a majestic tree",
+        date: "2024-02-18",
+        fileName: "tree-night.jpg",
+    },
+    {
+        name: "Wispette",
+        description: "A mystical creature with ethereal lighting effects",
+        date: "2024-03-05",
+        fileName: "wispette.jpg",
+    },
+    {
+        name: "Link - Breath of the Wild",
+        description: "A dynamic action scene featuring Link in the open world",
+        date: "2024-02-25",
+        fileName: "link-botw.jpg",
+    },
+    {
+        name: "Okay Blue Heron",
+        description: "A graceful water bird captured in its natural habitat",
+        date: "2024-01-20",
+        fileName: "okay-blue-heron.jpg",
+    },
+];
+
+export const getArtPieceByIndex = (index: number): ArtPiece | undefined => {
+    return artPieces[index];
 };
 
-/**
- * Get metadata for an art piece by name
- * @param artPieceName - The name of the art piece (from Azure blob name)
- * @returns ArtPieceMetadata or null if not found
- */
-export const getArtPieceMetadata = (
-    artPieceName: string
-): ArtPieceMetadata | null => {
-    return artPieceMetadata[artPieceName] || null;
+export const getArtPieceByName = (name: string): ArtPiece | undefined => {
+    return artPieces.find((piece) => piece.fileName === name);
 };
 
-/**
- * Format art piece name for display (capitalize and format)
- * @param artPieceName - The raw art piece name
- * @returns Formatted display name
- */
-export const formatArtPieceName = (artPieceName: string): string => {
-    // Convert kebab-case or snake_case to Title Case
-    return artPieceName
-        .replace(/[-_]/g, " ")
-        .replace(
-            /\w\S*/g,
-            (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-        );
-};
-
-/**
- * Get display information for an art piece
- * @param artPieceName - The name of the art piece
- * @returns Object with display information
- */
-export const getArtPieceDisplayInfo = (
-    artPieceName: string
-): {
-    name: string;
-    date?: string;
-    description?: string;
-    medium?: string;
-} => {
-    const metadata = getArtPieceMetadata(artPieceName);
-
-    if (metadata) {
-        return metadata;
-    }
-
-    // Fallback to formatted name only
-    return {
-        name: formatArtPieceName(artPieceName),
-        date: "",
-    };
+export const getAllArtPieces = (): ArtPiece[] => {
+    return artPieces;
 };

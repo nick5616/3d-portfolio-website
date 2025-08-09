@@ -40,9 +40,47 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         artPieceName,
     } = useAzureArtByIndex(artPieceIndex);
 
+    // Debug logging
+    console.log(`AzureArtFrameByIndex [${artPieceIndex}]:`, {
+        azureImageUrl,
+        isLoading,
+        error,
+        artPieceName,
+        useAzureStorage,
+    });
+
+    // Show loading state if still loading
+    if (isLoading) {
+        console.log(
+            `AzureArtFrameByIndex [${artPieceIndex}]: Still loading, showing placeholder`
+        );
+        return (
+            <group position={position} rotation={rotation} scale={scale}>
+                {/* Loading placeholder frame */}
+                <mesh castShadow>
+                    <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
+                    <meshStandardMaterial color="#8b7355" roughness={0.8} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.02]}>
+                    <boxGeometry args={[1.84, 1.34, 0.02]} />
+                    <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+                    <planeGeometry args={[1.84, 1.34]} />
+                    <meshBasicMaterial color="#666666" />
+                </mesh>
+            </group>
+        );
+    }
+
     // Determine which image URL to use - only use Azure Storage, no fallbacks
     const finalImageUrl =
         useAzureStorage && azureImageUrl && !error ? azureImageUrl : null;
+
+    console.log(
+        `AzureArtFrameByIndex [${artPieceIndex}]: finalImageUrl =`,
+        finalImageUrl
+    );
 
     // If no valid image URL, don't render anything
     if (!finalImageUrl) {
@@ -104,27 +142,6 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     }, [texture]);
 
     const mountPosition = getMountPosition();
-
-    // Show loading state if using Azure Storage and still loading
-    if (useAzureStorage && isLoading) {
-        return (
-            <group position={mountPosition} rotation={rotation} scale={scale}>
-                {/* Loading placeholder frame */}
-                <mesh castShadow>
-                    <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
-                    <meshStandardMaterial color="#8b7355" roughness={0.8} />
-                </mesh>
-                <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.02]}>
-                    <boxGeometry args={[1.84, 1.34, 0.02]} />
-                    <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
-                </mesh>
-                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
-                    <planeGeometry args={[1.84, 1.34]} />
-                    <meshBasicMaterial color="#666666" />
-                </mesh>
-            </group>
-        );
-    }
 
     return (
         <group position={mountPosition} rotation={rotation} scale={scale}>
