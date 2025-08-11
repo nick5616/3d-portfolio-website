@@ -23,16 +23,10 @@ export const FitnessExperience: React.FC = () => {
             ))}
 
             {/* Pull-up instructions poster - on left wall */}
-            <group position={[-4.49, 3, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <group position={[-1, 3, 5]} rotation={[0, -Math.PI, 0]}>
                 <mesh>
                     <planeGeometry args={[3, 2]} />
                     <meshStandardMaterial color="#FFFFFF" roughness={0.8} />
-                </mesh>
-
-                {/* Poster frame */}
-                <mesh position={[0, 0, 0.01]}>
-                    <ringGeometry args={[1.05, 1.1, 32]} />
-                    <meshStandardMaterial color="#000000" />
                 </mesh>
 
                 {/* Title */}
@@ -170,7 +164,7 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
 
             {/* Motivational text - on right wall */}
             <Text
-                position={[3.9, 3, 0]}
+                position={[3.9, 5, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 fontSize={0.4}
                 color="#FF0000"
