@@ -11,7 +11,7 @@ const createArtLayout = (): InteractiveElement[] => [
         scale: [1.5, 1.5, 1] as [number, number, number],
         content: {
             type: "art-frame",
-            imageUrl: "", // Removed old art config usage
+            imageUrl: "marvin-martian.jpg",
         },
     },
 
@@ -25,7 +25,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.8, 0.8, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: i === 0 ? "monster-under.jpg" : "chaos-bird.jpg",
             },
         })
     ),
@@ -40,7 +40,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.9, 0.9, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: i === 0 ? "teemo.jpg" : "tree-night.jpg",
             },
         })
     ),
@@ -55,7 +55,7 @@ const createArtLayout = (): InteractiveElement[] => [
         scale: [1.5, 1.5, 1] as [number, number, number],
         content: {
             type: "art-frame",
-            imageUrl: "", // Removed old art config usage
+            imageUrl: "wispette.jpg",
         },
     },
 
@@ -69,7 +69,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1.2, 1.2, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: i === 0 ? "link-botw.jpg" : "okay-blue-heron.jpg",
             },
         })
     ),
@@ -84,7 +84,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [0.9, 0.9, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: "marvin-martian.jpg",
             },
         })
     ),
@@ -103,7 +103,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1.1, 1.1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: "monster-under.jpg",
             },
         })
     ),
@@ -125,7 +125,7 @@ const createArtLayout = (): InteractiveElement[] => [
             scale: [1, 1, 1] as [number, number, number],
             content: {
                 type: "art-frame",
-                imageUrl: "", // Removed old art config usage
+                imageUrl: "chaos-bird.jpg",
             },
         })
     ),

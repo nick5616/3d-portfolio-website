@@ -2,6 +2,7 @@ import { useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { Suspense, useEffect, useState } from "react";
 import * as THREE from "three";
+import { azureStorageService } from "../../utils/azureStorage";
 
 interface ArtFrameProps {
     position: [number, number, number];
@@ -20,13 +21,64 @@ const FRAME_DEPTH = 0.1;
 const FRAME_THICKNESS = 0.08;
 const WALL_OFFSET = -0.75; // Distance to offset from wall center
 
+// Custom hook to handle Azure + fallback image loading
+const useImageWithFallback = (imageUrl: string) => {
+    const [finalImageUrl, setFinalImageUrl] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadImage = async () => {
+            if (!imageUrl) {
+                setError("No image URL provided");
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                // First, try to get the Azure URL
+                const azureUrl = await azureStorageService.getArtPieceUrl(
+                    imageUrl,
+                    imageUrl
+                );
+                setFinalImageUrl(azureUrl);
+                console.log(`✓ ArtFrame: Loaded from Azure - ${imageUrl}`);
+            } catch (azureError) {
+                console.warn(
+                    `⚠ ArtFrame: Azure failed for ${imageUrl}, trying local fallback`
+                );
+
+                // Fallback to local image
+                const localUrl = `/images/art/${imageUrl}`;
+                setFinalImageUrl(localUrl);
+                console.log(`✓ ArtFrame: Using local fallback - ${localUrl}`);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadImage();
+    }, [imageUrl]);
+
+    return { finalImageUrl, isLoading, error };
+};
+
 const Frame: React.FC<ArtFrameProps> = ({
     position,
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     imageUrl,
 }) => {
-    const texture = useLoader(TextureLoader, imageUrl);
+    const { finalImageUrl, isLoading, error } = useImageWithFallback(imageUrl);
+
+    // Only load texture if we have a final URL
+    const texture = finalImageUrl
+        ? useLoader(TextureLoader, finalImageUrl)
+        : null;
+
     const [dimensions, setDimensions] = useState<ImageDimensions>({
         width: 2,
         height: 1.5,
@@ -70,6 +122,48 @@ const Frame: React.FC<ArtFrameProps> = ({
     }, [texture]);
 
     const mountPosition = getMountPosition();
+
+    // Show loading state or error state
+    if (isLoading) {
+        return (
+            <group position={mountPosition} rotation={rotation} scale={scale}>
+                {/* Loading placeholder frame */}
+                <mesh castShadow>
+                    <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
+                    <meshStandardMaterial color="#8b7355" roughness={0.8} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.02]}>
+                    <boxGeometry args={[1.84, 1.34, 0.02]} />
+                    <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+                    <planeGeometry args={[1.84, 1.34]} />
+                    <meshBasicMaterial color="#666666" />
+                </mesh>
+            </group>
+        );
+    }
+
+    // Show error state
+    if (error || !texture) {
+        return (
+            <group position={mountPosition} rotation={rotation} scale={scale}>
+                {/* Error placeholder frame */}
+                <mesh castShadow>
+                    <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
+                    <meshStandardMaterial color="#8b7355" roughness={0.8} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.02]}>
+                    <boxGeometry args={[1.84, 1.34, 0.02]} />
+                    <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
+                </mesh>
+                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+                    <planeGeometry args={[1.84, 1.34]} />
+                    <meshBasicMaterial color="#ff4444" />
+                </mesh>
+            </group>
+        );
+    }
 
     return (
         <group position={mountPosition} rotation={rotation} scale={scale}>

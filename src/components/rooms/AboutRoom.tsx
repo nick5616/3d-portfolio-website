@@ -1,18 +1,18 @@
-import React, { useRef, useState } from "react";
-import { RoomConfig } from "../../types/scene.types";
-import { RoomComments } from "./RoomComments";
+import React, { useState, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
+import { RoomComments } from "./RoomComments";
+import { HolodeckControlPanel } from "./holodeck/HolodeckControlPanel";
+import { HolodeckGrid } from "./holodeck/HolodeckGrid";
+import { CourageExperience } from "./holodeck/CourageExperience";
+import { FitnessExperience } from "./holodeck/FitnessExperience";
+import { ArtExperience } from "./holodeck/ArtExperience";
+import { MathExperience } from "./holodeck/MathExperience";
+import { ForestExperience } from "./holodeck/ForestExperience";
+import { RoomConfig } from "../../types/scene.types";
+import { useSceneStore } from "../../stores/sceneStore";
 import * as THREE from "three";
-import {
-    HolodeckControlPanel,
-    HolodeckGrid,
-    CourageExperience,
-    FitnessExperience,
-    ArtExperience,
-    MathExperience,
-    ForestExperience,
-} from "./holodeck";
 
 interface AboutRoomProps {
     config: RoomConfig;
@@ -44,11 +44,10 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const [currentExperience, setCurrentExperience] =
         useState<HolodeckExperience>("off");
     const [isTransitioning, setIsTransitioning] = useState(false);
-
-    // References for animations
+    const scanLineRef = useRef<THREE.Mesh>(null);
     const controlPanelRef = useRef<THREE.Group>(null);
     const gridWallsRef = useRef<THREE.Group>(null);
-    const scanLineRef = useRef<THREE.Mesh>(null);
+    const { rotateUser, getExperienceRotationAngle } = useSceneStore();
 
     // Animation loop
     useFrame((state) => {
@@ -100,6 +99,15 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
         setTimeout(() => {
             setCurrentExperience(experience);
             setIsTransitioning(false);
+
+            // Rotate user to experience-specific optimal angle (but not for "off")
+            if (experience !== "off") {
+                setTimeout(() => {
+                    const rotationAngle =
+                        getExperienceRotationAngle(experience);
+                    rotateUser(rotationAngle);
+                }, 100); // Small delay to ensure environment is loaded
+            }
         }, 500);
     };
 

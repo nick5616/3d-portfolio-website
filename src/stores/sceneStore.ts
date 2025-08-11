@@ -4,6 +4,18 @@ import * as THREE from "three";
 import { RoomConfig } from "../types/scene.types";
 import { roomConfigs } from "../configs/rooms";
 
+// Configuration for experience-specific rotation angles (in radians)
+// Each angle represents the optimal orientation for the user to face when the experience loads
+const EXPERIENCE_ROTATION_ANGLES: Record<string, number> = {
+    // Current experiences
+    computer: Math.PI / 2 + 0.5,
+    fitness: Math.PI,
+    art: Math.PI / 2 + 0.5,
+    math: -Math.PI / 2,
+    forest: Math.PI / 4,
+    off: 0,
+};
+
 interface MovementState {
     forward: boolean;
     backward: boolean;
@@ -102,6 +114,8 @@ interface SceneState {
     toggleStats: () => void;
     togglePerformanceMonitoring: () => void;
     toggleMinimap: () => void;
+    rotateUser: (angle?: number) => void;
+    getExperienceRotationAngle: (experience: string) => number;
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -250,4 +264,30 @@ export const useSceneStore = create<SceneState>((set) => ({
                 visible: !state.minimap.visible,
             },
         })),
+    rotateUser: (angle?: number) => {
+        set((state) => {
+            // Get current rotation or default to [0, 0, 0]
+            const currentRotation = state.cameraRotation || [0, 0, 0];
+
+            // Use provided angle or get from experience config
+            let rotationAngle = angle;
+            if (rotationAngle === undefined) {
+                // Get the current experience from the room ID or default to "off"
+                const currentExperience = state.currentRoom?.id || "off";
+                rotationAngle =
+                    EXPERIENCE_ROTATION_ANGLES[currentExperience] || 0;
+            }
+
+            // Apply the rotation to the Y axis
+            const newRotation: [number, number, number] = [
+                currentRotation[0],
+                currentRotation[1] + rotationAngle,
+                currentRotation[2],
+            ];
+            return { cameraRotation: newRotation };
+        });
+    },
+    getExperienceRotationAngle: (experience: string) => {
+        return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
+    },
 }));

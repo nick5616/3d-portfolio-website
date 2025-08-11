@@ -164,6 +164,72 @@ export const CourageExperience: React.FC = () => {
                 scale={[0.6, 0.6, 0.6]}
             />
 
+            {/* Keyboard on the desk */}
+            <group position={[0, 0.85, -2.8]} rotation={[0, 0, 0]}>
+                {/* Keyboard base */}
+                <mesh position={[0, 0, 0]}>
+                    <boxGeometry args={[0.4, 0.02, 0.15]} />
+                    <meshStandardMaterial color="#2C2C2C" roughness={0.3} />
+                </mesh>
+
+                {/* Keyboard keys - main section */}
+                {Array.from({ length: 4 }).map((_, row) =>
+                    Array.from({ length: 12 }).map((_, col) => (
+                        <mesh
+                            key={`key-${row}-${col}`}
+                            position={[
+                                (col - 5.5) * 0.03,
+                                0.01,
+                                (row - 1.5) * 0.03,
+                            ]}
+                        >
+                            <boxGeometry args={[0.025, 0.005, 0.025]} />
+                            <meshStandardMaterial
+                                color="#1A1A1A"
+                                roughness={0.2}
+                            />
+                        </mesh>
+                    ))
+                )}
+
+                {/* Space bar */}
+                <mesh position={[0, 0.01, 0.06]}>
+                    <boxGeometry args={[0.25, 0.005, 0.02]} />
+                    <meshStandardMaterial color="#1A1A1A" roughness={0.2} />
+                </mesh>
+
+                {/* Function keys row */}
+                {Array.from({ length: 12 }).map((_, i) => (
+                    <mesh
+                        key={`fkey-${i}`}
+                        position={[(i - 5.5) * 0.03, 0.01, -0.06]}
+                    >
+                        <boxGeometry args={[0.025, 0.005, 0.025]} />
+                        <meshStandardMaterial color="#1A1A1A" roughness={0.2} />
+                    </mesh>
+                ))}
+
+                {/* Number pad section */}
+                {Array.from({ length: 4 }).map((_, row) =>
+                    Array.from({ length: 3 }).map((_, col) => (
+                        <mesh
+                            key={`numpad-${row}-${col}`}
+                            position={[
+                                0.12 + (col - 1) * 0.03,
+                                0.01,
+                                (row - 1.5) * 0.03,
+                            ]}
+                        >
+                            <boxGeometry args={[0.025, 0.005, 0.025]} />
+                            <meshStandardMaterial
+                                color="#1A1A1A"
+                                roughness={0.2}
+                            />
+                        </mesh>
+                    ))
+                )}
+            </group>
+
             {/* Warm homey lighting like in the show */}
             <pointLight
                 position={[0, 4, 0]}
