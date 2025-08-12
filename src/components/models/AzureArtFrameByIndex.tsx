@@ -1,6 +1,6 @@
-import { useLoader } from "@react-three/fiber";
+import { useLoader, useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useAzureArtByIndex } from "../../hooks/useAzureArtByIndex";
 import { ArtPlaque } from "./ArtPlaque";
@@ -12,6 +12,7 @@ interface AzureArtFrameByIndexProps {
     artPieceIndex: number; // Index of the art piece (0, 1, 2, etc.)
     useAzureStorage?: boolean; // Whether to use Azure Storage (default: true)
     showPlaque?: boolean; // Whether to show the plaque (default: true)
+    proximityRadius?: number; // Distance in world units to trigger loading
 }
 
 interface ImageDimensions {
@@ -22,7 +23,36 @@ interface ImageDimensions {
 
 const FRAME_DEPTH = 0.1;
 const FRAME_THICKNESS = 0.08;
-const WALL_OFFSET = -0.75; // Distance to offset from wall center
+const FLUSH_GAP = 0.01; // Small gap to avoid z-fighting with walls
+const DEFAULT_PROXIMITY_RADIUS = 16; // ~a room-width away
+
+const LazyImagePlane: React.FC<{
+    url: string;
+    width: number;
+    height: number;
+    onTextureLoaded?: (aspectRatio: number) => void;
+}> = ({ url, width, height, onTextureLoaded }) => {
+    const texture = useLoader(TextureLoader, url);
+
+    // Notify parent of actual aspect ratio
+    useEffect(() => {
+        if (texture && texture.image && onTextureLoaded) {
+            const ratio = texture.image.width / texture.image.height;
+            onTextureLoaded(ratio);
+        }
+    }, [texture, onTextureLoaded]);
+
+    return (
+        <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial
+                map={texture}
+                toneMapped={false}
+                side={THREE.DoubleSide}
+            />
+        </mesh>
+    );
+};
 
 const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     position,
@@ -31,32 +61,98 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     artPieceIndex,
     useAzureStorage = true,
     showPlaque = true,
+    proximityRadius = DEFAULT_PROXIMITY_RADIUS,
 }) => {
-    // Use Azure Storage hook with index
+    const { camera } = useThree();
+
+    // Track proximity to camera
+    const [isNear, setIsNear] = useState(false);
+    const groupRef = useRef<THREE.Group>(null);
+
+    useFrame(() => {
+        if (!groupRef.current) return;
+        const groupWorldPos = new THREE.Vector3();
+        groupRef.current.getWorldPosition(groupWorldPos);
+        const distance = camera.position.distanceTo(groupWorldPos);
+        // Small hysteresis to prevent rapid toggling
+        setIsNear((prev) =>
+            prev ? distance < proximityRadius + 2 : distance < proximityRadius
+        );
+    });
+
+    // Call the hook, enabling Azure only when near
     const {
         imageUrl: azureImageUrl,
         isLoading,
         error,
         artPieceName,
-    } = useAzureArtByIndex(artPieceIndex);
+    } = useAzureArtByIndex(artPieceIndex, useAzureStorage, isNear);
 
-    // Debug logging
-    console.log(`AzureArtFrameByIndex [${artPieceIndex}]:`, {
-        azureImageUrl,
-        isLoading,
-        error,
-        artPieceName,
-        useAzureStorage,
+    const finalArtPieceName = artPieceName;
+
+    // Determine which image URL to use with Azure-first behavior when near
+    let finalImageUrl: string | null = null;
+    if (isNear) {
+        if (useAzureStorage) {
+            if (azureImageUrl && !error) {
+                finalImageUrl = azureImageUrl;
+            } else if (error && finalArtPieceName) {
+                // Only fallback to local if Azure failed
+                finalImageUrl = `/images/art/${finalArtPieceName}`;
+            }
+        } else if (finalArtPieceName) {
+            // Azure disabled: use local when near
+            finalImageUrl = `/images/art/${finalArtPieceName}`;
+        }
+    }
+
+    const [dimensions, setDimensions] = useState<ImageDimensions>({
+        width: 2,
+        height: 1.5,
+        aspectRatio: 4 / 3,
     });
 
-    // Show loading state if still loading
-    if (isLoading) {
-        console.log(
-            `AzureArtFrameByIndex [${artPieceIndex}]: Still loading, showing placeholder`
+    const updateDimensionsFromAspect = (aspectRatio: number) => {
+        let width = 2;
+        let height = width / aspectRatio;
+
+        if (height > 2.5) {
+            height = 2.5;
+            width = height * aspectRatio;
+        }
+        if (width > 3) {
+            width = 3;
+            height = width / aspectRatio;
+        }
+        setDimensions({ width, height, aspectRatio });
+    };
+
+    // Calculate mounting position: offset center opposite the facing normal for flush mount
+    const getMountPosition = (): [number, number, number] => {
+        const [x, y, z] = position;
+        const [, rotY] = rotation;
+        const normal = new THREE.Vector3(Math.sin(rotY), 0, Math.cos(rotY));
+        const offset = FRAME_DEPTH / 2 + FLUSH_GAP;
+        const mount = new THREE.Vector3(x, y, z).sub(
+            normal.multiplyScalar(offset)
         );
+        return [mount.x, mount.y, mount.z];
+    };
+
+    const mountPosition = getMountPosition();
+
+    // Loading placeholder when near but waiting on Azure decision
+    const showLoading =
+        isNear && useAzureStorage && isLoading && !finalImageUrl;
+
+    if (showLoading) {
         return (
-            <group position={position} rotation={rotation} scale={scale}>
-                {/* Loading placeholder frame */}
+            <group
+                ref={groupRef}
+                position={mountPosition}
+                rotation={rotation}
+                scale={scale}
+            >
                 <mesh castShadow>
                     <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
                     <meshStandardMaterial color="#8b7355" roughness={0.8} />
@@ -73,78 +169,16 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         );
     }
 
-    // Determine which image URL to use - only use Azure Storage, no fallbacks
-    const finalImageUrl =
-        useAzureStorage && azureImageUrl && !error ? azureImageUrl : null;
-
-    console.log(
-        `AzureArtFrameByIndex [${artPieceIndex}]: finalImageUrl =`,
-        finalImageUrl
-    );
-
-    // If no valid image URL, don't render anything
-    if (!finalImageUrl) {
-        console.log(
-            `AzureArtFrameByIndex: No frame displayed for index ${artPieceIndex} (${artPieceName}) - no valid image URL`
-        );
-        return null;
-    }
-
-    // Log if Azure Storage fails
-    if (useAzureStorage && (!azureImageUrl || error)) {
-        console.log(
-            `AzureArtFrameByIndex: No image available for index ${artPieceIndex} (${artPieceName}) - no frame displayed`
-        );
-        return null;
-    }
-
-    const texture = useLoader(TextureLoader, finalImageUrl);
-    const [dimensions, setDimensions] = useState<ImageDimensions>({
-        width: 2,
-        height: 1.5,
-        aspectRatio: 4 / 3,
-    });
-
-    // Calculate mounting position based on rotation
-    const getMountPosition = (): [number, number, number] => {
-        const [x, y, z] = position;
-        const [_, rotY] = rotation;
-
-        // Use rotation to determine which wall we're on
-        if (Math.abs(rotY) === Math.PI / 2) {
-            // Frame faces east/west
-            return x < 0 ? [x + WALL_OFFSET, y, z] : [x - WALL_OFFSET, y, z];
-        } else {
-            // Frame faces north/south
-            return z < 0 ? [x, y, z + WALL_OFFSET] : [x, y, z - WALL_OFFSET];
-        }
-    };
-
-    // Calculate frame dimensions based on image aspect ratio
-    useEffect(() => {
-        if (texture) {
-            const aspectRatio = texture.image.width / texture.image.height;
-            let width = 2;
-            let height = width / aspectRatio;
-
-            if (height > 2.5) {
-                height = 2.5;
-                width = height * aspectRatio;
-            }
-
-            if (width > 3) {
-                width = 3;
-                height = width / aspectRatio;
-            }
-
-            setDimensions({ width, height, aspectRatio });
-        }
-    }, [texture]);
-
-    const mountPosition = getMountPosition();
+    // If not near, or no valid image, show empty frame (aesthetic placeholder)
+    const hasImage = Boolean(finalImageUrl);
 
     return (
-        <group position={mountPosition} rotation={rotation} scale={scale}>
+        <group
+            ref={groupRef}
+            position={mountPosition}
+            rotation={rotation}
+            scale={scale}
+        >
             {/* Main frame box */}
             <mesh castShadow>
                 <boxGeometry
@@ -165,20 +199,27 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
                 <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
             </mesh>
 
-            {/* Art canvas/image */}
-            <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
-                <planeGeometry
-                    args={[
-                        dimensions.width - FRAME_THICKNESS * 2,
-                        dimensions.height - FRAME_THICKNESS * 2,
-                    ]}
+            {/* Art canvas/image - only mount when near to avoid eager texture load */}
+            {isNear && hasImage ? (
+                <LazyImagePlane
+                    url={finalImageUrl!}
+                    width={dimensions.width - FRAME_THICKNESS * 2}
+                    height={dimensions.height - FRAME_THICKNESS * 2}
+                    onTextureLoaded={updateDimensionsFromAspect}
                 />
-                <meshBasicMaterial
-                    map={texture}
-                    toneMapped={false}
-                    side={THREE.DoubleSide}
-                />
-            </mesh>
+            ) : (
+                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+                    <planeGeometry
+                        args={[
+                            dimensions.width - FRAME_THICKNESS * 2,
+                            dimensions.height - FRAME_THICKNESS * 2,
+                        ]}
+                    />
+                    <meshBasicMaterial
+                        color={hasImage ? "#3a3a3a" : "#555555"}
+                    />
+                </mesh>
+            )}
 
             {/* Corner decorations */}
             {[
@@ -211,12 +252,12 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
             ))}
 
             {/* Plaque */}
-            {showPlaque && artPieceName && (
+            {showPlaque && finalArtPieceName && (
                 <ArtPlaque
                     position={[0, -dimensions.height / 2 - 0.3, 0]}
                     rotation={[0, 0, 0]}
                     scale={[1, 1, 1]}
-                    artPieceName={artPieceName}
+                    artPieceName={finalArtPieceName}
                     showPlaque={showPlaque}
                 />
             )}

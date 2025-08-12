@@ -25,6 +25,14 @@ export class AzureStorageService {
 
     constructor(config: AzureStorageConfig) {
         this.config = config;
+
+        // If SAS URL is empty, don't initialize the client
+        if (!config.sasUrl || config.sasUrl.trim() === "") {
+            this.blobServiceClient = null as any;
+            this.containerClient = null as any;
+            return;
+        }
+
         this.blobServiceClient = new BlobServiceClient(config.sasUrl);
         // The SAS URL already points to the container, so we use empty string
         this.containerClient = this.blobServiceClient.getContainerClient("");
@@ -40,6 +48,11 @@ export class AzureStorageService {
         artPieceName: string,
         fileName?: string
     ): Promise<string> {
+        // If client is not initialized (empty SAS URL), throw error immediately
+        if (!this.containerClient) {
+            throw new Error("Azure Storage is not configured (empty SAS URL)");
+        }
+
         // Check cache first
         if (blobUrlCache.has(artPieceName)) {
             return blobUrlCache.get(artPieceName)!;
@@ -48,7 +61,7 @@ export class AzureStorageService {
         console.log(`Fetching art piece: "${artPieceName}"`);
 
         try {
-            // If fileName is provided, use it directly (it already includes the extension)
+            // If fileName is provided, try it first
             if (fileName) {
                 const blobClient = this.containerClient.getBlobClient(fileName);
 
@@ -78,15 +91,12 @@ export class AzureStorageService {
                         blobUrlCache.set(artPieceName, directUrl);
                         return directUrl;
                     }
+                    // If other error, proceed to extension fallback below
                 }
-
-                // If the exact fileName doesn't exist, throw an error
-                throw new Error(
-                    `Art piece "${artPieceName}" not found in Azure Storage (tried ${fileName})`
-                );
+                // If the exact fileName doesn't exist or errored, try extension fallback using artPieceName
             }
 
-            // Fallback: Try JPG first, then PNG if no fileName provided
+            // Fallback: Try JPG first, then PNG if no fileName provided or fileName failed
             const extensions = [".jpg", ".png"];
 
             for (const ext of extensions) {
@@ -161,7 +171,7 @@ export class AzureStorageService {
 
     /**
      * List all available art pieces in the container
-     * @returns Promise<string[]> - Array of art piece names
+     * @returns Promise<string[]> - Array of art piece names (without extension)
      */
     async listArtPieces(): Promise<string[]> {
         try {

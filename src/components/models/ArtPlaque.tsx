@@ -1,20 +1,19 @@
 import React from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
+import { getArtPieceByName } from "../../configs/artMetadata";
 
 interface ArtPlaqueProps {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
-    artPieceName: string;
+    artPieceName: string; // this is the fileName like "marvin-martian.jpg"
     showPlaque?: boolean;
 }
 
 const PLAQUE_WIDTH = 0.8;
 const PLAQUE_HEIGHT = 0.4;
 const PLAQUE_DEPTH = 0.02;
-const TEXT_SIZE = 0.04;
-const LINE_HEIGHT = 0.06;
 
 export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
     position,
@@ -23,28 +22,14 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
     artPieceName,
     showPlaque = true,
 }) => {
-    if (!showPlaque) {
-        return null;
-    }
+    if (!showPlaque) return null;
 
-    const displayInfo = {
-        name: "test",
-        date: "2025",
-        description: "test",
-        medium: "test",
-    };
-    const hasMetadata =
-        displayInfo.date || displayInfo.description || displayInfo.medium;
+    const piece = getArtPieceByName(artPieceName);
+    if (!piece) return null;
 
-    // Only show plaque if there's actual metadata
-    if (!hasMetadata) {
-        return null;
-    }
-
-    console.log("displayInfo", displayInfo);
-    console.log("artPieceName", artPieceName);
-    console.log("showPlaque", showPlaque);
-    console.log("hasMetadata", hasMetadata);
+    const title = piece.name;
+    const date = piece.date;
+    const description = piece.description;
 
     return (
         <group position={position} rotation={rotation} scale={scale}>
@@ -76,11 +61,11 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                     maxWidth={PLAQUE_WIDTH - 0.04}
                     textAlign="center"
                 >
-                    {displayInfo.name}
+                    {title}
                 </Text>
 
                 {/* Date */}
-                {displayInfo.date && (
+                {date && (
                     <Text
                         position={[0, 0.06, 0]}
                         fontSize={0.03}
@@ -90,12 +75,12 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                         maxWidth={PLAQUE_WIDTH - 0.04}
                         textAlign="center"
                     >
-                        {displayInfo.date}
+                        {date}
                     </Text>
                 )}
 
                 {/* Description */}
-                {displayInfo.description && (
+                {description && (
                     <Text
                         position={[0, 0, 0]}
                         fontSize={0.025}
@@ -105,22 +90,7 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                         maxWidth={PLAQUE_WIDTH - 0.04}
                         textAlign="center"
                     >
-                        {displayInfo.description}
-                    </Text>
-                )}
-
-                {/* Medium */}
-                {displayInfo.medium && (
-                    <Text
-                        position={[0, -0.06, 0]}
-                        fontSize={0.03}
-                        color="#ffffff"
-                        anchorX="center"
-                        anchorY="middle"
-                        maxWidth={PLAQUE_WIDTH - 0.04}
-                        textAlign="center"
-                    >
-                        {displayInfo.medium}
+                        {description}
                     </Text>
                 )}
             </group>

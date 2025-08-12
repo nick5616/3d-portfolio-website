@@ -304,7 +304,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             position: [7, 0.1, 0] as [number, number, number],
             rotation: [0, -Math.PI / 2, 0] as [number, number, number],
         },
-        interactiveElements: createArtLayout(),
+        interactiveElements: [], // Art frames are handled by GalleryRoom component
         archways: [
             {
                 id: "to-atrium-from-gallery",

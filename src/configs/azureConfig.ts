@@ -2,8 +2,8 @@
 // Update these values with your actual Azure Storage account details
 
 export const azureStorageConfig = {
-    // Replace with your actual SAS URL
-    sasUrl: "https://portfoliomedia.blob.core.windows.net/digital-art?sp=r&st=2025-08-08T17:32:54Z&se=2025-08-09T01:47:54Z&spr=https&sv=2024-11-04&sr=c&sig=%2F4%2BjNIJ1EDFGUnhdEYNSp3TmcwD4dOW5BuHcA%2B3b7Do%3D",
+    // Replace with your actual SAS URL (currently disabled due to expired token)
+    sasUrl: "https://portfoliomedia.blob.core.windows.net/digital-art?sp=r&st=2025-08-12T06:10:46Z&se=2028-08-01T14:25:46Z&spr=https&sv=2024-11-04&sr=c&sig=udpOam4i8owLuei7HjOZDZRCq4Hi0TKHX8teUC3GuZc%3D", // Disabled - SAS token has expired
 
     // Container name for art pieces
     containerName: "digital-art",

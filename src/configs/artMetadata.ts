@@ -57,6 +57,94 @@ export const artPieces: ArtPiece[] = [
         date: "2024-01-20",
         fileName: "okay-blue-heron.jpg",
     },
+    {
+        name: "Wiz Dog",
+        description: "A magical canine companion with mystical aura",
+        date: "2024-03-12",
+        fileName: "wiz-dog.jpg",
+    },
+    {
+        name: "Snow White Night",
+        description: "A winter landscape bathed in moonlight",
+        date: "2024-02-08",
+        fileName: "snow-white-night.jpg",
+    },
+    {
+        name: "Smoke Man",
+        description: "A mysterious figure emerging from swirling smoke",
+        date: "2024-01-30",
+        fileName: "smoke-man.jpg",
+    },
+    {
+        name: "Seal",
+        description: "A playful seal in its natural aquatic environment",
+        date: "2024-02-14",
+        fileName: "seal.jpg",
+    },
+    {
+        name: "San Bernardino",
+        description: "An urban landscape capturing the essence of the city",
+        date: "2024-03-01",
+        fileName: "san-bernardino.jpg",
+    },
+    {
+        name: "Mackbook",
+        description:
+            "A sleek technological composition featuring modern design",
+        date: "2024-02-20",
+        fileName: "mackbook.jpg",
+    },
+    {
+        name: "Lion Sun",
+        description: "A majestic lion basking in golden sunlight",
+        date: "2024-01-25",
+        fileName: "lion-sun.jpg",
+    },
+    {
+        name: "Homunculus",
+        description: "A mystical alchemical creature with intricate details",
+        date: "2024-02-28",
+        fileName: "homunculus.jpg",
+    },
+    {
+        name: "First Drawing",
+        description:
+            "A foundational piece marking the beginning of artistic journey",
+        date: "2024-01-10",
+        fileName: "first-drawing.jpg",
+    },
+    {
+        name: "Far East",
+        description: "An evocative scene inspired by Eastern aesthetics",
+        date: "2024-03-08",
+        fileName: "far-east.jpg",
+    },
+    {
+        name: "Brushed Sunset",
+        description: "A vibrant sunset captured with expressive brushwork",
+        date: "2024-02-12",
+        fileName: "brushed-sunset.jpg",
+    },
+    {
+        name: "Bite of 87",
+        description: "A dramatic scene with intense action and emotion",
+        date: "2024-01-18",
+        fileName: "bite-of-87.jpg",
+    },
+    {
+        name: "Animal Sketches",
+        description:
+            "A collection of wildlife studies showcasing natural forms",
+        date: "2024-02-05",
+        fileName: "animal-sketches.jpg",
+    },
+    {
+        name: "Sprites",
+        description:
+            "A collection of pixel art sprites with retro gaming aesthetic",
+        date: "2024-03-15",
+        fileName: "sprites.png",
+    },
 ];
 
 export const getArtPieceByIndex = (index: number): ArtPiece | undefined => {
