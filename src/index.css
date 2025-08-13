@@ -26,7 +26,7 @@ body,
 }
 
 /* Canvas should take full viewport */
-canvas {
+.main-canvas {
     touch-action: none !important;
     position: absolute !important;
     top: 0;
@@ -38,19 +38,20 @@ canvas {
 
 /* Desktop styles - normal behavior */
 @media (min-width: 769px) {
-    /* Stats styling for desktop */
-    #root canvas + * {
-        z-index: 9999 !important;
-    }
+    /* Stats z-index is set directly on the elements now */
 
-    /* Make the Stats panel smaller - using attribute selector */
+    /* Stats panel: fixed size matching HUD, no scaling */
     [data-testid="stats-panel"],
     .fps-stats {
-        transform: scale(0.125) !important;
-        transform-origin: top right !important;
         position: absolute !important;
-        top: 0 !important;
-        right: 0 !important;
+        top: 8px !important;
+        right: 8px !important;
+        left: auto !important;
+        width: 80px !important;
+        height: 48px !important;
+        transform: none !important;
+        transform-origin: top right !important;
+        z-index: 20 !important;
     }
 
     /* Make stats panel background slightly transparent */
@@ -123,12 +124,14 @@ canvas {
     .modal-hidden [data-testid="stats-panel"],
     .modal-hidden .fps-stats {
         display: block !important;
-        transform: scale(0.15) !important;
-        transform-origin: top right !important;
         position: fixed !important;
-        top: 0 !important;
-        right: 0 !important;
-        z-index: 20 !important; /* Above controls but below modal */
+        top: 8px !important;
+        left: auto !important;
+        width: 80px !important;
+        height: 48px !important;
+        transform: none !important;
+        transform-origin: top right !important;
+        z-index: 20 !important; /* Below minimap (z-40) to avoid eclipsing */
     }
 
     /* Optimize animations for mobile performance without causing jitter */

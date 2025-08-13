@@ -1,11 +1,34 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const Minimap: React.FC = () => {
     const { currentRoom, minimap, cameraData } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [playerPosition, setPlayerPosition] = useState({ x: 0, z: 0 });
+    const [size, setSize] = useState<{ width: number; height: number }>({
+        width: 240,
+        height: 200,
+    });
+
+    // Determine responsive minimap size based on viewport width
+    useEffect(() => {
+        const computeSize = () => {
+            const vw = window.innerWidth;
+            if (vw < 360) return { width: 160, height: 140 };
+            if (vw < 480) return { width: 180, height: 160 };
+            if (vw < 768) return { width: 200, height: 180 };
+            if (vw < 1280) return { width: 220, height: 200 };
+            return { width: 260, height: 220 };
+        };
+
+        const applySize = () => setSize(computeSize());
+        applySize();
+        window.addEventListener("resize", applySize);
+        return () => window.removeEventListener("resize", applySize);
+    }, []);
 
     // Track player position from camera data
     useEffect(() => {
@@ -23,9 +46,9 @@ export const Minimap: React.FC = () => {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // Set canvas size - smaller to match FPS indicator height
-        const width = 280;
-        const height = 250;
+        // Set canvas size responsively
+        const width = size.width;
+        const height = size.height;
         canvas.width = width;
         canvas.height = height;
 
@@ -34,7 +57,7 @@ export const Minimap: React.FC = () => {
         ctx.fillRect(0, 0, width, height);
 
         // Draw room layout
-        const scale = 0.25; // Scale factor for minimap - reduced to fit all rooms
+        const scale = 0.25; // Scale factor for minimap
         const centerX = width / 2;
         const centerY = height / 2;
 
@@ -108,22 +131,26 @@ export const Minimap: React.FC = () => {
         ctx.font = "9px monospace";
         ctx.textAlign = "left";
         ctx.fillText(`Room: ${currentRoom?.name || "None"}`, 5, height - 5);
-    }, [minimap.visible, currentRoom, playerPosition]);
+    }, [minimap.visible, currentRoom, playerPosition, size]);
 
     if (!minimap.visible) return null;
 
+    const bottomClass = isMobile ? "bottom-[160px]" : "bottom-4";
+
     return (
-        <div className="fixed top-[120px] right-[160px] z-40">
+        <div
+            className={`fixed right-4 ${bottomClass} md:top-20 md:bottom-auto z-40`}
+        >
             <div className="bg-black/60 rounded-lg p-2 border border-gray-600">
-                <div className="text-white text-xs mb-1 text-center">
+                <div className="text-white text-xs mb-1 text-center hidden sm:block">
                     Minimap
                 </div>
                 <canvas
                     ref={canvasRef}
                     className="rounded border border-gray-500"
                     style={{
-                        maxWidth: "220px",
-                        maxHeight: "220px",
+                        width: `${size.width}px`,
+                        height: `${size.height}px`,
                         backgroundColor: "rgba(40, 40, 40, 0.8)",
                     }}
                 />

@@ -23,7 +23,9 @@ export const Scene: React.FC = () => {
             alpha: false,
             stencil: false,
             depth: true,
-            powerPreference: isMobile ? "default" : "high-performance",
+            powerPreference: (isMobile
+                ? "default"
+                : "high-performance") as WebGLPowerPreference,
         };
 
         return baseConfig;
@@ -59,7 +61,7 @@ export const Scene: React.FC = () => {
     // Show fallback when hardware acceleration is disabled or still detecting
     if (isDetecting || isHardwareAccelerationDisabled) {
         const isEdge = navigator.userAgent.toLowerCase().includes("edge");
-        
+
         return (
             <div
                 style={{
@@ -105,32 +107,49 @@ export const Scene: React.FC = () => {
                                 acceleration in your browser settings and
                                 refresh the page.
                             </p>
-                            
+
                             {isEdge && (
-                                <div style={{ 
-                                    marginBottom: "1rem", 
-                                    padding: "1rem", 
-                                    backgroundColor: "#374151", 
-                                    borderRadius: "0.375rem",
-                                    textAlign: "left"
-                                }}>
-                                    <h3 style={{ marginBottom: "0.5rem", color: "#60a5fa" }}>
+                                <div
+                                    style={{
+                                        marginBottom: "1rem",
+                                        padding: "1rem",
+                                        backgroundColor: "#374151",
+                                        borderRadius: "0.375rem",
+                                        textAlign: "left",
+                                    }}
+                                >
+                                    <h3
+                                        style={{
+                                            marginBottom: "0.5rem",
+                                            color: "#60a5fa",
+                                        }}
+                                    >
                                         Microsoft Edge Instructions:
                                     </h3>
-                                    <ol style={{ margin: 0, paddingLeft: "1.5rem" }}>
+                                    <ol
+                                        style={{
+                                            margin: 0,
+                                            paddingLeft: "1.5rem",
+                                        }}
+                                    >
                                         <li>Open Edge Settings (Ctrl+,)</li>
                                         <li>Go to System and performance</li>
-                                        <li>Enable "Use hardware acceleration when available"</li>
+                                        <li>
+                                            Enable "Use hardware acceleration
+                                            when available"
+                                        </li>
                                         <li>Restart Edge completely</li>
                                         <li>Refresh this page</li>
                                     </ol>
                                 </div>
                             )}
-                            
+
                             <div style={{ marginBottom: "1rem" }}>
                                 <button
                                     onClick={() => {
-                                        console.log("User clicked refresh - checking hardware acceleration again");
+                                        console.log(
+                                            "User clicked refresh - checking hardware acceleration again"
+                                        );
                                         window.location.reload();
                                     }}
                                     style={{
@@ -148,19 +167,42 @@ export const Scene: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        console.log("Hardware acceleration detection debug info:");
-                                        console.log("User Agent:", navigator.userAgent);
-                                        console.log("WebGL Available:", !!document.createElement("canvas").getContext("webgl"));
-                                        const canvas = document.createElement("canvas");
+                                        console.log(
+                                            "Hardware acceleration detection debug info:"
+                                        );
+                                        console.log(
+                                            "User Agent:",
+                                            navigator.userAgent
+                                        );
+                                        console.log(
+                                            "WebGL Available:",
+                                            !!document
+                                                .createElement("canvas")
+                                                .getContext("webgl")
+                                        );
+                                        const canvas =
+                                            document.createElement("canvas");
                                         const gl = canvas.getContext("webgl");
                                         if (gl) {
-                                            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+                                            const debugInfo = gl.getExtension(
+                                                "WEBGL_debug_renderer_info"
+                                            );
                                             if (debugInfo) {
-                                                console.log("WebGL Renderer:", gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
-                                                console.log("WebGL Vendor:", gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+                                                console.log(
+                                                    "WebGL Renderer:",
+                                                    gl.getParameter(
+                                                        debugInfo.UNMASKED_RENDERER_WEBGL
+                                                    )
+                                                );
+                                                console.log(
+                                                    "WebGL Vendor:",
+                                                    gl.getParameter(
+                                                        debugInfo.UNMASKED_VENDOR_WEBGL
+                                                    )
+                                                );
                                             }
                                         }
-                                        
+
                                         // Use the new Edge debug utility
                                         logEdgeDebugInfo();
                                     }}
@@ -177,9 +219,15 @@ export const Scene: React.FC = () => {
                                     Debug Info
                                 </button>
                             </div>
-                            
-                            <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
-                                If you're still having issues, try opening this page in Chrome or Firefox.
+
+                            <p
+                                style={{
+                                    fontSize: "0.875rem",
+                                    color: "#9ca3af",
+                                }}
+                            >
+                                If you're still having issues, try opening this
+                                page in Chrome or Firefox.
                             </p>
                         </div>
                     )}
@@ -191,6 +239,7 @@ export const Scene: React.FC = () => {
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <Canvas
+                className="main-canvas"
                 gl={glParams}
                 camera={{
                     fov: isMobile ? 80 : 75,
