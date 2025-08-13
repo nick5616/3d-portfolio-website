@@ -23,7 +23,7 @@ interface ImageDimensions {
 
 const FRAME_DEPTH = 0.1;
 const FRAME_THICKNESS = 0.08;
-const FLUSH_GAP = 0.01; // Small gap to avoid z-fighting with walls
+const FLUSH_GAP = -0.02; // Slight embed to appear perfectly flush and avoid z-fighting
 const DEFAULT_PROXIMITY_RADIUS = 16; // ~a room-width away
 
 const LazyImagePlane: React.FC<{
@@ -254,7 +254,11 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
             {/* Plaque */}
             {showPlaque && finalArtPieceName && (
                 <ArtPlaque
-                    position={[0, -dimensions.height / 2 - 0.3, 0]}
+                    position={[
+                        0,
+                        -dimensions.height / 2 - 0.3,
+                        FRAME_DEPTH / 2 + 0.02,
+                    ]}
                     rotation={[0, 0, 0]}
                     scale={[1, 1, 1]}
                     artPieceName={finalArtPieceName}
