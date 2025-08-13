@@ -8,115 +8,117 @@ export interface ArtPiece {
 export const artPieces: ArtPiece[] = [
     {
         name: "Marvin Martian",
-        description:
-            "A whimsical portrait of Marvin the Martian in a futuristic style",
-        date: "2024-01-15",
+        description: "",
+        date: "Unknown",
         fileName: "marvin-martian.jpg",
     },
     {
-        name: "Monster Under the Bed",
-        description:
-            "A playful interpretation of childhood fears with a friendly monster",
-        date: "2024-02-03",
+        name: "Monster Under My Bed",
+        description: "The monster is you",
+        date: "Unknown",
         fileName: "monster-under.jpg",
     },
     {
         name: "Chaos Bird",
-        description:
-            "An abstract representation of chaos and freedom in avian form",
-        date: "2024-01-28",
+        description: "An abstract representation of chaos in avian form",
+        date: "Unknown",
         fileName: "chaos-bird.jpg",
     },
     {
         name: "Teemo Portrait",
-        description: "A detailed character study of Teemo in a fantasy setting",
-        date: "2024-03-10",
+        description:
+            "I don't play this game but I made it for my friend who used to play a lot. I think this character is very cute!",
+        date: "Circa new year 2023",
         fileName: "teemo.jpg",
     },
     {
         name: "Tree at Night",
         description: "A serene nocturnal landscape featuring a majestic tree",
-        date: "2024-02-18",
+        date: "Unknown",
         fileName: "tree-night.jpg",
     },
     {
         name: "Wispette",
         description: "A mystical creature with ethereal lighting effects",
-        date: "2024-03-05",
+        date: "Unknown",
         fileName: "wispette.jpg",
     },
     {
         name: "Link - Breath of the Wild",
-        description: "A dynamic action scene featuring Link in the open world",
-        date: "2024-02-25",
+        description: "A dynamic action scene featuring Link",
+        date: "Unknown",
         fileName: "link-botw.jpg",
     },
     {
         name: "Okay Blue Heron",
-        description: "A graceful water bird captured in its natural habitat",
-        date: "2024-01-20",
+        description: "A quick sketch of a great blue heron, but okay-ified",
+        date: "Unknown",
         fileName: "okay-blue-heron.jpg",
     },
     {
         name: "Wiz Dog",
-        description: "A magical canine companion with mystical aura",
-        date: "2024-03-12",
+        description:
+            "A magical canine companion with mystical aura. It's based off my Aunt's dog, Arya. I drew it for her as a gift.",
+        date: "Circa December 2024",
         fileName: "wiz-dog.jpg",
     },
     {
         name: "Snow White Night",
-        description: "A winter landscape bathed in moonlight",
-        date: "2024-02-08",
+        description:
+            "Disnet's Snow White lying across a natural landscape bathed in moonlight and fireflies",
+        date: "Circa December 2024",
         fileName: "snow-white-night.jpg",
     },
     {
         name: "Smoke Man",
-        description: "A mysterious figure emerging from swirling smoke",
-        date: "2024-01-30",
+        description:
+            "A mysterious figure emerging from swirling smoke. It tends to evoke dread.",
+        date: "Unknown",
         fileName: "smoke-man.jpg",
     },
     {
         name: "Seal",
         description: "A playful seal in its natural aquatic environment",
-        date: "2024-02-14",
+        date: "Unknown",
         fileName: "seal.jpg",
     },
     {
         name: "San Bernardino",
-        description: "An urban landscape capturing the essence of the city",
-        date: "2024-03-01",
+        description:
+            "The infamous Los Angeles neighborhood, depicted around the late 60's. I drew it for my Grandma, who was invited to live with my Grandpa when they were both very young. Her home town is all she knew. She cherishes these memories dearly",
+        date: "Circa December 2024",
         fileName: "san-bernardino.jpg",
     },
     {
         name: "Mackbook",
         description:
             "A sleek technological composition featuring modern design",
-        date: "2024-02-20",
+        date: "Unknown",
         fileName: "mackbook.jpg",
     },
     {
         name: "Lion Sun",
         description: "A majestic lion basking in golden sunlight",
-        date: "2024-01-25",
+        date: "Unknown",
         fileName: "lion-sun.jpg",
     },
     {
         name: "Homunculus",
-        description: "A mystical alchemical creature with intricate details",
-        date: "2024-02-28",
+        description: "A mystical alchemical creature with cartoonish details.",
+        date: "Unknown",
         fileName: "homunculus.jpg",
     },
     {
         name: "First Drawing",
-        description:
-            "A foundational piece marking the beginning of artistic journey",
-        date: "2024-01-10",
+        description: "The first digital art I ever made. ",
+        date: "Unknown",
         fileName: "first-drawing.jpg",
     },
     {
         name: "Far East",
-        description: "An evocative scene inspired by Eastern aesthetics",
-        date: "2024-03-08",
+        description:
+            "A drawing I made for my Grandfather, who was stationed in Korea. My grandma often wrote to him while he was stationed there. He once had a backlog of letters that all came at once. He vividly remembers sitting down with coffee and his favorite cookies, and getting to read these letters from my Grandma.",
+        date: "Circa December 2024",
         fileName: "far-east.jpg",
     },
     {
