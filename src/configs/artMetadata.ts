@@ -123,28 +123,28 @@ export const artPieces: ArtPiece[] = [
     },
     {
         name: "Brushed Sunset",
-        description: "A vibrant sunset captured with expressive brushwork",
-        date: "2024-02-12",
+        description: "",
+        date: "Unknown",
         fileName: "brushed-sunset.jpg",
     },
     {
         name: "Bite of 87",
-        description: "A dramatic scene with intense action and emotion",
-        date: "2024-01-18",
+        description: "I just drew with no objective in mind.",
+        date: "Unknown",
         fileName: "bite-of-87.jpg",
     },
     {
         name: "Animal Sketches",
         description:
-            "A collection of wildlife studies showcasing natural forms",
-        date: "2024-02-05",
+            "Random animal sketches with no reference. Some of them don't exist!",
+        date: "Unknown",
         fileName: "animal-sketches.jpg",
     },
     {
         name: "Sprites",
         description:
-            "A collection of pixel art sprites with retro gaming aesthetic",
-        date: "2024-03-15",
+            "I drew this for my partner. You don't get any more information than that.",
+        date: "July 2025",
         fileName: "sprites.png",
     },
 ];
