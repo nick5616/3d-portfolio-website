@@ -97,12 +97,15 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                             isMobile ? "text-xl" : "text-2xl"
                         }`}
                     >
-                        Welcome to the 3D Portfolio
+                        Hi! I'm Nick
                     </h2>
                     <div className="space-y-4">
                         <p className={isMobile ? "text-sm" : ""}>
-                            This is an interactive 3D environment showcasing my
-                            work and skills. Here's how to navigate:
+                            I like to create things. I wanted to archive my
+                            creations for myself but why not share some stuff
+                            publicly? There are some obscured things that I
+                            included for me or people I know in real life, but
+                            hey, if you find them, you find them 🤷‍♂️
                         </p>
                         <div className="space-y-4">
                             {isMobile ? (

@@ -37,7 +37,7 @@ const NUM_CURVES = 50;
 const POINTS_PER_CURVE = 100;
 const CURVE_RADIUS = 5;
 
-export const WarpSpeedLoadingScene = () => {
+export const SpiralLinesEffect = () => {
     const linesRef = useRef<THREE.Group>(null);
     const shaderMaterialRef = useRef<THREE.ShaderMaterial>(null);
 

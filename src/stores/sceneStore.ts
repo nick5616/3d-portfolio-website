@@ -9,9 +9,9 @@ import { Meteor } from "../types/math-game.types";
 // Each angle represents the optimal orientation for the user to face when the experience loads
 const EXPERIENCE_ROTATION_ANGLES: Record<string, number> = {
     // Current experiences
-    computer: Math.PI / 2 + 0.5,
+    computer: 0,
     fitness: Math.PI,
-    art: Math.PI / 2 + 0.5,
+    art: 0,
     math: 0,
     forest: Math.PI / 4,
     off: 0,
@@ -126,6 +126,11 @@ interface SceneState {
     getExperienceRotationAngle: (experience: string) => number;
     playerGrounded: boolean;
     setPlayerGrounded: (grounded: boolean) => void;
+
+    // Holodeck loading state
+    holodeckLoading: boolean;
+    holodeckLoadingExperience: string | null;
+    setHolodeckLoading: (loading: boolean, experience?: string | null) => void;
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -349,4 +354,19 @@ export const useSceneStore = create<SceneState>((set) => ({
         return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
     },
     setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
+
+    // Holodeck loading state
+    holodeckLoading: false,
+    holodeckLoadingExperience: null,
+    setHolodeckLoading: (loading, experience) => {
+        const updates: any = { holodeckLoading: loading };
+
+        // Only update the experience if one is provided
+        // This preserves the experience during the fade-out phase
+        if (experience !== undefined) {
+            updates.holodeckLoadingExperience = experience;
+        }
+
+        set(updates);
+    },
 }));

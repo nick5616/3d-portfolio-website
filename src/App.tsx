@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
+import { HolodeckLoadingScreen } from "./components/ui/HolodeckLoadingScreen";
 import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useSceneStore } from "./stores/sceneStore";
@@ -190,6 +191,7 @@ export default function App() {
                 <Scene />
             </WebGLErrorBoundary>
             <Interface />
+            <HolodeckLoadingScreen />
         </Suspense>
     );
 }

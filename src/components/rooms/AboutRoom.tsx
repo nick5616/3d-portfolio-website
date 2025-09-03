@@ -35,12 +35,12 @@ type HolodeckExperience =
 // Configuration for experience-specific spawn positions
 const EXPERIENCE_SPAWN_POSITIONS: Record<string, [number, number, number]> = {
     // Current experiences
-    computer: [0, 0.9, 5],
-    fitness: [0, 0.9, 5],
-    art: [0, 0.9, 5],
+    computer: [0, 0.9, 0],
+    fitness: [0, 0.9, 0],
+    art: [0, 0.9, 0],
     math: [0, 0.9, 3.5], // Math experience spawns further back
-    forest: [0, 0.9, 5],
-    off: [0, 0.9, 5],
+    forest: [0, 0.9, 0],
+    off: [0, 0.9, 0],
 };
 
 export const AboutRoom: React.FC<AboutRoomProps> = ({
@@ -58,8 +58,12 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const scanLineRef = useRef<THREE.Mesh>(null);
     const controlPanelRef = useRef<THREE.Group>(null);
     const gridWallsRef = useRef<THREE.Group>(null);
-    const { rotateUser, getExperienceRotationAngle, teleportToRoom } =
-        useSceneStore();
+    const {
+        rotateUser,
+        getExperienceRotationAngle,
+        teleportToRoom,
+        setHolodeckLoading,
+    } = useSceneStore();
 
     // Animation loop
     useFrame((state) => {
@@ -107,10 +111,20 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const switchExperience = (experience: HolodeckExperience) => {
         if (isTransitioning) return;
 
+        console.log(`🎮 Switching to ${experience} experience`);
+
+        // Start loading screen
+        setHolodeckLoading(true, experience);
         setIsTransitioning(true);
+
+        // Simulate loading time (you can adjust this based on actual asset loading)
+        const loadingDuration = experience === "off" ? 800 : 1500; // Longer for complex experiences
+
+        console.log(`⏳ Loading ${experience} for ${loadingDuration}ms`);
+
         setTimeout(() => {
+            console.log(`✅ ${experience} experience loaded, updating scene`);
             setCurrentExperience(experience);
-            setIsTransitioning(false);
 
             // Handle rotation and position for experiences (but not for "off")
             if (experience !== "off") {
@@ -121,6 +135,12 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                         experience
                     ] || [0, 0.9, 5];
 
+                    console.log(
+                        `📍 Teleporting to ${experience} at`,
+                        spawnPosition,
+                        `with rotation`,
+                        rotationAngle
+                    );
                     // Update both rotation and position
                     teleportToRoom("about", spawnPosition, [
                         0,
@@ -129,7 +149,14 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
                     ]);
                 }, 100); // Small delay to ensure environment is loaded
             }
-        }, 500);
+
+            // End loading screen after a short delay to ensure everything is rendered
+            setTimeout(() => {
+                console.log(`🏁 ${experience} experience fully ready`);
+                setHolodeckLoading(false);
+                setIsTransitioning(false);
+            }, 300);
+        }, loadingDuration);
     };
 
     const renderCurrentExperience = () => {
