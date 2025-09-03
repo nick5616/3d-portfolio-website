@@ -3,6 +3,7 @@ import { create } from "zustand";
 import * as THREE from "three";
 import { RoomConfig } from "../types/scene.types";
 import { roomConfigs } from "../configs/rooms";
+import { Meteor } from "../types/math-game.types";
 
 // Configuration for experience-specific rotation angles (in radians)
 // Each angle represents the optimal orientation for the user to face when the experience loads
@@ -38,17 +39,6 @@ interface CameraData {
 interface SceneData {
     objectCount: number;
     lightCount: number;
-}
-
-interface Meteor {
-    id: number;
-    x: number;
-    y: number;
-    z: number;
-    problem: string;
-    answer: number;
-    choices: number[];
-    color?: string;
 }
 
 interface MathGameState {

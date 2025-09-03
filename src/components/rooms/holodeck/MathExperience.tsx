@@ -3,17 +3,7 @@ import { Text, Html } from "@react-three/drei";
 import { MathGameOverlay } from "../../ui/MathGameOverlay";
 import { useFrame } from "@react-three/fiber";
 import { useSceneStore } from "../../../stores/sceneStore";
-
-interface Meteor {
-    id: number;
-    x: number;
-    y: number;
-    z: number;
-    problem: string;
-    answer: number;
-    choices: number[];
-    color?: string;
-}
+import { Meteor } from "../../../types/math-game.types";
 
 // Remove the props interface since we're managing state internally now
 interface MathExperienceProps {}
@@ -89,6 +79,7 @@ export const MathExperience: React.FC<MathExperienceProps> = () => {
                 problem: `${num1} × ${num2}`,
                 answer,
                 choices,
+                answered: false,
             };
 
             updateMathGameMeteors([...mathGame.meteors, newMeteor]);

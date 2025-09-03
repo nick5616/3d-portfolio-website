@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
+import { Meteor } from "../../types/math-game.types";
 
 const METEOR_COLORS = [
     "#FF4500", // Red-Orange
@@ -165,8 +166,8 @@ export const MathGameOverlay: React.FC = () => {
         console.log("Answer clicked:", { meteorId, selectedAnswer });
 
         const meteor = mathGame.meteors.find((m) => m.id === meteorId);
-        if (!meteor) {
-            console.log("Meteor not found for ID:", meteorId);
+        if (!meteor || meteor.answered) {
+            console.log("Meteor not found or already answered:", meteorId);
             return;
         }
 
@@ -175,6 +176,13 @@ export const MathGameOverlay: React.FC = () => {
         console.log("Selected answer:", selectedAnswer);
         console.log("Is correct:", selectedAnswer === meteor.answer);
         console.log("Current score:", mathGame.score);
+
+        // Mark the meteor as answered immediately to prevent multiple clicks
+        updateMathGameMeteors(
+            mathGame.meteors.map((m) =>
+                m.id === meteorId ? { ...m, answered: true } : m
+            )
+        );
 
         if (selectedAnswer === meteor.answer) {
             console.log(
@@ -188,11 +196,12 @@ export const MathGameOverlay: React.FC = () => {
             console.log("Incorrect answer");
         }
 
-        // Remove the answered meteor
-        console.log("Removing meteor with ID:", meteorId);
-        updateMathGameMeteors(
-            mathGame.meteors.filter((m) => m.id !== meteorId)
-        );
+        // Remove the answered meteor after a short delay to ensure state updates are processed
+        setTimeout(() => {
+            updateMathGameMeteors(
+                mathGame.meteors.filter((m) => m.id !== meteorId)
+            );
+        }, 100);
     };
 
     return (
