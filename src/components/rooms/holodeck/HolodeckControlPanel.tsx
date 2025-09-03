@@ -103,6 +103,8 @@ const ControlButton: React.FC<ButtonProps> = ({
                                     whiteSpace: "nowrap",
                                     textAlign: "center",
                                     userSelect: "none",
+                                    transform: "translate(-50%, -100%)", // Center horizontally, place above
+                                    pointerEvents: "none", // Prevent interference with interactions
                                 }}
                             >
                                 {isActive ? (
@@ -127,7 +129,7 @@ const ControlButton: React.FC<ButtonProps> = ({
                                 )}
                             </div>
                         ),
-                        offset: [0, 0.3, 0],
+                        offset: [-2, -1.5, -1],
                         visible: hovered,
                         distanceScale: true,
                         fadeTime: 200,
