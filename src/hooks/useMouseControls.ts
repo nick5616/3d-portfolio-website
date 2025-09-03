@@ -50,11 +50,13 @@ export const useMouseControls = () => {
         if (isMobile) return;
 
         if (controlMode !== "firstPerson") return;
+        // Do not request lock while interacting with UI/console
+        if (isInteracting) return;
         const canvas = document.querySelector("canvas");
         if (canvas) {
             canvas.requestPointerLock();
         }
-    }, [controlMode, isMobile]);
+    }, [controlMode, isMobile, isInteracting]);
 
     const handlePointerLockChange = useCallback(() => {
         // On mobile, always consider pointer "unlocked" for normal UI interaction

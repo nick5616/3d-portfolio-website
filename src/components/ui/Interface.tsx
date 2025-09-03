@@ -10,6 +10,7 @@ import { MathGameOverlay } from "./MathGameOverlay";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
+import { ConsoleInputManager } from "./ConsoleInputManager";
 
 export default function Interface() {
     const { isMobile } = useDeviceDetection();
@@ -21,6 +22,8 @@ export default function Interface() {
         doorId: string;
         targetRoomId: string;
     } | null>(null);
+
+    const { console: consoleState, isInteracting } = useSceneStore();
 
     // Listen for door hover events
     useEffect(() => {
@@ -87,16 +90,21 @@ export default function Interface() {
 
     return (
         <div className="fixed inset-0 pointer-events-none">
+            {/* Manager for console keystrokes */}
+            <ConsoleInputManager />
+
             {/* Educational/Instructional Modal */}
             <EducationalModal />
 
             {/* Mouse state indicator for desktop users */}
             <MouseStateIndicator />
 
-            {/* Crosshair */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-                <div className="w-2 h-2 bg-white rounded-full opacity-80 shadow-lg"></div>
-            </div>
+            {/* Crosshair - hide when interacting (console or other) */}
+            {!isInteracting && (
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+                    <div className="w-2 h-2 bg-white rounded-full opacity-80 shadow-lg"></div>
+                </div>
+            )}
 
             {/* Door interaction prompt */}
             {isHoveringDoor && (
@@ -112,6 +120,26 @@ export default function Interface() {
                         style={{ touchAction: "manipulation" }}
                     >
                         {`Move Forward or ${isMobile ? "Tap" : "Click"}`}
+                    </div>
+                </div>
+            )}
+
+            {/* Console badge */}
+            {consoleState.isActive && (
+                <div className="fixed top-4 left-4 z-50 pointer-events-none">
+                    <div
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 bg-blue-900/90 border-2 border-blue-400/80 text-blue-100`}
+                        style={{
+                            backdropFilter: "blur(16px)",
+                            boxShadow:
+                                "0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+                            textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                        }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="inline-block w-2 h-2 bg-blue-400 rounded-full" />
+                            <span>Console Mode (Esc to exit)</span>
+                        </div>
                     </div>
                 </div>
             )}

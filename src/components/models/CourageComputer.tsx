@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface CourageComputerProps {
     position: [number, number, number];
@@ -19,6 +20,8 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
     const crtScreenRef = useRef<THREE.Mesh>(null);
     const scanLineRef = useRef<THREE.Mesh>(null);
     const powerLEDRef = useRef<THREE.Mesh>(null);
+
+    const { console: consoleState } = useSceneStore();
 
     // AI personality state
     const [currentText, setCurrentText] = useState("COMPUTER");
@@ -102,6 +105,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
 
     // AI behavior - change messages periodically
     useEffect(() => {
+        if (consoleState.isActive) return; // pause AI when console is active
         const messageInterval = setInterval(() => {
             if (!isTyping) {
                 setIsTyping(true);
@@ -126,7 +130,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
         }, 8000);
 
         return () => clearInterval(messageInterval);
-    }, [isTyping]);
+    }, [isTyping, consoleState.isActive]);
 
     // Cursor blinking
     useEffect(() => {
@@ -166,6 +170,10 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
 
         // No glass animation needed anymore
     });
+
+    // Build console screen text
+    const consoleLines = consoleState.history.slice(-8); // last N lines
+    const promptLine = `> ${consoleState.input}${cursor}`;
 
     return (
         <group position={position} rotation={rotation} scale={scale}>
@@ -290,18 +298,49 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                 <primitive object={curvedGlassMaterial} />
             </mesh>
 
-            {/* AI Text Display */}
-            <Text
-                position={[0, 0.05, 0.103]}
-                fontSize={0.08}
-                color="#00ff88"
-                anchorX="center"
-                anchorY="middle"
-                maxWidth={1.5}
-                textAlign="center"
-            >
-                {currentText + (isTyping ? "" : cursor)}
-            </Text>
+            {/* AI/Console Text Display */}
+            {!consoleState.isActive && (
+                <Text
+                    position={[0, 0.05, 0.103]}
+                    fontSize={0.08}
+                    color="#00ff88"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={1.5}
+                    textAlign="center"
+                >
+                    {currentText + (isTyping ? "" : cursor)}
+                </Text>
+            )}
+
+            {/* Console screen - lines stacked, prompt at bottom */}
+            {consoleState.isActive && (
+                <group position={[0, 0.05, 0.103]}>
+                    {consoleLines.map((line, idx) => (
+                        <Text
+                            key={idx}
+                            position={[0, -0.3 + idx * 0.08, 0]}
+                            fontSize={0.07}
+                            color="#00ff88"
+                            anchorX="left"
+                            anchorY="middle"
+                            maxWidth={1.5}
+                        >
+                            {line}
+                        </Text>
+                    ))}
+                    <Text
+                        position={[-0.82, 0.4, 0]}
+                        fontSize={0.07}
+                        color="#00ff88"
+                        anchorX="left"
+                        anchorY="middle"
+                        maxWidth={1.5}
+                    >
+                        {promptLine}
+                    </Text>
+                </group>
+            )}
 
             {/* Computer Base/Stand */}
             <RigidBody type="fixed" colliders="cuboid">

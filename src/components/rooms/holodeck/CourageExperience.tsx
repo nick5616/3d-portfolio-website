@@ -1,7 +1,10 @@
 import React from "react";
 import { CourageComputer } from "../../models/CourageComputer";
+import { useSceneStore } from "../../../stores/sceneStore";
 
 export const CourageExperience: React.FC = () => {
+    const { setConsoleActive } = useSceneStore();
+
     return (
         <group>
             {/* Exact recreation of Muriel and Eustace's computer room */}
@@ -165,7 +168,14 @@ export const CourageExperience: React.FC = () => {
             />
 
             {/* Keyboard on the desk */}
-            <group position={[0, 0.85, -2.8]} rotation={[0, 0, 0]}>
+            <group
+                position={[0, 0.85, -2.8]}
+                rotation={[0, 0, 0]}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setConsoleActive(true);
+                }}
+            >
                 {/* Keyboard base */}
                 <mesh position={[0, 0, 0]}>
                     <boxGeometry args={[0.4, 0.02, 0.15]} />

@@ -57,6 +57,13 @@ interface MathGameState {
     score: number;
 }
 
+interface ConsoleState {
+    isActive: boolean;
+    input: string;
+    history: string[];
+    isProcessing: boolean;
+}
+
 interface SceneState {
     currentRoom: RoomConfig | null;
     controlMode: "firstPerson" | "pointAndClick";
@@ -84,6 +91,8 @@ interface SceneState {
     sceneData: SceneData;
     // Math game state
     mathGame: MathGameState;
+    // Console interaction state
+    console: ConsoleState;
     // Virtual controls for mobile
     virtualMovement: MovementState;
     virtualRotation: RotationState;
@@ -95,6 +104,15 @@ interface SceneState {
         meteors: Meteor[] | ((prev: Meteor[]) => Meteor[])
     ) => void;
     setMathGameScore: (score: number | ((prev: number) => number)) => void;
+    // Console actions
+    setConsoleActive: (active: boolean) => void;
+    setConsoleInput: (input: string | ((prev: string) => string)) => void;
+    appendConsoleInput: (text: string) => void;
+    backspaceConsoleInput: () => void;
+    pushConsoleHistory: (line: string) => void;
+    clearConsole: () => void;
+    setConsoleProcessing: (processing: boolean) => void;
+    // General scene actions
     setIsInteracting: (interacting: boolean) => void;
     updateCameraData: (cameraData: CameraData) => void;
     updateSceneData: (sceneData: SceneData) => void;
@@ -156,6 +174,13 @@ export const useSceneStore = create<SceneState>((set) => ({
         meteors: [],
         score: 0,
     },
+    // Console initial state
+    console: {
+        isActive: false,
+        input: "",
+        history: [],
+        isProcessing: false,
+    },
     // Virtual controls state
     virtualMovement: {
         forward: false,
@@ -194,6 +219,46 @@ export const useSceneStore = create<SceneState>((set) => ({
                         : score,
             },
         })),
+    // Console actions
+    setConsoleActive: (active) =>
+        set((state) => ({ console: { ...state.console, isActive: active } })),
+    setConsoleInput: (input) =>
+        set((state) => ({
+            console: {
+                ...state.console,
+                input:
+                    typeof input === "function"
+                        ? input(state.console.input)
+                        : input,
+            },
+        })),
+    appendConsoleInput: (text) =>
+        set((state) => ({
+            console: { ...state.console, input: state.console.input + text },
+        })),
+    backspaceConsoleInput: () =>
+        set((state) => ({
+            console: {
+                ...state.console,
+                input: state.console.input.slice(0, -1),
+            },
+        })),
+    pushConsoleHistory: (line) =>
+        set((state) => ({
+            console: {
+                ...state.console,
+                history: [...state.console.history, line],
+            },
+        })),
+    clearConsole: () =>
+        set((state) => ({
+            console: { ...state.console, history: [], input: "" },
+        })),
+    setConsoleProcessing: (processing) =>
+        set((state) => ({
+            console: { ...state.console, isProcessing: processing },
+        })),
+
     setIsInteracting: (interacting) => set({ isInteracting: interacting }),
     updateCameraData: (cameraData) => set({ cameraData }),
     updateSceneData: (sceneData) => set({ sceneData }),
