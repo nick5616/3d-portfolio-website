@@ -158,34 +158,34 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
     controlPanelRef,
 }) => {
     const buttons = [
-        { experience: "off" as const, label: "OFF", color: "#666", icon: "" },
+        { experience: "off" as const, label: "Off", color: "#666", icon: "" },
         {
             experience: "computer" as const,
-            label: "HOUSE",
+            label: "Courage",
             color: "#ff6600",
             icon: "",
         },
         {
             experience: "fitness" as const,
-            label: "GYM",
+            label: "Gym",
             color: "#ff0000",
             icon: "",
         },
         {
             experience: "art" as const,
-            label: "ART",
+            label: "Art",
             color: "#00ff00",
             icon: "",
         },
         {
             experience: "math" as const,
-            label: "MATH",
+            label: "Math",
             color: "#ffff00",
             icon: "",
         },
         {
             experience: "forest" as const,
-            label: "FOREST",
+            label: "Forest",
             color: "#00ff88",
             icon: "",
         },
