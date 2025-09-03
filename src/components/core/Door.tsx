@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { useSceneStore } from "../../stores/sceneStore";
 import { Archway } from "../../types/scene.types";
@@ -9,6 +9,7 @@ import {
     interactionGroups,
 } from "@react-three/rapier";
 import * as THREE from "three";
+import { InteractionRaycaster } from "./InteractionRaycaster";
 
 interface DoorProps {
     archway: Archway;
@@ -17,7 +18,6 @@ interface DoorProps {
 export const Door: React.FC<DoorProps> = ({ archway }) => {
     const { teleportToRoom, lastTeleportTime, playerVelocity } =
         useSceneStore();
-    const { camera, raycaster } = useThree();
     const [isInTrigger, setIsInTrigger] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isHoveringFromCenter, setIsHoveringFromCenter] = useState(false);
@@ -211,46 +211,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         };
     }, []);
 
-    // Raycast from center of screen to detect door hover
-    useFrame(() => {
-        if (!doorMeshRef.current) return;
-
-        // Cast ray from camera center
-        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersects = raycaster.intersectObject(doorMeshRef.current, true); // Include children
-
-        // Check if door is hit by raycast AND within interaction range
-        const maxInteractionDistance = 6; // Maximum distance for door interaction
-        const nowHovering =
-            intersects.length > 0 &&
-            intersects[0].distance <= maxInteractionDistance;
-
-        if (nowHovering !== isHoveringFromCenter) {
-            setIsHoveringFromCenter(nowHovering);
-
-            // Dispatch custom event to UI with door interaction data
-            window.dispatchEvent(
-                new CustomEvent("doorHover", {
-                    detail: {
-                        hovering: nowHovering,
-                        distance:
-                            intersects.length > 0
-                                ? intersects[0].distance
-                                : Infinity,
-                        // Pass door interaction data for UI click handling
-                        doorData: nowHovering
-                            ? {
-                                  archway: archway,
-                                  doorId: archway.id,
-                                  targetRoomId: archway.targetRoomId,
-                              }
-                            : null,
-                    },
-                })
-            );
-        }
-    });
-
     return (
         <group>
             {/* Themed Door - VISIBLE DOOR MESH */}
@@ -279,6 +239,37 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
                 />
             </mesh>
+
+            <InteractionRaycaster
+                target={doorMeshRef}
+                config={{
+                    maxDistance: 6,
+                    includeChildren: true,
+                    rayOrigin: "center",
+                    triggerActions: [
+                        { type: "click", cooldown: 1000 },
+                        { type: "keypress", key: "e", cooldown: 1000 },
+                        { type: "hover" },
+                    ],
+                }}
+                callbacks={{
+                    onRayEnter: () => setIsHoveringFromCenter(true),
+                    onRayExit: () => setIsHoveringFromCenter(false),
+                    onTrigger: (action) => {
+                        if (
+                            action.type === "click" ||
+                            action.type === "keypress"
+                        ) {
+                            handleTeleport();
+                        }
+                    },
+                }}
+                visual={{
+                    cursorStyle: "pointer",
+                    highlightColor: theme.glowColor,
+                    highlightIntensity: 0.2,
+                }}
+            />
 
             <mesh
                 position={[
