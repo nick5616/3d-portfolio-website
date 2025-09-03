@@ -2,6 +2,7 @@ export { SpiralLinesEffect } from "./SpiralLinesEffect";
 export { MandelbrotEffect } from "./MandelbrotEffect";
 export { DNAHelixEffect } from "./DNAHelixEffect";
 export { CrystalFormationEffect } from "./CrystalFormationEffect";
+export { RupeeFormationEffect } from "./RupeeFormationEffect";
 
 // Holodeck Experience Loading Effects
 export { MathLoadingEffect } from "./MathLoadingEffect";
@@ -15,6 +16,7 @@ export type LoadingEffectType =
     | "mandelbrot"
     | "dna"
     | "crystal"
+    | "rupee"
     | "math"
     | "courage"
     | "art"

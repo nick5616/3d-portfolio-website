@@ -9,8 +9,8 @@ type LoadingPhase = "initial" | "assets-loaded" | "physics-ready" | "complete";
 const PHYSICS_INIT_DELAY = 1000; // Time to wait for physics to initialize
 const FADE_OUT_DURATION = 1000;
 
-// Change this to switch effects: 'spiral' | 'mandelbrot' | 'dna' | 'crystal' | 'math' | 'courage' | 'art' | 'fitness' | 'forest'
-const CURRENT_EFFECT: LoadingEffectType = "spiral";
+// Change this to switch effects: 'spiral' | 'mandelbrot' | 'dna' | 'crystal' | 'rupee' | 'math' | 'courage' | 'art' | 'fitness' | 'forest'
+const CURRENT_EFFECT: LoadingEffectType = "rupee";
 
 /**
  * EnhancedLoadingScreen - Handles initial app loading only

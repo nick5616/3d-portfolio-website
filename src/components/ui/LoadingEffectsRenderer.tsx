@@ -3,6 +3,7 @@ import {
     MandelbrotEffect,
     DNAHelixEffect,
     CrystalFormationEffect,
+    RupeeFormationEffect,
     MathLoadingEffect,
     CourageLoadingEffect,
     ArtLoadingEffect,
@@ -28,6 +29,8 @@ export const LoadingEffectsRenderer = ({
                 return <DNAHelixEffect />;
             case "crystal":
                 return <CrystalFormationEffect />;
+            case "rupee":
+                return <RupeeFormationEffect />;
             case "math":
                 return <MathLoadingEffect />;
             case "courage":
