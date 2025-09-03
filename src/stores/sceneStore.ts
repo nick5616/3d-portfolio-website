@@ -124,6 +124,8 @@ interface SceneState {
     toggleMinimap: () => void;
     rotateUser: (angle?: number) => void;
     getExperienceRotationAngle: (experience: string) => number;
+    playerGrounded: boolean;
+    setPlayerGrounded: (grounded: boolean) => void;
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -138,6 +140,7 @@ export const useSceneStore = create<SceneState>((set) => ({
     isFirstPerson: true,
     isInteracting: false,
     lastTeleportTime: 0,
+    playerGrounded: false,
 
     performance: {
         showStats: false,
@@ -345,4 +348,5 @@ export const useSceneStore = create<SceneState>((set) => ({
     getExperienceRotationAngle: (experience: string) => {
         return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
     },
+    setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
 }));

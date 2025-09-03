@@ -22,7 +22,8 @@ export const PlayerBody: React.FC = () => {
         shouldTeleportPlayer,
         playerPosition,
         clearTeleportFlag,
-        updatePlayerVelocity, // Add this
+        updatePlayerVelocity,
+        setPlayerGrounded, // Add this
     } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
@@ -63,6 +64,9 @@ export const PlayerBody: React.FC = () => {
 
         const currentTime = Date.now();
         const isGrounded = checkIfGrounded();
+
+        // Report ground contact state
+        setPlayerGrounded(isGrounded);
 
         // Reset jump ability when grounded
         if (

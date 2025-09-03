@@ -9,6 +9,7 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { logEdgeDebugInfo } from "../../utils/edgeDebug";
+import { EnhancedLoadingScreen } from "../ui/EnhancedLoadingScreen";
 
 export const Scene: React.FC = () => {
     const { performance } = useSceneStore();
@@ -237,7 +238,8 @@ export const Scene: React.FC = () => {
     }
 
     return (
-        <div style={{ width: "100%", height: "100%" }}>
+        <div className="w-full h-full relative">
+            <EnhancedLoadingScreen />
             <Canvas
                 className="main-canvas"
                 gl={glParams}
