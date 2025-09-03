@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { RigidBody } from "@react-three/rapier";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
+import { InteractionRaycaster } from "../../core/InteractionRaycaster";
 
 type HolodeckExperience =
     | "computer"
@@ -38,24 +39,18 @@ const ControlButton: React.FC<ButtonProps> = ({
     icon,
 }) => {
     const [hovered, setHovered] = useState(false);
+    const buttonRef = useRef<THREE.Mesh>(null);
     const isActive = currentExperience === experience;
 
     const buttonColor = isActive ? color : hovered ? "#444" : "#222";
     const emissiveColor = isActive ? color : hovered ? "#333" : "#000";
     const emissiveIntensity = isActive ? 0.3 : hovered ? 0.1 : 0;
 
-    const handleClick = (e: any) => {
-        e.stopPropagation();
-        switchExperience(experience);
-    };
-
     return (
         <group position={position}>
             {/* Button Base */}
             <mesh
-                onClick={handleClick}
-                onPointerEnter={() => setHovered(true)}
-                onPointerLeave={() => setHovered(false)}
+                ref={buttonRef}
                 position={[0, 0, 0.02]}
                 rotation={[Math.PI / 2, 0, 0]}
             >
@@ -68,6 +63,77 @@ const ControlButton: React.FC<ButtonProps> = ({
                     emissiveIntensity={emissiveIntensity}
                 />
             </mesh>
+
+            <InteractionRaycaster
+                target={buttonRef}
+                config={{
+                    maxDistance: 5,
+                    includeChildren: true,
+                    rayOrigin: "center",
+                    triggerActions: [
+                        { type: "click", cooldown: 300 },
+                        { type: "keypress", key: "e", cooldown: 300 },
+                        { type: "hover" },
+                    ],
+                }}
+                callbacks={{
+                    onRayEnter: () => setHovered(true),
+                    onRayExit: () => setHovered(false),
+                    onTrigger: (action) => {
+                        if (
+                            action.type === "click" ||
+                            action.type === "keypress"
+                        ) {
+                            switchExperience(experience);
+                        }
+                    },
+                }}
+                visual={{
+                    cursorStyle: "pointer",
+                    prompt: {
+                        content: (
+                            <div
+                                style={{
+                                    background: "rgba(0, 0, 0, 0.8)",
+                                    color: "white",
+                                    padding: "8px 12px",
+                                    borderRadius: "4px",
+                                    fontSize: "14px",
+                                    fontFamily: "monospace",
+                                    whiteSpace: "nowrap",
+                                    textAlign: "center",
+                                    userSelect: "none",
+                                }}
+                            >
+                                {isActive ? (
+                                    <span>Currently Active</span>
+                                ) : (
+                                    <>
+                                        Press{" "}
+                                        <kbd
+                                            style={{
+                                                background: "#fff",
+                                                color: "#000",
+                                                padding: "2px 6px",
+                                                borderRadius: "3px",
+                                                fontSize: "12px",
+                                                fontWeight: "bold",
+                                            }}
+                                        >
+                                            E
+                                        </kbd>{" "}
+                                        to activate {label}
+                                    </>
+                                )}
+                            </div>
+                        ),
+                        offset: [0, 0.3, 0],
+                        visible: hovered,
+                        distanceScale: true,
+                        fadeTime: 200,
+                    },
+                }}
+            />
 
             {/* Button Text */}
             <Text
