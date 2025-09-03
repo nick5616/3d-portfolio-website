@@ -15,6 +15,36 @@ interface DoorProps {
     archway: Archway;
 }
 
+// Add a styled prompt component
+const InteractionPrompt: React.FC<{ action: string }> = ({ action }) => (
+    <div
+        style={{
+            background: "rgba(0, 0, 0, 0.8)",
+            color: "white",
+            padding: "8px 12px",
+            borderRadius: "4px",
+            fontSize: "14px",
+            fontFamily: "Arial, sans-serif",
+            whiteSpace: "nowrap",
+        }}
+    >
+        Press{" "}
+        <kbd
+            style={{
+                background: "#fff",
+                color: "#000",
+                padding: "2px 6px",
+                borderRadius: "3px",
+                fontSize: "12px",
+                fontWeight: "bold",
+            }}
+        >
+            E
+        </kbd>{" "}
+        {action}
+    </div>
+);
+
 export const Door: React.FC<DoorProps> = ({ archway }) => {
     const { teleportToRoom, lastTeleportTime, playerVelocity } =
         useSceneStore();
@@ -268,6 +298,19 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     cursorStyle: "pointer",
                     highlightColor: theme.glowColor,
                     highlightIntensity: 0.2,
+                    prompt: {
+                        content: (
+                            <InteractionPrompt
+                                action={`to enter ${theme.label}`}
+                            />
+                        ),
+                        offset: [0, 1.5, 0],
+                        visible: isHoveringFromCenter,
+                        distanceScale: true,
+                        style: {
+                            userSelect: "none",
+                        },
+                    },
                 }}
             />
 

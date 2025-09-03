@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
+import { Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 
 export interface TriggerAction {
@@ -26,11 +27,22 @@ export interface RaycastCallbacks {
     ) => void;
 }
 
+export interface PromptConfig {
+    content: React.ReactNode | string;
+    offset?: [number, number, number]; // Offset from target position [x, y, z]
+    style?: React.CSSProperties; // For React node prompts
+    visible?: boolean; // Control prompt visibility
+    distanceScale?: boolean; // Whether to scale with distance
+    fontSize?: number; // For string prompts using Three.js Text
+    fadeTime?: number; // Time in ms for fade transition
+}
+
 export interface VisualConfig {
     cursorStyle?: string;
     highlightColor?: string;
     highlightIntensity?: number;
     customIndicator?: React.ReactNode;
+    prompt?: PromptConfig;
 }
 
 interface InteractionRaycasterProps {
@@ -50,8 +62,14 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
 }) => {
     const { camera, raycaster } = useThree();
     const [isHovering, setIsHovering] = useState(false);
+    const [promptVisible, setPromptVisible] = useState(false);
+    const [promptOpacity, setPromptOpacity] = useState(0);
     const lastTriggerTime = useRef<Record<string, number>>({});
     const mousePos = useRef(new THREE.Vector2());
+    const [promptPosition, setPromptPosition] = useState<THREE.Vector3 | null>(
+        null
+    );
+    const fadeTimeout = useRef<NodeJS.Timeout>();
 
     // Handle mouse movement if using mouse-based raycasting
     useEffect(() => {
@@ -143,6 +161,48 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
         };
     }, [isHovering, visual?.cursorStyle]);
 
+    // Handle prompt visibility with fade
+    useEffect(() => {
+        const fadeTime = visual?.prompt?.fadeTime ?? 200; // Default 200ms fade
+
+        if (fadeTimeout.current) {
+            clearTimeout(fadeTimeout.current);
+        }
+
+        if (isHovering && visual?.prompt?.visible) {
+            setPromptVisible(true);
+            // Use requestAnimationFrame for smooth fade in
+            requestAnimationFrame(() => setPromptOpacity(1));
+        } else {
+            // Fade out
+            setPromptOpacity(0);
+            // Remove from DOM after fade
+            fadeTimeout.current = setTimeout(() => {
+                setPromptVisible(false);
+            }, fadeTime);
+        }
+
+        return () => {
+            if (fadeTimeout.current) {
+                clearTimeout(fadeTimeout.current);
+            }
+        };
+    }, [isHovering, visual?.prompt?.visible]);
+
+    // Calculate prompt position
+    const updatePromptPosition = (targetObject: THREE.Object3D) => {
+        if (!visual?.prompt?.visible || !isHovering) {
+            return;
+        }
+
+        const offset = visual.prompt.offset || [0, 1, 0];
+        const worldPos = new THREE.Vector3();
+        targetObject.getWorldPosition(worldPos);
+
+        worldPos.add(new THREE.Vector3(...offset));
+        setPromptPosition(worldPos);
+    };
+
     // Main raycasting logic
     useFrame(() => {
         if (!enabled) return;
@@ -190,8 +250,9 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
             }
         }
 
-        // Handle continuous hover
+        // Update prompt position
         if (isHit) {
+            updatePromptPosition(targetObject);
             callbacks?.onRayStay?.(intersects[0]);
 
             // Handle hover triggers
@@ -209,5 +270,64 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
         }
     });
 
-    return null;
+    // Render prompt if configured
+    const renderPrompt = () => {
+        if (!visual?.prompt?.content || !promptPosition || !promptVisible)
+            return null;
+
+        const fadeTime = visual.prompt.fadeTime ?? 200;
+        const baseStyle: React.CSSProperties = {
+            transition: `opacity ${fadeTime}ms ease-in-out`,
+            opacity: promptOpacity,
+            pointerEvents: "none",
+        };
+
+        const isReactNode = typeof visual.prompt.content !== "string";
+
+        if (isReactNode) {
+            return (
+                <Html
+                    position={promptPosition}
+                    style={{
+                        transform: "translate(-50%, -100%)",
+                        ...baseStyle,
+                        ...visual.prompt.style,
+                    }}
+                    distanceFactor={visual.prompt.distanceScale ? 8 : undefined}
+                >
+                    {visual.prompt.content}
+                </Html>
+            );
+        }
+
+        return (
+            <Text
+                position={promptPosition}
+                fontSize={visual.prompt.fontSize || 0.2}
+                anchorX="center"
+                anchorY="bottom"
+                color="white"
+                outlineWidth={0.02}
+                outlineColor="black"
+                material-opacity={promptOpacity}
+                material-transparent={true}
+            >
+                {visual.prompt.content as string}
+            </Text>
+        );
+    };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (fadeTimeout.current) {
+                clearTimeout(fadeTimeout.current);
+            }
+            setPromptVisible(false);
+            setPromptOpacity(0);
+            setPromptPosition(null);
+        };
+    }, []);
+
+    return renderPrompt();
 };
