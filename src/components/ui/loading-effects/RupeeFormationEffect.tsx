@@ -148,18 +148,19 @@ export const RupeeFormationEffect = () => {
         const faces: number[] = [];
         const normals: number[] = [];
 
-        const hexRadius = 0.6;
+        const hexRadiusX = 0.8; // Wider horizontally
+        const hexRadiusZ = 0.4; // Narrower vertically
         const middleHeight = 1.2; // Height of the middle section - made longer
         const pyramidHeight = 0.6; // Height of each pyramid
 
-        // Create hexagonal vertices for the middle section
+        // Create hexagonal vertices for the middle section (stretched horizontally like <=>)
         const topHex = [];
         const bottomHex = [];
 
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;
-            const x = Math.cos(angle) * hexRadius;
-            const z = Math.sin(angle) * hexRadius;
+            const x = Math.cos(angle) * hexRadiusX;
+            const z = Math.sin(angle) * hexRadiusZ;
 
             topHex.push([x, middleHeight / 2, z]);
             bottomHex.push([x, -middleHeight / 2, z]);
@@ -243,6 +244,11 @@ export const RupeeFormationEffect = () => {
         return geometry;
     }, []);
 
+    // Create edges geometry for pronounced wireframe
+    const edgesGeometry = useMemo(() => {
+        return new THREE.EdgesGeometry(rupeeGeometry);
+    }, [rupeeGeometry]);
+
     const material = useMemo(() => {
         return new THREE.ShaderMaterial({
             ...rupeeShader,
@@ -259,30 +265,37 @@ export const RupeeFormationEffect = () => {
         }
 
         if (groupRef.current) {
-            groupRef.current.rotation.y += delta * 0.1;
-
-            // Animate individual rupees
-            groupRef.current.children.forEach((rupee, i) => {
-                if (rupee instanceof THREE.Mesh) {
+            // Animate individual rupees with free movement
+            groupRef.current.children.forEach((rupeeGroup, i) => {
+                if (rupeeGroup instanceof THREE.Group) {
                     const data = rupees[i];
 
                     // Rupee-like spinning motion
-                    rupee.rotation.x += delta * data.speed * 0.3;
-                    rupee.rotation.y += delta * data.speed;
-                    rupee.rotation.z += delta * data.speed * 0.5;
+                    rupeeGroup.rotation.x += delta * data.speed * 0.3;
+                    rupeeGroup.rotation.y += delta * data.speed;
+                    rupeeGroup.rotation.z += delta * data.speed * 0.5;
+
+                    // Free floating movement with orbiting
+                    const time = state.clock.elapsedTime;
+                    const orbitSpeed = data.speed * 0.2;
+                    const orbitRadius =
+                        2 + Math.sin(time * orbitSpeed + i) * 1.5;
+
+                    rupeeGroup.position.x =
+                        Math.cos(time * orbitSpeed + i * 0.5) * orbitRadius;
+                    rupeeGroup.position.z =
+                        Math.sin(time * orbitSpeed + i * 0.5) * orbitRadius;
 
                     // Gentle floating with slight bobbing
                     const bobSpeed = data.value > 100 ? 0.8 : 1.2; // Higher value rupees bob slower
-                    rupee.position.y =
+                    rupeeGroup.position.y =
                         data.position.y +
-                        Math.sin(state.clock.elapsedTime * bobSpeed + i * 0.5) *
-                            0.4;
+                        Math.sin(time * bobSpeed + i * 0.5) * 0.6;
 
                     // Rare rupees have a subtle glow effect
                     if (data.value >= 200) {
-                        const glowIntensity =
-                            1 + Math.sin(state.clock.elapsedTime * 3 + i) * 0.1;
-                        rupee.scale.setScalar(data.scale * glowIntensity);
+                        const glowIntensity = 1 + Math.sin(time * 3 + i) * 0.1;
+                        rupeeGroup.scale.setScalar(data.scale * glowIntensity);
                     }
                 }
             });
@@ -293,20 +306,33 @@ export const RupeeFormationEffect = () => {
         <group>
             <group ref={groupRef}>
                 {rupees.map((rupee, i) => (
-                    <mesh
+                    <group
                         key={i}
                         position={rupee.position}
                         scale={rupee.scale}
-                        geometry={rupeeGeometry}
                     >
-                        <meshPhongMaterial
-                            color={rupee.color}
-                            transparent
-                            opacity={0.8}
-                            shininess={100}
-                            specular={rupee.color.clone().multiplyScalar(0.5)}
-                        />
-                    </mesh>
+                        {/* Main rupee body */}
+                        <mesh geometry={rupeeGeometry}>
+                            <meshPhongMaterial
+                                color={rupee.color}
+                                transparent
+                                opacity={0.85}
+                                shininess={300}
+                                specular={new THREE.Color(0xffffff)}
+                                reflectivity={0.8}
+                                flatShading={true}
+                            />
+                        </mesh>
+                        {/* Subtle dark edge wireframe */}
+                        <lineSegments geometry={edgesGeometry}>
+                            <lineBasicMaterial
+                                color={rupee.color.clone().multiplyScalar(0.4)}
+                                transparent
+                                opacity={0.15}
+                                linewidth={1}
+                            />
+                        </lineSegments>
+                    </group>
                 ))}
             </group>
 

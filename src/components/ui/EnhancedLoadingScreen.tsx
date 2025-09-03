@@ -23,21 +23,21 @@ export const EnhancedLoadingScreen: React.FC = () => {
     const [fadeOut, setFadeOut] = useState(false);
 
     // Handle initial app loading phases
-    useEffect(() => {
-        // Initial -> Assets Loaded
-        if (loadingPhase === "initial" && progress === 100 && !active) {
-            setLoadingPhase("assets-loaded");
-            // Wait for physics to initialize
-            setTimeout(() => {
-                setLoadingPhase("physics-ready");
-                setFadeOut(true);
-                // Complete loading after fade
-                setTimeout(() => {
-                    setLoadingPhase("complete");
-                }, FADE_OUT_DURATION);
-            }, PHYSICS_INIT_DELAY);
-        }
-    }, [progress, active, loadingPhase]);
+    // useEffect(() => {
+    //     // Initial -> Assets Loaded
+    //     if (loadingPhase === "initial" && progress === 100 && !active) {
+    //         setLoadingPhase("assets-loaded");
+    //         // Wait for physics to initialize
+    //         setTimeout(() => {
+    //             setLoadingPhase("physics-ready");
+    //             setFadeOut(true);
+    //             // Complete loading after fade
+    //             setTimeout(() => {
+    //                 setLoadingPhase("complete");
+    //             }, FADE_OUT_DURATION);
+    //         }, PHYSICS_INIT_DELAY);
+    //     }
+    // }, [progress, active, loadingPhase]);
 
     // Prevent scrolling while initial app is loading
     useEffect(() => {
