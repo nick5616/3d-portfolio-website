@@ -32,6 +32,17 @@ type HolodeckExperience =
     | "forest"
     | "off";
 
+// Configuration for experience-specific spawn positions
+const EXPERIENCE_SPAWN_POSITIONS: Record<string, [number, number, number]> = {
+    // Current experiences
+    computer: [0, 0.9, 5],
+    fitness: [0, 0.9, 5],
+    art: [0, 0.9, 5],
+    math: [0, 0.9, 3.5], // Math experience spawns further back
+    forest: [0, 0.9, 5],
+    off: [0, 0.9, 5],
+};
+
 export const AboutRoom: React.FC<AboutRoomProps> = ({
     config,
     materials,
@@ -47,7 +58,8 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
     const scanLineRef = useRef<THREE.Mesh>(null);
     const controlPanelRef = useRef<THREE.Group>(null);
     const gridWallsRef = useRef<THREE.Group>(null);
-    const { rotateUser, getExperienceRotationAngle } = useSceneStore();
+    const { rotateUser, getExperienceRotationAngle, teleportToRoom } =
+        useSceneStore();
 
     // Animation loop
     useFrame((state) => {
@@ -100,12 +112,21 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
             setCurrentExperience(experience);
             setIsTransitioning(false);
 
-            // Rotate user to experience-specific optimal angle (but not for "off")
+            // Handle rotation and position for experiences (but not for "off")
             if (experience !== "off") {
                 setTimeout(() => {
                     const rotationAngle =
                         getExperienceRotationAngle(experience);
-                    rotateUser(rotationAngle);
+                    const spawnPosition = EXPERIENCE_SPAWN_POSITIONS[
+                        experience
+                    ] || [0, 0.9, 5];
+
+                    // Update both rotation and position
+                    teleportToRoom("about", spawnPosition, [
+                        0,
+                        rotationAngle,
+                        0,
+                    ]);
                 }, 100); // Small delay to ensure environment is loaded
             }
         }, 500);

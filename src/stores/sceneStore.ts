@@ -12,7 +12,7 @@ const EXPERIENCE_ROTATION_ANGLES: Record<string, number> = {
     computer: Math.PI / 2 + 0.5,
     fitness: Math.PI,
     art: Math.PI / 2 + 0.5,
-    math: Math.PI,
+    math: 0,
     forest: Math.PI / 4,
     off: 0,
 };
