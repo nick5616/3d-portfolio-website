@@ -13,7 +13,7 @@ export const EnhancedLoadingScreen: React.FC = () => {
     const [loadingPhase, setLoadingPhase] = useState<LoadingPhase>("initial");
     const [fadeOut, setFadeOut] = useState(false);
 
-    // Handle loading phase transitions
+    // Comment out loading phase transitions for development
     useEffect(() => {
         // Initial -> Assets Loaded
         if (loadingPhase === "initial" && progress === 100 && !active) {
@@ -29,6 +29,11 @@ export const EnhancedLoadingScreen: React.FC = () => {
             }, PHYSICS_INIT_DELAY);
         }
     }, [progress, active, loadingPhase]);
+
+    // Force loading phase to stay in initial state
+    useEffect(() => {
+        setLoadingPhase("initial");
+    }, []);
 
     // Prevent scrolling while loading
     useEffect(() => {

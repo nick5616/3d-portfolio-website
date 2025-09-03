@@ -2,84 +2,169 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const PARTICLE_COUNT = 5000;
-const PARTICLE_SPEED = 2;
-const LINE_LENGTH = 4;
+// Shader for the flowing lines
+const lineVertexShader = `
+  uniform float time;
+  varying vec3 vColor;
+  
+  vec3 getColor(float t) {
+    return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.7, 0.4) + vec3(0.0, 0.15, 0.20)));
+  }
+
+  void main() {
+    float t = position.y * 0.1 + time * 0.2;
+    vColor = getColor(t);
+    
+    // Add some waviness to the position
+    vec3 pos = position;
+    float wave = sin(t * 2.0 + position.x) * 0.2;
+    pos.x += wave;
+    pos.z += cos(t * 3.0 + position.x) * 0.2;
+    
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`;
+
+const lineFragmentShader = `
+  varying vec3 vColor;
+  
+  void main() {
+    gl_FragColor = vec4(vColor, 1.0);
+  }
+`;
+
+const NUM_CURVES = 50;
+const POINTS_PER_CURVE = 100;
+const CURVE_RADIUS = 5;
 
 export const WarpSpeedLoadingScene = () => {
-    const particlesRef = useRef<THREE.Points>(null);
+    const linesRef = useRef<THREE.Group>(null);
+    const shaderMaterialRef = useRef<THREE.ShaderMaterial>(null);
 
-    // Create particles in a cylindrical formation
-    const { positions, colors } = useMemo(() => {
-        const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const colors = new Float32Array(PARTICLE_COUNT * 3);
+    // Create flowing curves
+    const curves = useMemo(() => {
+        const curves: THREE.CatmullRomCurve3[] = [];
+        for (let i = 0; i < NUM_CURVES; i++) {
+            const points: THREE.Vector3[] = [];
+            const angle = (i / NUM_CURVES) * Math.PI * 2;
+            const radius = CURVE_RADIUS;
+            const height = 20;
 
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-            // Distribute particles in a cylindrical pattern
-            const radius = Math.random() * 10;
-            const theta = Math.random() * Math.PI * 2;
-            const y = (Math.random() - 0.5) * 20;
+            for (let j = 0; j < POINTS_PER_CURVE; j++) {
+                const t = j / (POINTS_PER_CURVE - 1);
+                const spiralRadius =
+                    radius * (1 + Math.sin(t * Math.PI * 4) * 0.3);
+                const x = Math.cos(angle + t * Math.PI * 4) * spiralRadius;
+                const y = t * height - height / 2;
+                const z = Math.sin(angle + t * Math.PI * 4) * spiralRadius;
+                points.push(new THREE.Vector3(x, y, z));
+            }
 
-            // Convert to Cartesian coordinates
-            positions[i * 3] = Math.cos(theta) * radius; // x
-            positions[i * 3 + 1] = y; // y
-            positions[i * 3 + 2] = Math.sin(theta) * radius; // z
-
-            // Create a blue-white color gradient
-            const intensity = Math.random() * 0.5 + 0.5;
-            colors[i * 3] = intensity * 0.5; // r
-            colors[i * 3 + 1] = intensity * 0.8; // g
-            colors[i * 3 + 2] = intensity; // b
+            const curve = new THREE.CatmullRomCurve3(points);
+            curves.push(curve);
         }
-
-        return { positions, colors };
+        return curves;
     }, []);
 
-    // Create geometry with stretched particles
-    const geometry = useMemo(() => {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-            "position",
-            new THREE.BufferAttribute(positions, 3)
-        );
-        geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-        return geometry;
-    }, [positions, colors]);
+    // Create line geometries from curves
+    const lineGeometries = useMemo(() => {
+        return curves.map((curve) => {
+            const points = curve.getPoints(POINTS_PER_CURVE);
+            return new THREE.BufferGeometry().setFromPoints(points);
+        });
+    }, [curves]);
 
-    // Create material for particles
-    const material = useMemo(() => {
-        return new THREE.PointsMaterial({
-            size: LINE_LENGTH,
-            sizeAttenuation: true,
-            vertexColors: true,
+    // Create shader material
+    const shaderMaterial = useMemo(() => {
+        return new THREE.ShaderMaterial({
+            vertexShader: lineVertexShader,
+            fragmentShader: lineFragmentShader,
+            uniforms: {
+                time: { value: 0 },
+            },
             transparent: true,
-            opacity: 0.8,
             blending: THREE.AdditiveBlending,
         });
     }, []);
 
-    // Animate particles
+    // Animate the lines
     useFrame((state, delta) => {
-        if (!particlesRef.current) return;
-
-        const positions = particlesRef.current.geometry.attributes.position;
-        const array = positions.array as Float32Array;
-
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-            // Move particles along z-axis
-            array[i * 3 + 2] +=
-                delta * PARTICLE_SPEED * (array[i * 3 + 2] / 10);
-
-            // Reset particles that go too far
-            if (array[i * 3 + 2] > 20) {
-                array[i * 3 + 2] = -20;
-            }
+        if (shaderMaterialRef.current) {
+            shaderMaterialRef.current.uniforms.time.value += delta;
         }
 
-        positions.needsUpdate = true;
+        if (linesRef.current) {
+            linesRef.current.rotation.y += delta * 0.1;
+            linesRef.current.rotation.x =
+                Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+        }
     });
 
+    // Create fractal effect
+    const createFractalPoints = useMemo(() => {
+        const points: THREE.Vector3[] = [];
+        const iterations = 5;
+        const angleStep = (Math.PI * 2) / 5;
+
+        const addPoint = (
+            x: number,
+            y: number,
+            z: number,
+            size: number,
+            depth: number
+        ) => {
+            if (depth <= 0) {
+                points.push(new THREE.Vector3(x, y, z));
+                return;
+            }
+
+            for (let i = 0; i < 5; i++) {
+                const angle = i * angleStep;
+                const newSize = size * 0.4;
+                const newX = x + Math.cos(angle) * size;
+                const newY = y + size * 0.5;
+                const newZ = z + Math.sin(angle) * size;
+                addPoint(newX, newY, newZ, newSize, depth - 1);
+            }
+        };
+
+        addPoint(0, -10, 0, 3, iterations);
+        return points;
+    }, []);
+
+    const fractalGeometry = useMemo(() => {
+        return new THREE.BufferGeometry().setFromPoints(createFractalPoints);
+    }, [createFractalPoints]);
+
     return (
-        <points ref={particlesRef} geometry={geometry} material={material} />
+        <group>
+            {/* Flowing lines */}
+            <group ref={linesRef}>
+                {lineGeometries.map((geometry, i) => (
+                    <mesh key={i}>
+                        <primitive object={geometry} attach="geometry" />
+                        <primitive
+                            object={shaderMaterial}
+                            attach="material"
+                            ref={i === 0 ? shaderMaterialRef : undefined}
+                        />
+                    </mesh>
+                ))}
+            </group>
+
+            {/* Fractal points */}
+            <points geometry={fractalGeometry}>
+                <pointsMaterial
+                    size={0.05}
+                    color="#ffffff"
+                    transparent
+                    opacity={0.6}
+                    blending={THREE.AdditiveBlending}
+                />
+            </points>
+
+            {/* Ambient light for better visibility */}
+            <ambientLight intensity={0.2} />
+        </group>
     );
 };
