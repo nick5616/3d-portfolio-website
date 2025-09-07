@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
 export const PerformanceControls: React.FC = () => {
@@ -11,8 +11,37 @@ export const PerformanceControls: React.FC = () => {
         togglePerformanceMonitoring,
         toggleMinimap,
         toggleFlyMode,
+        setIsInteracting,
     } = useSceneStore();
+
+    const menuRef = useRef<HTMLDivElement>(null);
     const [isOpen, setIsOpen] = useState(false);
+
+    // Handle click outside to close menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
+                setIsOpen(false);
+                setIsInteracting(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen, setIsInteracting]);
+
+    // Update interaction state when menu opens/closes
+    useEffect(() => {
+        setIsInteracting(isOpen);
+    }, [isOpen, setIsInteracting]);
 
     return (
         <div className="absolute bottom-4 left-4 z-50 pointer-events-auto">
@@ -43,7 +72,11 @@ export const PerformanceControls: React.FC = () => {
 
             {/* Controls panel */}
             {isOpen && (
-                <div className="absolute bottom-12 left-0 bg-black/50 backdrop-blur-md text-white p-3 rounded-lg w-56 shadow-lg">
+                <div
+                    ref={menuRef}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute bottom-12 left-0 bg-black/50 backdrop-blur-md text-white p-3 rounded-lg w-56 shadow-lg"
+                >
                     <h3 className="text-sm font-bold mb-2">
                         Performance Settings
                     </h3>
@@ -76,27 +109,7 @@ export const PerformanceControls: React.FC = () => {
                     {/* Toggle options */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs">Show Stats</label>
-                            <button
-                                onClick={toggleStats}
-                                className={`w-8 h-4 rounded-full transition-colors ${
-                                    performance.showStats
-                                        ? "bg-blue-500"
-                                        : "bg-gray-600"
-                                }`}
-                            >
-                                <div
-                                    className={`w-3 h-3 rounded-full bg-white transform transition-transform ${
-                                        performance.showStats
-                                            ? "translate-x-4"
-                                            : "translate-x-1"
-                                    }`}
-                                />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <label className="text-xs">FPS Monitoring</label>
+                            <label className="text-xs">Performance Stats</label>
                             <button
                                 onClick={togglePerformanceMonitoring}
                                 className={`w-8 h-4 rounded-full transition-colors ${
@@ -108,6 +121,26 @@ export const PerformanceControls: React.FC = () => {
                                 <div
                                     className={`w-3 h-3 rounded-full bg-white transform transition-transform ${
                                         performance.monitoring
+                                            ? "translate-x-4"
+                                            : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs">Debug Info</label>
+                            <button
+                                onClick={toggleStats}
+                                className={`w-8 h-4 rounded-full transition-colors ${
+                                    performance.showStats
+                                        ? "bg-blue-500"
+                                        : "bg-gray-600"
+                                }`}
+                            >
+                                <div
+                                    className={`w-3 h-3 rounded-full bg-white transform transition-transform ${
+                                        performance.showStats
                                             ? "translate-x-4"
                                             : "translate-x-1"
                                     }`}

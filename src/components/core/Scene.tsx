@@ -259,11 +259,13 @@ export const Scene: React.FC = () => {
                 <SceneDataBridge />
 
                 {/* Stats panel in top-right corner */}
-                <Stats
-                    className="fps-stats"
-                    showPanel={0}
-                    data-testid="stats-panel"
-                />
+                {performance.monitoring && (
+                    <Stats
+                        className="fps-stats"
+                        showPanel={0}
+                        data-testid="stats-panel"
+                    />
+                )}
 
                 <Suspense fallback={null}>
                     <Physics

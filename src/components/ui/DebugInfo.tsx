@@ -2,9 +2,9 @@ import React from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
 export const DebugInfo: React.FC = () => {
-    const { currentRoom, minimap, cameraData, sceneData } = useSceneStore();
+    const { currentRoom, performance, cameraData, sceneData } = useSceneStore();
 
-    if (!minimap.visible) return null;
+    if (!performance.showStats) return null;
 
     return (
         <div className="fixed bottom-2 right-2 z-40 pointer-events-none">
