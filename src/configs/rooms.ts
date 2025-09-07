@@ -168,7 +168,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             ],
         },
         defaultEntrance: {
-            position: [0, 0.1, 5] as [number, number, number],
+            position: [0, 1.5, 5] as [number, number, number],
             rotation: [0, Math.PI, 0] as [number, number, number],
         },
         interactiveElements: [
@@ -200,7 +200,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [7, 0.1, 0] as [number, number, number],
+                    position: [7, 1.5, 0] as [number, number, number],
                     rotation: [0, -Math.PI, 0] as [number, number, number],
                 },
             },
@@ -212,7 +212,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 0.1, 7] as [number, number, number],
+                    position: [0, 1.5, 7] as [number, number, number],
                     rotation: [0, Math.PI, 0] as [number, number, number],
                 },
             },
@@ -224,7 +224,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 2,
                 height: 3,
                 entrancePoint: {
-                    position: [-2.5, 0.1, 0] as [number, number, number],
+                    position: [-2.5, 1.5, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
@@ -301,7 +301,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             ],
         },
         defaultEntrance: {
-            position: [7, 0.1, 0] as [number, number, number],
+            position: [7, 1.5, 0] as [number, number, number],
             rotation: [0, -Math.PI / 2, 0] as [number, number, number],
         },
         interactiveElements: [], // Art frames are handled by GalleryRoom component
@@ -314,7 +314,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [-7, 0.1, 0] as [number, number, number], // Clearly in front of gallery, away from play room
+                    position: [-7, 1.5, 0] as [number, number, number], // Clearly in front of gallery, away from play room
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
@@ -347,7 +347,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 })),
         },
         defaultEntrance: {
-            position: [0, 0.1, 7] as [number, number, number],
+            position: [0, 1.5, 7] as [number, number, number],
             rotation: [0, Math.PI, 0] as [number, number, number],
         },
         interactiveElements: [], // Interactive elements are now handled directly in ProjectsRoom component
@@ -360,7 +360,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 0.1, -7] as [number, number, number],
+                    position: [0, 1.5, -7] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
                 },
             },
@@ -439,7 +439,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             ],
         },
         defaultEntrance: {
-            position: [-3.5, 0.1, 0] as [number, number, number],
+            position: [-3.5, 1.5, 0] as [number, number, number],
             rotation: [0, Math.PI / 2, 0] as [number, number, number],
         },
         interactiveElements: [
@@ -473,7 +473,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 2,
                 height: 3,
                 entrancePoint: {
-                    position: [7, 0.1, 0] as [number, number, number],
+                    position: [7, 1.5, 0] as [number, number, number],
                     rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 },
             },

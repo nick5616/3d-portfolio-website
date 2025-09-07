@@ -3,6 +3,7 @@ import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import * as THREE from "three";
 import { InteractiveObject } from "../core/InteractiveObject";
+import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
 
 interface BaseRoomProps {
     config: RoomConfig;
@@ -60,6 +61,8 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
 
     return (
         <>
+            <RoomEnvironmentReady />
+
             {/* Lighting */}
             <ambientLight
                 intensity={config.lightPreset.ambient.intensity * 0.5}

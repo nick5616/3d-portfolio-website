@@ -10,6 +10,7 @@ import { GalleryRoom } from "../rooms/GalleryRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
 import { AboutRoom } from "../rooms/AboutRoom";
 import { DefaultRoom } from "../rooms/DefaultRoom";
+import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
     config: RoomConfig;
@@ -113,6 +114,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             {config.id === "about" ? (
                 // About room (holodeck) handles its own walls and environment
                 <>
+                    <RoomEnvironmentReady />
+
                     {/* Floor collision for about room - covers entire 8x8 room */}
                     <RigidBody type="fixed" colliders="cuboid">
                         <mesh position={[0, -0.25, 0]}>

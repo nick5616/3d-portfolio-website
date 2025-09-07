@@ -62,6 +62,7 @@ interface SceneState {
     playerPosition: [number, number, number];
     playerVelocity: [number, number, number]; // Add player velocity
     shouldTeleportPlayer: boolean;
+    roomEnvironmentReady: boolean; // Add this flag
     spotlightsEnabled: boolean;
     flyMode: boolean;
     isFirstPerson: boolean;
@@ -109,6 +110,7 @@ interface SceneState {
     updatePlayerVelocity: (velocity: [number, number, number]) => void; // Add velocity update function
     clearTeleportFlag: () => void;
     toggleFlyMode: () => void;
+    setRoomEnvironmentReady: (ready: boolean) => void;
     loadRoom: (roomId: string) => void;
     setControlMode: (mode: "firstPerson" | "pointAndClick") => void;
     setCameraTarget: (target: THREE.Vector3) => void;
@@ -134,13 +136,14 @@ interface SceneState {
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
-    currentRoom: null,
+    currentRoom: roomConfigs.atrium, // Set atrium as initial room
     controlMode: "firstPerson",
     cameraTarget: new THREE.Vector3(0, 2, 5),
     cameraRotation: undefined,
-    playerPosition: [0, 0.9, 5],
+    playerPosition: [0, 1.5, 5], // Adjusted to ensure proper floor collision
     playerVelocity: [0, 0, 0], // Initialize player velocity
     shouldTeleportPlayer: false,
+    roomEnvironmentReady: false, // Initialize room environment ready flag
     spotlightsEnabled: false,
     isFirstPerson: true,
     isInteracting: false,
@@ -263,10 +266,14 @@ export const useSceneStore = create<SceneState>((set) => ({
     updatePlayerVelocity: (velocity) => set({ playerVelocity: velocity }), // Update player velocity
     clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),
     toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
+    setRoomEnvironmentReady: (ready) => set({ roomEnvironmentReady: ready }),
     loadRoom: (roomId) => {
         const config = roomConfigs[roomId];
         if (config) {
-            set({ currentRoom: config });
+            set({
+                currentRoom: config,
+                roomEnvironmentReady: false,
+            });
         } else {
             console.error(`Room configuration not found for ID: ${roomId}`);
         }
@@ -292,6 +299,7 @@ export const useSceneStore = create<SceneState>((set) => ({
                 playerPosition: position,
                 shouldTeleportPlayer: true,
                 lastTeleportTime: Date.now(),
+                roomEnvironmentReady: false, // Reset environment ready flag
             });
             console.log(`🔄 Store: State updated - shouldTeleportPlayer: true`);
         } else {

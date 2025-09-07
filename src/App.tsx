@@ -6,10 +6,12 @@ import { HolodeckLoadingScreen } from "./components/ui/HolodeckLoadingScreen";
 import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useSceneStore } from "./stores/sceneStore";
+import { useRoomInitialization } from "./hooks/useRoomInitialization";
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
     const { setPerformanceQuality } = useSceneStore();
+    useRoomInitialization(); // Initialize room based on URL
     const [hasInteracted, setHasInteracted] = useState(false);
 
     useEffect(() => {

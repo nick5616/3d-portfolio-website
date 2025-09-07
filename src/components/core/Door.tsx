@@ -174,20 +174,20 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         handleTeleport();
     };
 
-    // Handle collision events
-    const handleCollisionEnter = () => {
-        if (!isTransitioning) {
-            setIsInTrigger(true);
-        }
-    };
+    // // Handle collision events
+    // const handleCollisionEnter = () => {
+    //     if (!isTransitioning) {
+    //         setIsInTrigger(true);
+    //     }
+    // };
 
-    const handleCollisionExit = (event: any) => {
-        console.log(
-            `🔴 COLLISION EXIT: Door ${archway.id} (${archway.targetRoomId}) - Green trigger area deactivated`,
-            event
-        );
-        setIsInTrigger(false);
-    };
+    // const handleCollisionExit = (event: any) => {
+    //     console.log(
+    //         `🔴 COLLISION EXIT: Door ${archway.id} (${archway.targetRoomId}) - Green trigger area deactivated`,
+    //         event
+    //     );
+    //     setIsInTrigger(false);
+    // };
 
     useEffect(() => {
         if (!isInTrigger || isTransitioning) return;
@@ -335,8 +335,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 rotation={archway.rotation}
                 sensor
                 collisionGroups={interactionGroups(1, [0])}
-                onIntersectionEnter={handleCollisionEnter}
-                onIntersectionExit={handleCollisionExit}
+                // onIntersectionEnter={handleCollisionEnter}
+                // onIntersectionExit={handleCollisionExit}
             >
                 <CuboidCollider
                     args={[archway.width / 2, archway.height / 2, 1]}

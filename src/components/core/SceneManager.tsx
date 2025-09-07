@@ -4,6 +4,7 @@ import { Environment } from "@react-three/drei";
 import { Room } from "./Room";
 import { CameraController } from "./CameraController";
 import { Door } from "./Door";
+import { RouterIntegration } from "./RouterIntegration";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
@@ -38,10 +39,8 @@ export const SceneManager: React.FC = () => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.2;
 
-        if (!currentRoom) {
-            loadRoom("atrium");
-        }
-    }, [scene, loadRoom, currentRoom, gl]);
+        // Room loading is now handled by RouterIntegration
+    }, [scene, gl]);
 
     useFrame(({ gl, clock }) => {
         const now = window.performance.now();
@@ -73,6 +72,8 @@ export const SceneManager: React.FC = () => {
 
     return (
         <>
+            <RouterIntegration />
+
             {/* Enhanced lighting setup */}
             <ambientLight intensity={0.3} color="#f0f8ff" />
             <directionalLight

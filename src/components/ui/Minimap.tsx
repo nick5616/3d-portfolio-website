@@ -32,10 +32,19 @@ export const Minimap: React.FC = () => {
 
     // Track player position from camera data
     useEffect(() => {
+        // Offset camera position by 0 on x and -1.8 on y to get player position
         setPlayerPosition({
             x: cameraData.position.x,
             z: cameraData.position.z,
         });
+
+        // Debug log positions
+        console.log(
+            "Minimap - Camera pos:",
+            cameraData.position,
+            "Player pos:",
+            playerPosition
+        );
     }, [cameraData.position]);
 
     // Draw minimap

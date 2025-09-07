@@ -5,6 +5,7 @@ import {
     RigidBody,
     CapsuleCollider,
     interactionGroups,
+    useRapier,
 } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -17,13 +18,14 @@ const JUMP_COOLDOWN = 500; // milliseconds
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
+    const { world } = useRapier();
     const {
         flyMode,
         shouldTeleportPlayer,
         playerPosition,
         clearTeleportFlag,
         updatePlayerVelocity,
-        setPlayerGrounded, // Add this
+        setPlayerGrounded,
     } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
@@ -139,6 +141,14 @@ export const PlayerBody: React.FC = () => {
         // Update camera position to follow player
         const pos = playerRef.current.translation();
         camera.position.set(pos.x, pos.y + 1.8, pos.z);
+
+        // Debug position
+        console.log(
+            "Player position:",
+            pos,
+            "Camera position:",
+            camera.position
+        );
     });
 
     return (
@@ -148,7 +158,7 @@ export const PlayerBody: React.FC = () => {
             type="dynamic"
             enabledRotations={[false, false, false]}
             lockRotations
-            position={[0, 3, 5]}
+            position={playerPosition} // Use position from store
             friction={20}
             restitution={0}
             // Add collision groups

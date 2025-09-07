@@ -7,6 +7,7 @@ import { MouseStateIndicator } from "./MouseStateIndicator";
 import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
 import { MathGameOverlay } from "./MathGameOverlay";
+import { PositionDebug } from "./PositionDebug";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
@@ -158,6 +159,9 @@ export default function Interface() {
 
             {/* Math Game Overlay */}
             <MathGameOverlay />
+
+            {/* Temporary Position Debug
+            <PositionDebug /> */}
         </div>
     );
 }

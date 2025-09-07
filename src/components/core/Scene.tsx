@@ -12,7 +12,7 @@ import { logEdgeDebugInfo } from "../../utils/edgeDebug";
 import { EnhancedLoadingScreen } from "../ui/EnhancedLoadingScreen";
 
 export const Scene: React.FC = () => {
-    const { performance } = useSceneStore();
+    const { performance, currentRoom } = useSceneStore();
     const { isMobile } = useDeviceDetection();
     const { isHardwareAccelerationDisabled, isDetecting } =
         useHardwareAcceleration();
@@ -247,7 +247,7 @@ export const Scene: React.FC = () => {
                     fov: isMobile ? 80 : 75,
                     near: 0.1,
                     far: isMobile ? 500 : 1000,
-                    position: [0, 2, 5],
+                    position: [0, 2.7, 5], // Adjusted to match player height + camera offset
                 }}
                 shadows={performance.quality !== "low" && !isMobile}
                 dpr={dpr}
@@ -278,8 +278,8 @@ export const Scene: React.FC = () => {
                         }
                         maxCcdSubsteps={performance.quality === "low" ? 1 : 3} // Reduce physics substeps on low quality
                     >
-                        <PlayerBody />
                         <SceneManager />
+                        {currentRoom && <PlayerBody />}
                         {!isMobile && <AdaptiveDpr pixelated />}
                         {!isMobile && <AdaptiveEvents />}
                         <Preload all />

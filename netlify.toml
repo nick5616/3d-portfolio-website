@@ -8,6 +8,12 @@
   to = "/.netlify/functions/console-chat"
   status = 200
 
+# SPA routing - redirect all non-existent paths to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [dev]
   command = "npm run dev"
   functions = "netlify/functions"
