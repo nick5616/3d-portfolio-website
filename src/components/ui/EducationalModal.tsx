@@ -315,13 +315,31 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                     <span className="px-2 py-1 bg-white/10 rounded mr-2">
                                         ESC
                                     </span>
-                                    Free cursor
+                                    Free cursor{" "}
+                                    <svg
+                                        className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
+                                        viewBox="0 0 24 24"
+                                        fill="white"
+                                        stroke="black"
+                                        strokeWidth="1"
+                                    >
+                                        <path d="M6,3L12,20L14,13L21,11L6,3Z" />
+                                    </svg>
                                 </p>
                                 <p>
                                     <span className="px-2 py-1 bg-white/10 rounded mr-2">
                                         CLICK
                                     </span>
-                                    Lock cursor
+                                    Lock cursor{" "}
+                                    <svg
+                                        className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
+                                        viewBox="0 0 24 24"
+                                        fill="white"
+                                        stroke="black"
+                                        strokeWidth="1"
+                                    >
+                                        <path d="M6,3L12,20L14,13L21,11L6,3Z" />
+                                    </svg>
                                 </p>
                             </div>
                         </div>
