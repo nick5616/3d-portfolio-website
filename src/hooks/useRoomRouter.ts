@@ -34,12 +34,8 @@ export const useRoomRouter = () => {
             const position = config.defaultEntrance.position;
             const rotation = config.defaultEntrance.rotation;
 
-            // Ensure spawn position is safely above the floor
-            const safePosition: [number, number, number] = [
-                position[0],
-                Math.max(position[1], 1.5), // Ensure at least 1.5 units above ground
-                position[2],
-            ];
+            // Use exact position from room config
+            const safePosition: [number, number, number] = position;
 
             console.log(
                 `📍 Router: Using spawn position`,
@@ -147,7 +143,7 @@ export const useRoomRouter = () => {
         if (!currentRoom) {
             const roomId = getRoomIdFromPath(location.pathname) || "atrium";
             console.log(
-                `🎬 Router: Initial load, loading room ${roomId} FIRST`
+                `🎬 Router: Initial load, loading room ${roomId} FIRST from path ${location.pathname}`
             );
 
             // CRITICAL: Load the room FIRST, then teleport player
@@ -165,12 +161,8 @@ export const useRoomRouter = () => {
                     const position = config.defaultEntrance.position;
                     const rotation = config.defaultEntrance.rotation;
 
-                    // Ensure spawn position is safely above the floor
-                    const safePosition: [number, number, number] = [
-                        position[0],
-                        Math.max(position[1], 1.5), // Ensure at least 1.5 units above ground
-                        position[2],
-                    ];
+                    // Use exact position from room config
+                    const safePosition: [number, number, number] = position;
 
                     console.log(
                         `📍 Router: Room loaded, now spawning player at`,

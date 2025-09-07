@@ -160,8 +160,8 @@ export default function Interface() {
             {/* Math Game Overlay */}
             <MathGameOverlay />
 
-            {/* Temporary Position Debug
-            <PositionDebug /> */}
+            {/* Temporary Position Debug */}
+            {/* <PositionDebug /> */}
         </div>
     );
 }

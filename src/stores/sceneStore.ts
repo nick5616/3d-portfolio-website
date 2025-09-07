@@ -135,246 +135,265 @@ interface SceneState {
     setHolodeckLoading: (loading: boolean, experience?: string | null) => void;
 }
 
-export const useSceneStore = create<SceneState>((set) => ({
-    currentRoom: roomConfigs.atrium, // Set atrium as initial room
-    controlMode: "firstPerson",
-    cameraTarget: new THREE.Vector3(0, 2, 5),
-    cameraRotation: undefined,
-    playerPosition: [0, 1.5, 5], // Adjusted to ensure proper floor collision
-    playerVelocity: [0, 0, 0], // Initialize player velocity
-    shouldTeleportPlayer: false,
-    roomEnvironmentReady: false, // Initialize room environment ready flag
-    spotlightsEnabled: false,
-    isFirstPerson: true,
-    isInteracting: false,
-    lastTeleportTime: 0,
-    playerGrounded: false,
+export const useSceneStore = create<SceneState>((set) => {
+    console.log("🏗️ Initializing scene store");
+    return {
+        currentRoom: null, // Don't set a default room
+        controlMode: "firstPerson",
+        cameraTarget: new THREE.Vector3(0, 0, 0),
+        cameraRotation: undefined,
+        playerPosition: [0, 0, 0], // Don't set a default position
+        playerVelocity: [0, 0, 0], // Initialize player velocity
+        shouldTeleportPlayer: false,
+        roomEnvironmentReady: false, // Initialize room environment ready flag
+        spotlightsEnabled: false,
+        isFirstPerson: true,
+        isInteracting: false,
+        lastTeleportTime: 0,
+        playerGrounded: false,
 
-    performance: {
-        showStats: false,
-        monitoring: true,
-        quality: "high", // Ensure default is high quality
-    },
-    minimap: {
-        enabled: true,
-        visible: true,
-    },
-    flyMode: false,
-    // Camera and scene data for UI components
-    cameraData: {
-        position: { x: 0, y: 0.5, z: 5 },
-        rotation: { x: 0, y: 0, z: 0 },
-    },
-    sceneData: {
-        objectCount: 0,
-        lightCount: 0,
-    },
-    // Math game initial state
-    mathGame: {
-        isActive: false,
-        meteors: [],
-        score: 0,
-    },
-    // Console initial state
-    console: {
-        isActive: false,
-        input: "",
-        history: [],
-        isProcessing: false,
-    },
-    // Virtual controls state
-    virtualMovement: {
-        forward: false,
-        backward: false,
-        left: false,
-        right: false,
-        running: false,
-        jumping: false,
-    },
-    virtualRotation: {
-        x: 0,
-        y: 0,
-    },
-    setVirtualMovement: (movement) => set({ virtualMovement: movement }),
-    setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
-    // Math game actions
-    setMathGameActive: (active) =>
-        set((state) => ({ mathGame: { ...state.mathGame, isActive: active } })),
-    updateMathGameMeteors: (meteors) =>
-        set((state) => ({
-            mathGame: {
-                ...state.mathGame,
-                meteors:
-                    typeof meteors === "function"
-                        ? meteors(state.mathGame.meteors)
-                        : meteors,
-            },
-        })),
-    setMathGameScore: (score) =>
-        set((state) => ({
-            mathGame: {
-                ...state.mathGame,
-                score:
-                    typeof score === "function"
-                        ? score(state.mathGame.score)
-                        : score,
-            },
-        })),
-    // Console actions
-    setConsoleActive: (active) =>
-        set((state) => ({ console: { ...state.console, isActive: active } })),
-    setConsoleInput: (input) =>
-        set((state) => ({
-            console: {
-                ...state.console,
-                input:
-                    typeof input === "function"
-                        ? input(state.console.input)
-                        : input,
-            },
-        })),
-    appendConsoleInput: (text) =>
-        set((state) => ({
-            console: { ...state.console, input: state.console.input + text },
-        })),
-    backspaceConsoleInput: () =>
-        set((state) => ({
-            console: {
-                ...state.console,
-                input: state.console.input.slice(0, -1),
-            },
-        })),
-    pushConsoleHistory: (line) =>
-        set((state) => ({
-            console: {
-                ...state.console,
-                history: [...state.console.history, line],
-            },
-        })),
-    clearConsole: () =>
-        set((state) => ({
-            console: { ...state.console, history: [], input: "" },
-        })),
-    setConsoleProcessing: (processing) =>
-        set((state) => ({
-            console: { ...state.console, isProcessing: processing },
-        })),
+        performance: {
+            showStats: false,
+            monitoring: true,
+            quality: "high", // Ensure default is high quality
+        },
+        minimap: {
+            enabled: true,
+            visible: true,
+        },
+        flyMode: false,
+        // Camera and scene data for UI components
+        cameraData: {
+            position: { x: 0, y: 0.5, z: 5 },
+            rotation: { x: 0, y: 0, z: 0 },
+        },
+        sceneData: {
+            objectCount: 0,
+            lightCount: 0,
+        },
+        // Math game initial state
+        mathGame: {
+            isActive: false,
+            meteors: [],
+            score: 0,
+        },
+        // Console initial state
+        console: {
+            isActive: false,
+            input: "",
+            history: [],
+            isProcessing: false,
+        },
+        // Virtual controls state
+        virtualMovement: {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            running: false,
+            jumping: false,
+        },
+        virtualRotation: {
+            x: 0,
+            y: 0,
+        },
+        setVirtualMovement: (movement) => set({ virtualMovement: movement }),
+        setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
+        // Math game actions
+        setMathGameActive: (active) =>
+            set((state) => ({
+                mathGame: { ...state.mathGame, isActive: active },
+            })),
+        updateMathGameMeteors: (meteors) =>
+            set((state) => ({
+                mathGame: {
+                    ...state.mathGame,
+                    meteors:
+                        typeof meteors === "function"
+                            ? meteors(state.mathGame.meteors)
+                            : meteors,
+                },
+            })),
+        setMathGameScore: (score) =>
+            set((state) => ({
+                mathGame: {
+                    ...state.mathGame,
+                    score:
+                        typeof score === "function"
+                            ? score(state.mathGame.score)
+                            : score,
+                },
+            })),
+        // Console actions
+        setConsoleActive: (active) =>
+            set((state) => ({
+                console: { ...state.console, isActive: active },
+            })),
+        setConsoleInput: (input) =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    input:
+                        typeof input === "function"
+                            ? input(state.console.input)
+                            : input,
+                },
+            })),
+        appendConsoleInput: (text) =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    input: state.console.input + text,
+                },
+            })),
+        backspaceConsoleInput: () =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    input: state.console.input.slice(0, -1),
+                },
+            })),
+        pushConsoleHistory: (line) =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    history: [...state.console.history, line],
+                },
+            })),
+        clearConsole: () =>
+            set((state) => ({
+                console: { ...state.console, history: [], input: "" },
+            })),
+        setConsoleProcessing: (processing) =>
+            set((state) => ({
+                console: { ...state.console, isProcessing: processing },
+            })),
 
-    setIsInteracting: (interacting) => set({ isInteracting: interacting }),
-    updateCameraData: (cameraData) => set({ cameraData }),
-    updateSceneData: (sceneData) => set({ sceneData }),
-    updatePlayerVelocity: (velocity) => set({ playerVelocity: velocity }), // Update player velocity
-    clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),
-    toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
-    setRoomEnvironmentReady: (ready) => set({ roomEnvironmentReady: ready }),
-    loadRoom: (roomId) => {
-        const config = roomConfigs[roomId];
-        if (config) {
+        setIsInteracting: (interacting) => set({ isInteracting: interacting }),
+        updateCameraData: (cameraData) => set({ cameraData }),
+        updateSceneData: (sceneData) => set({ sceneData }),
+        updatePlayerVelocity: (velocity) => set({ playerVelocity: velocity }), // Update player velocity
+        clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),
+        toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
+        setRoomEnvironmentReady: (ready) =>
+            set({ roomEnvironmentReady: ready }),
+        loadRoom: (roomId) => {
+            const config = roomConfigs[roomId];
+            if (config) {
+                set({
+                    currentRoom: config,
+                    roomEnvironmentReady: false,
+                });
+            } else {
+                console.error(`Room configuration not found for ID: ${roomId}`);
+            }
+        },
+        setControlMode: (mode) =>
             set({
-                currentRoom: config,
-                roomEnvironmentReady: false,
-            });
-        } else {
-            console.error(`Room configuration not found for ID: ${roomId}`);
-        }
-    },
-    setControlMode: (mode) =>
-        set({
-            controlMode: mode,
-            isFirstPerson: mode === "firstPerson",
-        }),
-    setCameraTarget: (target) => set({ cameraTarget: target }),
-    teleportToRoom: (roomId, position, rotation) => {
-        console.log(`🏠 Store: teleportToRoom called - changing to ${roomId}`, {
-            position,
-            rotation,
-        });
-        const config = roomConfigs[roomId];
-        if (config) {
-            console.log(`📋 Store: Room config found for ${roomId}`, config);
-            set({
-                currentRoom: config,
-                cameraTarget: new THREE.Vector3(...position),
-                cameraRotation: rotation,
-                playerPosition: position,
-                shouldTeleportPlayer: true,
-                lastTeleportTime: Date.now(),
-                roomEnvironmentReady: false, // Reset environment ready flag
-            });
-            console.log(`🔄 Store: State updated - shouldTeleportPlayer: true`);
-        } else {
-            console.error(
-                `❌ Store: Room configuration not found for ID: ${roomId}`
+                controlMode: mode,
+                isFirstPerson: mode === "firstPerson",
+            }),
+        setCameraTarget: (target) => set({ cameraTarget: target }),
+        teleportToRoom: (roomId, position, rotation) => {
+            console.log(
+                `🏠 Store: teleportToRoom called - changing to ${roomId}`,
+                {
+                    position,
+                    rotation,
+                }
             );
-        }
-    },
-    toggleSpotlights: () =>
-        set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
-    setPerformanceQuality: (quality) =>
-        set((state) => ({
-            performance: { ...state.performance, quality },
-        })),
-    toggleStats: () =>
-        set((state) => ({
-            performance: {
-                ...state.performance,
-                showStats: !state.performance.showStats,
-            },
-        })),
-    togglePerformanceMonitoring: () =>
-        set((state) => ({
-            performance: {
-                ...state.performance,
-                monitoring: !state.performance.monitoring,
-            },
-        })),
-    toggleMinimap: () =>
-        set((state) => ({
-            minimap: {
-                ...state.minimap,
-                visible: !state.minimap.visible,
-            },
-        })),
-    rotateUser: (angle?: number) => {
-        set((state) => {
-            // Get current rotation or default to [0, 0, 0]
-            const currentRotation = state.cameraRotation || [0, 0, 0];
+            const config = roomConfigs[roomId];
+            if (config) {
+                console.log(
+                    `📋 Store: Room config found for ${roomId}`,
+                    config
+                );
+                set({
+                    currentRoom: config,
+                    cameraTarget: new THREE.Vector3(...position),
+                    cameraRotation: rotation,
+                    playerPosition: position,
+                    shouldTeleportPlayer: true,
+                    lastTeleportTime: Date.now(),
+                    roomEnvironmentReady: false, // Reset environment ready flag
+                });
+                console.log(
+                    `🔄 Store: State updated - shouldTeleportPlayer: true`
+                );
+            } else {
+                console.error(
+                    `❌ Store: Room configuration not found for ID: ${roomId}`
+                );
+            }
+        },
+        toggleSpotlights: () =>
+            set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
+        setPerformanceQuality: (quality) =>
+            set((state) => ({
+                performance: { ...state.performance, quality },
+            })),
+        toggleStats: () =>
+            set((state) => ({
+                performance: {
+                    ...state.performance,
+                    showStats: !state.performance.showStats,
+                },
+            })),
+        togglePerformanceMonitoring: () =>
+            set((state) => ({
+                performance: {
+                    ...state.performance,
+                    monitoring: !state.performance.monitoring,
+                },
+            })),
+        toggleMinimap: () =>
+            set((state) => ({
+                minimap: {
+                    ...state.minimap,
+                    visible: !state.minimap.visible,
+                },
+            })),
+        rotateUser: (angle?: number) => {
+            set((state) => {
+                // Get current rotation or default to [0, 0, 0]
+                const currentRotation = state.cameraRotation || [0, 0, 0];
 
-            // Use provided angle or get from experience config
-            let rotationAngle = angle;
-            if (rotationAngle === undefined) {
-                // Get the current experience from the room ID or default to "off"
-                const currentExperience = state.currentRoom?.id || "off";
-                rotationAngle =
-                    EXPERIENCE_ROTATION_ANGLES[currentExperience] || 0;
+                // Use provided angle or get from experience config
+                let rotationAngle = angle;
+                if (rotationAngle === undefined) {
+                    // Get the current experience from the room ID or default to "off"
+                    const currentExperience = state.currentRoom?.id || "off";
+                    rotationAngle =
+                        EXPERIENCE_ROTATION_ANGLES[currentExperience] || 0;
+                }
+
+                // Apply the rotation to the Y axis
+                const newRotation: [number, number, number] = [
+                    currentRotation[0],
+                    currentRotation[1] + rotationAngle,
+                    currentRotation[2],
+                ];
+                return { cameraRotation: newRotation };
+            });
+        },
+        getExperienceRotationAngle: (experience: string) => {
+            return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
+        },
+        setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
+
+        // Holodeck loading state
+        holodeckLoading: false,
+        holodeckLoadingExperience: null,
+        setHolodeckLoading: (loading, experience) => {
+            const updates: any = { holodeckLoading: loading };
+
+            // Only update the experience if one is provided
+            // This preserves the experience during the fade-out phase
+            if (experience !== undefined) {
+                updates.holodeckLoadingExperience = experience;
             }
 
-            // Apply the rotation to the Y axis
-            const newRotation: [number, number, number] = [
-                currentRotation[0],
-                currentRotation[1] + rotationAngle,
-                currentRotation[2],
-            ];
-            return { cameraRotation: newRotation };
-        });
-    },
-    getExperienceRotationAngle: (experience: string) => {
-        return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
-    },
-    setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
-
-    // Holodeck loading state
-    holodeckLoading: false,
-    holodeckLoadingExperience: null,
-    setHolodeckLoading: (loading, experience) => {
-        const updates: any = { holodeckLoading: loading };
-
-        // Only update the experience if one is provided
-        // This preserves the experience during the fade-out phase
-        if (experience !== undefined) {
-            updates.holodeckLoadingExperience = experience;
-        }
-
-        set(updates);
-    },
-}));
+            set(updates);
+        },
+    };
+});
