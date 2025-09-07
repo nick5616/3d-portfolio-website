@@ -181,7 +181,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                     {/* Introduction */}
                     <div className=" mb-8">
                         <h2 className="text-3xl font-bold mb-3">
-                            Welcome! I'm Nick.
+                            Welcome! I'm Nick
                         </h2>
                         <p className="text-lg text-gray-300">
                             Explore my creative space in an interactive 3D
