@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
-import { useNavigate } from "react-router-dom";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface EducationalModalProps {
     isVisible?: boolean;
@@ -106,7 +106,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     isVisible = true,
     onClose,
 }) => {
-    const navigate = useNavigate();
+    const { teleportToRoom } = useSceneStore();
     const { isMobile } = useDeviceDetection();
     const [isOpen, setIsOpen] = useState(isVisible);
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -194,7 +194,12 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate("/art-gallery");
+                                teleportToRoom(
+                                    "gallery",
+                                    [7, 1.5, 0],
+                                    [0, 0, 0]
+                                );
+                                handleClose();
                             }}
                             className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                         >
@@ -206,7 +211,12 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate("/software");
+                                teleportToRoom(
+                                    "projects",
+                                    [0, 1.5, 7],
+                                    [0, 0, 0]
+                                );
+                                handleClose();
                             }}
                             className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                         >
@@ -218,7 +228,12 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate("/holodeck");
+                                teleportToRoom(
+                                    "about",
+                                    [-2.5, 1.6, 0],
+                                    [0, -Math.PI / 2, 0]
+                                );
+                                handleClose();
                             }}
                             className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                         >
