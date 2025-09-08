@@ -305,6 +305,14 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         }
         setIsOpen(false);
         onClose?.();
+
+        // Request pointer lock if not on mobile
+        if (!isMobile) {
+            const canvas = document.querySelector("canvas");
+            if (canvas) {
+                canvas.requestPointerLock();
+            }
+        }
     };
 
     if (!isOpen) return null;
