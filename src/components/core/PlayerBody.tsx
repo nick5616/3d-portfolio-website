@@ -141,14 +141,6 @@ export const PlayerBody: React.FC = () => {
         // Update camera position to follow player
         const pos = playerRef.current.translation();
         camera.position.set(pos.x, pos.y + 1.8, pos.z);
-
-        // Debug position
-        console.log(
-            "Player position:",
-            pos,
-            "Camera position:",
-            camera.position
-        );
     });
 
     return (

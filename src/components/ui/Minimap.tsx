@@ -37,14 +37,6 @@ export const Minimap: React.FC = () => {
             x: cameraData.position.x,
             z: cameraData.position.z,
         });
-
-        // Debug log positions
-        console.log(
-            "Minimap - Camera pos:",
-            cameraData.position,
-            "Player pos:",
-            playerPosition
-        );
     }, [cameraData.position]);
 
     // Draw minimap

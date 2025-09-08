@@ -72,31 +72,156 @@ const KeyboardKey: React.FC<KeyProps> = ({
     );
 };
 
-const MouseAnimation: React.FC = () => {
+const QuickAccess: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const { teleportToRoom } = useSceneStore();
+    const { isMobile } = useDeviceDetection();
+    if (isMobile) return null;
+    return (
+        <div
+            className={`grid grid-cols-3 ${
+                isMobile ? "gap-2" : "gap-4"
+            } w-full`}
+        >
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    teleportToRoom("gallery", [7, 1.5, 0], [0, 0, 0]);
+                    onClose();
+                }}
+                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+            >
+                <h3
+                    className={`font-semibold ${
+                        isMobile ? "text-sm mb-1" : "mb-2"
+                    }`}
+                >
+                    Art Gallery
+                </h3>
+                <p
+                    className={`${
+                        isMobile ? "text-xs" : "text-sm"
+                    } text-gray-400`}
+                >
+                    {isMobile ? "View artwork" : "View my artwork collection"}
+                </p>
+            </button>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    teleportToRoom("projects", [0, 1.5, 7], [0, 0, 0]);
+                    onClose();
+                }}
+                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+            >
+                <h3
+                    className={`font-semibold ${
+                        isMobile ? "text-sm mb-1" : "mb-2"
+                    }`}
+                >
+                    Software
+                </h3>
+                <p
+                    className={`${
+                        isMobile ? "text-xs" : "text-sm"
+                    } text-gray-400`}
+                >
+                    {isMobile ? "View projects" : "Check out my projects"}
+                </p>
+            </button>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    teleportToRoom(
+                        "about",
+                        [-2.5, 1.6, 0],
+                        [0, -Math.PI / 2, 0]
+                    );
+                    onClose();
+                }}
+                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+            >
+                <h3
+                    className={`font-semibold ${
+                        isMobile ? "text-sm mb-1" : "mb-2"
+                    }`}
+                >
+                    Activities
+                </h3>
+                <p
+                    className={`${
+                        isMobile ? "text-xs" : "text-sm"
+                    } text-gray-400`}
+                >
+                    {isMobile ? "Interactive" : "Interactive experiences"}
+                </p>
+            </button>
+        </div>
+    );
+};
+
+const DragAnimation: React.FC = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const interval = setInterval(() => {
+            const time = Date.now() / 1000;
             setPosition({
-                x: Math.sin(Date.now() / 1000) * 20,
-                y: Math.cos(Date.now() / 1000) * 20,
+                x: Math.sin(time) * 20,
+                y: Math.cos(time * 0.5) * 10, // Slower vertical movement
             });
         }, 50);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="relative w-32 h-32 border-2 border-white/20 rounded-lg">
+        <div className="relative w-32 h-20 border-2 border-white/20 rounded-lg flex items-center justify-center">
             <div
                 className="absolute w-4 h-4 bg-white/50 rounded-full transition-all duration-200"
                 style={{
-                    transform: `translate(${position.x + 56}px, ${
-                        position.y + 56
-                    }px)`,
+                    transform: `translate(${position.x}px, ${position.y}px)`,
                 }}
             />
             <div className="absolute inset-0 flex items-center justify-center text-sm text-white/50">
-                Drag
+                Drag to look
+            </div>
+        </div>
+    );
+};
+
+const JoystickAnimation: React.FC<{ type: "move" | "look" }> = ({ type }) => {
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (type === "look") {
+                // Circular motion for look joystick
+                setPosition({
+                    x: Math.sin(Date.now() / 1000) * 20,
+                    y: Math.cos(Date.now() / 1000) * 20,
+                });
+            } else {
+                // Sequential WASD motion for move joystick
+                const time = (Date.now() % 4000) / 1000; // 4 second cycle
+                if (time < 1) setPosition({ x: 0, y: -20 }); // Up
+                else if (time < 2) setPosition({ x: 20, y: 0 }); // Right
+                else if (time < 3) setPosition({ x: 0, y: 20 }); // Down
+                else setPosition({ x: -20, y: 0 }); // Left
+            }
+        }, 50);
+        return () => clearInterval(interval);
+    }, [type]);
+
+    return (
+        <div className="relative w-20 h-20 border-2 border-white/20 rounded-full flex items-center justify-center">
+            <div className="absolute w-10 h-10 border border-white/20 rounded-full" />
+            <div
+                className="absolute w-4 h-4 bg-white/50 rounded-full transition-all duration-200"
+                style={{
+                    transform: `translate(${position.x}px, ${position.y}px)`,
+                }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-white/50">
+                {type === "look" ? "Look" : "Move"}
             </div>
         </div>
     );
@@ -106,7 +231,6 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     isVisible = true,
     onClose,
 }) => {
-    const { teleportToRoom } = useSceneStore();
     const { isMobile } = useDeviceDetection();
     const [isOpen, setIsOpen] = useState(isVisible);
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -154,7 +278,11 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             />
 
             <div
-                className="relative bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl mx-4 p-6 border border-white/10"
+                className={`relative bg-gray-900 rounded-xl shadow-2xl border border-white/10 ${
+                    isMobile
+                        ? "w-full h-full m-0 rounded-none flex flex-col justify-between"
+                        : "w-full max-w-3xl mx-4 p-6"
+                }`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close button */}
@@ -177,176 +305,191 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                     </svg>
                 </button>
 
-                <div className="text-white">
+                <div
+                    className={`text-white ${
+                        isMobile ? "p-2 flex flex-col h-full" : ""
+                    }`}
+                >
                     {/* Introduction */}
-                    <div className=" mb-8">
-                        <h2 className="text-3xl font-bold mb-3">
+                    <div
+                        className={`${isMobile ? "text-center mb-2" : "mb-8"}`}
+                    >
+                        <h2
+                            className={`font-bold mb-3 ${
+                                isMobile ? "text-2xl" : "text-3xl"
+                            }`}
+                        >
                             Welcome! I'm Nick
                         </h2>
-                        <p className="text-lg text-gray-300">
+                        <p
+                            className={`${
+                                isMobile ? "text-base" : "text-lg"
+                            } text-gray-300`}
+                        >
                             Explore my creative space in an interactive 3D
                             environment
                         </p>
                     </div>
 
                     {/* Quick Access */}
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                teleportToRoom(
-                                    "gallery",
-                                    [7, 1.5, 0],
-                                    [0, 0, 0]
-                                );
-                                handleClose();
-                            }}
-                            className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
-                        >
-                            <h3 className="font-semibold mb-2">Art Gallery</h3>
-                            <p className="text-sm text-gray-400">
-                                View my artwork collection
-                            </p>
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                teleportToRoom(
-                                    "projects",
-                                    [0, 1.5, 7],
-                                    [0, 0, 0]
-                                );
-                                handleClose();
-                            }}
-                            className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
-                        >
-                            <h3 className="font-semibold mb-2">Software</h3>
-                            <p className="text-sm text-gray-400">
-                                Check out my projects
-                            </p>
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                teleportToRoom(
-                                    "about",
-                                    [-2.5, 1.6, 0],
-                                    [0, -Math.PI / 2, 0]
-                                );
-                                handleClose();
-                            }}
-                            className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
-                        >
-                            <h3 className="font-semibold mb-2">Activities</h3>
-                            <p className="text-sm text-gray-400">
-                                Interactive experiences
-                            </p>
-                        </button>
-                    </div>
+                    {!isMobile && (
+                        <div className="mb-8">
+                            <QuickAccess onClose={handleClose} />
+                        </div>
+                    )}
 
                     {/* Basic Controls */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold mb-6">
-                            Basic Controls
+                    <div className={isMobile ? "flex-grow" : "mb-8"}>
+                        <h2
+                            className={`font-bold ${
+                                isMobile
+                                    ? "text-lg text-center mb-4"
+                                    : "text-2xl mb-6"
+                            }`}
+                        >
+                            {isMobile ? "Touch Controls" : "Basic Controls"}
                         </h2>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div className="flex flex-col items-center">
-                                <h3 className="font-semibold text-xl mb-4">
-                                    Movement
-                                </h3>
-                                <div className="flex flex-col items-center gap-2">
-                                    <KeyboardKey
-                                        letter="W"
-                                        direction="up"
-                                        delay={0}
-                                    />
-                                    <div className="flex gap-2">
-                                        <KeyboardKey
-                                            letter="A"
-                                            direction="left"
-                                            delay={1000}
-                                        />
-                                        <KeyboardKey
-                                            letter="S"
-                                            direction="down"
-                                            delay={2000}
-                                        />
-                                        <KeyboardKey
-                                            letter="D"
-                                            direction="right"
-                                            delay={3000}
-                                        />
+                        <div
+                            className={`grid ${
+                                isMobile
+                                    ? "grid-cols-1 gap-6"
+                                    : "grid-cols-2 gap-8"
+                            }`}
+                        >
+                            {isMobile ? (
+                                <>
+                                    <div className="flex flex-col items-center">
+                                        <div className="flex justify-around w-full mb-6">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <span className="text-sm font-semibold text-white/90 mb-1">
+                                                    Left Joystick
+                                                </span>
+                                                <JoystickAnimation type="move" />
+                                                <span className="text-sm text-white/70">
+                                                    Movement
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <span className="text-sm font-semibold text-white/90 mb-1">
+                                                    Right Joystick
+                                                </span>
+                                                <JoystickAnimation type="look" />
+                                                <span className="text-sm text-white/70">
+                                                    Camera
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-white/50 text-center mb-6">
+                                            Tap objects to interact
+                                        </div>
+                                        <QuickAccess onClose={handleClose} />
                                     </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <h3 className="font-semibold text-xl mb-4">
-                                    Look Around
-                                </h3>
-                                <div className="flex justify-center">
-                                    <MouseAnimation />
-                                </div>
-                            </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col items-center">
+                                        <h3 className="font-semibold text-xl mb-4">
+                                            Movement
+                                        </h3>
+                                        <div className="flex flex-col items-center gap-2">
+                                            <KeyboardKey
+                                                letter="W"
+                                                direction="up"
+                                                delay={0}
+                                            />
+                                            <div className="flex gap-2">
+                                                <KeyboardKey
+                                                    letter="A"
+                                                    direction="left"
+                                                    delay={1000}
+                                                />
+                                                <KeyboardKey
+                                                    letter="S"
+                                                    direction="down"
+                                                    delay={2000}
+                                                />
+                                                <KeyboardKey
+                                                    letter="D"
+                                                    direction="right"
+                                                    delay={3000}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <h3 className="font-semibold text-xl mb-4">
+                                            Look Around
+                                        </h3>
+                                        <div className="flex justify-center">
+                                            <DragAnimation />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
                     {/* Advanced Controls */}
-                    <div className="bg-white/5 rounded-lg p-4 mb-8">
-                        <h3 className="font-semibold text-xl mb-3">
-                            Advanced Controls
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p className="mb-2">
-                                    <span className="px-2 py-1 bg-white/10 rounded mr-2">
-                                        SPACE
-                                    </span>
-                                    Jump
-                                </p>
-                                <p>
-                                    <span className="px-2 py-1 bg-white/10 rounded mr-2">
-                                        SHIFT
-                                    </span>
-                                    Run
-                                </p>
-                            </div>
-                            <div>
-                                <p className="mb-2">
-                                    <span className="px-2 py-1 bg-white/10 rounded mr-2">
-                                        ESC
-                                    </span>
-                                    Free cursor{" "}
-                                    <svg
-                                        className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
-                                        viewBox="0 0 24 24"
-                                        fill="white"
-                                        stroke="black"
-                                        strokeWidth="1"
-                                    >
-                                        <path d="M6,3L12,20L14,13L21,11L6,3Z" />
-                                    </svg>
-                                </p>
-                                <p>
-                                    <span className="px-2 py-1 bg-white/10 rounded mr-2">
-                                        CLICK
-                                    </span>
-                                    Lock cursor{" "}
-                                    <svg
-                                        className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
-                                        viewBox="0 0 24 24"
-                                        fill="white"
-                                        stroke="black"
-                                        strokeWidth="1"
-                                    >
-                                        <path d="M6,3L12,20L14,13L21,11L6,3Z" />
-                                    </svg>
-                                </p>
+                    {!isMobile && (
+                        <div className="bg-white/5 rounded-lg p-4 mb-8">
+                            <h3 className="font-semibold text-xl mb-3">
+                                Advanced Controls
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="mb-2">
+                                        <span className="px-2 py-1 bg-white/10 rounded mr-2">
+                                            SPACE
+                                        </span>
+                                        Jump
+                                    </p>
+                                    <p>
+                                        <span className="px-2 py-1 bg-white/10 rounded mr-2">
+                                            SHIFT
+                                        </span>
+                                        Run
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="mb-2">
+                                        <span className="px-2 py-1 bg-white/10 rounded mr-2">
+                                            ESC
+                                        </span>
+                                        Free cursor{" "}
+                                        <svg
+                                            className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
+                                            viewBox="0 0 24 24"
+                                            fill="white"
+                                            stroke="black"
+                                            strokeWidth="1"
+                                        >
+                                            <path d="M6,3L12,20L14,13L21,11L6,3Z" />
+                                        </svg>
+                                    </p>
+                                    <p>
+                                        <span className="px-2 py-1 bg-white/10 rounded mr-2">
+                                            CLICK
+                                        </span>
+                                        Lock cursor{" "}
+                                        <svg
+                                            className="w-4 h-4 inline-block ml-2 -rotate-[0deg]"
+                                            viewBox="0 0 24 24"
+                                            fill="white"
+                                            stroke="black"
+                                            strokeWidth="1"
+                                        >
+                                            <path d="M6,3L12,20L14,13L21,11L6,3Z" />
+                                        </svg>
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Footer */}
-                    <div className="flex justify-between items-center">
+                    <div
+                        className={`flex justify-between items-center mt-auto`}
+                    >
                         <label className="flex items-center space-x-2 text-sm text-gray-400">
                             <input
                                 type="checkbox"
@@ -360,7 +503,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         </label>
                         <button
                             onClick={handleClose}
-                            className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                            className={`px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all`}
                         >
                             Let's Begin
                         </button>

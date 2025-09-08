@@ -904,7 +904,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         return (
             <div
                 className="virtual-controls"
-                style={{ zIndex: 10000, pointerEvents: "all" }}
+                style={{ zIndex: 40, pointerEvents: "all" }}
             >
                 {/* D-Pad */}
                 <div
