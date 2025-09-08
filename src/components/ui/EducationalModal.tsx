@@ -159,6 +159,51 @@ const QuickAccess: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     );
 };
 
+const useDeviceOrientation = () => {
+    const [isLandscape, setIsLandscape] = useState(
+        window.innerWidth > window.innerHeight
+    );
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsLandscape(window.innerWidth > window.innerHeight);
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    return isLandscape;
+};
+
+const RotateDeviceAnimation: React.FC = () => {
+    const [rotation, setRotation] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRotation((prev) => (prev + 90) % 360);
+        }, 1500);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex flex-col items-center gap-2 text-white/70 bg-white/5 rounded-lg p-3">
+            <div className="relative w-12 h-8">
+                <div
+                    className="absolute inset-0 border-2 border-white/30 rounded transition-transform duration-500"
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-1 h-1 bg-white/30 rounded-full" />
+                </div>
+            </div>
+            <span className="text-sm">
+                Rotate horizontally for best experience
+            </span>
+        </div>
+    );
+};
+
 const DragAnimation: React.FC = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -232,6 +277,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     onClose,
 }) => {
     const { isMobile } = useDeviceDetection();
+    const isLandscape = useDeviceOrientation();
     const [isOpen, setIsOpen] = useState(isVisible);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -379,9 +425,14 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="text-sm text-white/50 text-center mb-6">
+                                        <div className="text-sm text-white/50 text-center mb-4">
                                             Tap objects to interact
                                         </div>
+                                        {!isLandscape && (
+                                            <div className="mb-6">
+                                                <RotateDeviceAnimation />
+                                            </div>
+                                        )}
                                         <QuickAccess onClose={handleClose} />
                                     </div>
                                 </>
