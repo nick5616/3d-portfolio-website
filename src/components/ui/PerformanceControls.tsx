@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const PerformanceControls: React.FC = () => {
     const {
@@ -14,7 +15,10 @@ export const PerformanceControls: React.FC = () => {
         setIsInteracting,
     } = useSceneStore();
 
+    const { isMobile } = useDeviceDetection();
+
     const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
 
     // Handle click outside to close menu
@@ -22,7 +26,8 @@ export const PerformanceControls: React.FC = () => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 menuRef.current &&
-                !menuRef.current.contains(event.target as Node)
+                !menuRef.current.contains(event.target as Node) &&
+                !buttonRef.current?.contains(event.target as Node)
             ) {
                 setIsOpen(false);
                 setIsInteracting(false);
@@ -44,12 +49,19 @@ export const PerformanceControls: React.FC = () => {
     }, [isOpen, setIsInteracting]);
 
     return (
-        <div className="absolute bottom-4 left-4 z-50 pointer-events-auto">
+        <div
+            className={`absolute bottom-4 ${
+                isMobile ? "right-4" : "left-4"
+            } z-50 pointer-events-auto ${isMobile ? "top-2" : "bottom-4"}`}
+        >
             {/* Toggle button */}
             <button
+                ref={buttonRef}
                 onClick={(e) => {
+                    console.log("PerformanceControls clicked");
                     e.stopPropagation();
-                    setIsOpen(!isOpen);
+                    console.log("setting isOpen to", !isOpen);
+                    setIsOpen((prev) => !prev);
                 }}
                 className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm text-white transition-all hover:bg-black/30"
                 aria-label="Performance Settings"
@@ -75,7 +87,9 @@ export const PerformanceControls: React.FC = () => {
                 <div
                     ref={menuRef}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-12 left-0 bg-black/50 backdrop-blur-md text-white p-3 rounded-lg w-56 shadow-lg"
+                    className={`absolute ${isMobile ? "top-12" : "bottom-12"} ${
+                        isMobile ? "right-4" : "left-4"
+                    } bg-black/50 backdrop-blur-md text-white p-3 rounded-lg w-56 shadow-lg`}
                 >
                     <h3 className="text-sm font-bold mb-2">
                         Performance Settings

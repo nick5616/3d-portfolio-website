@@ -17,9 +17,9 @@ export const Minimap: React.FC = () => {
     useEffect(() => {
         const computeSize = () => {
             const vw = window.innerWidth;
-            if (vw < 360) return { width: 160, height: 140 };
-            if (vw < 480) return { width: 180, height: 160 };
-            if (vw < 768) return { width: 200, height: 180 };
+            if (vw < 360) return { width: 100, height: 80 };
+            if (vw < 480) return { width: 120, height: 100 };
+            if (vw < 768) return { width: 140, height: 120 };
             if (vw < 1280) return { width: 220, height: 200 };
             return { width: 260, height: 220 };
         };
@@ -58,7 +58,7 @@ export const Minimap: React.FC = () => {
         ctx.fillRect(0, 0, width, height);
 
         // Draw room layout
-        const scale = 0.25; // Scale factor for minimap
+        const scale = isMobile ? 0.5 : 0.25; // Scale factor for minimap
         const centerX = width / 2;
         const centerY = height / 2;
 
@@ -96,7 +96,7 @@ export const Minimap: React.FC = () => {
 
             // Draw room label
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "9px Arial";
+            ctx.font = isMobile ? "7px Arial" : "9px Arial";
             ctx.textAlign = "center";
             ctx.fillText(room.name, x, y + 1);
 
@@ -129,21 +129,31 @@ export const Minimap: React.FC = () => {
 
         // Draw coordinates
         ctx.fillStyle = "#FFFF00";
-        ctx.font = "9px monospace";
+        ctx.font = isMobile ? "7px monospace" : "9px monospace";
         ctx.textAlign = "left";
         ctx.fillText(`Room: ${currentRoom?.name || "None"}`, 5, height - 5);
     }, [minimap.visible, currentRoom, playerPosition, size]);
 
     if (!minimap.visible) return null;
 
-    const bottomClass = isMobile ? "bottom-[160px]" : "bottom-4";
+    const spacingClass = isMobile ? "top-14" : "bottom-4";
 
     return (
         <div
-            className={`fixed right-4 ${bottomClass} md:top-20 md:bottom-auto z-40`}
+            className={`fixed right-4 ${spacingClass} md:top-20 md:bottom-auto z-40`}
         >
-            <div className="bg-black/60 rounded-lg p-2 border border-gray-600">
-                <div className="text-white text-xs mb-1 text-center hidden sm:block">
+            <div
+                className={`bg-black/60 rounded-lg ${
+                    isMobile ? "p-0" : "p-2"
+                } border border-gray-600`}
+            >
+                <div
+                    className={`text-white text-xs ${
+                        isMobile ? "mb-0" : "mb-1"
+                    } text-center hidden sm:block ${
+                        isMobile ? "text-xs" : "text-sm"
+                    }`}
+                >
                     Minimap
                 </div>
                 <canvas
