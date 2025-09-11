@@ -38,8 +38,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         const { isMobile } = useDeviceDetection();
         const isMobileLocal = mobileOverride ?? isMobile;
 
-        console.log("VirtualControls rendering, isMobile:", isMobileLocal);
-
         // Track active touch ids
         const [activeTouchIds, setActiveTouchIds] = useState<{
             [key: number]: "dpad" | "joystick";
@@ -120,7 +118,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Update movement based on d-pad touch - with throttling
         const updateDpadMovement = useCallback(() => {
             if (!dpadTouch.current) {
-                console.log("No active d-pad touch");
                 return false; // Return false to indicate no movement
             }
 
@@ -133,24 +130,12 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             const dx = dpadTouch.current.currentX - dpadTouch.current.startX;
             const dy = dpadTouch.current.currentY - dpadTouch.current.startY;
 
-            console.log("D-pad movement update", {
-                dx,
-                dy,
-                currentX: dpadTouch.current.currentX,
-                currentY: dpadTouch.current.currentY,
-                startX: dpadTouch.current.startX,
-                startY: dpadTouch.current.startY,
-            });
-
             // Check if there's no significant movement - use smaller deadzone for more responsiveness
             const movementDeadzone = 1;
             if (
                 Math.abs(dx) < movementDeadzone &&
                 Math.abs(dy) < movementDeadzone
             ) {
-                console.log(
-                    "No significant movement detected, continuing animation..."
-                );
                 return true; // Continue animation to check for movement
             }
 
@@ -217,13 +202,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         setShowRipple(false);
                     }, 300);
                 }
-
-                // Log movement direction
-                const direction = Object.entries(newActiveDirections)
-                    .filter(([_, value]) => value)
-                    .map(([key]) => key)
-                    .join(", ");
-                console.log(`Moving ${direction}`);
             } else {
                 return false; // No direction active, stop the animation
             }
@@ -269,7 +247,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 frameCount++;
                 // First check if we still have an active dpad touch
                 if (!dpadTouch.current) {
-                    console.log("No dpad touch, stopping animation");
                     stopContinuousMovement();
                     return;
                 }
@@ -277,23 +254,17 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 // Call the update function and check if we should continue
                 const shouldContinue = updateDpadMovement();
 
-                console.log(
-                    `Animation frame ${frameCount}, shouldContinue: ${shouldContinue}`
-                );
-
                 // Continue the animation if we should and still have a touch
                 // Give it a few frames to start detecting movement
                 if ((shouldContinue || frameCount < 5) && dpadTouch.current) {
                     animationFrameIdRef.current =
                         requestAnimationFrame(animate);
                 } else {
-                    console.log("Stopping animation, frameCount:", frameCount);
                     stopContinuousMovement();
                 }
             };
 
             // Start the animation loop immediately
-            console.log("Starting continuous movement animation");
             animate();
         }, [updateDpadMovement, stopContinuousMovement]);
 
@@ -385,35 +356,24 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Handle D-pad touch start
         const handleDpadTouchStart = useCallback(
             (e: TouchEvent) => {
-                console.log("D-pad touch start detected");
-
                 // Only process if we don't already have a dpad touch active
                 if (dpadTouch.current) {
-                    console.log("D-pad touch already active, ignoring");
                     return;
                 }
 
                 const touch = e.changedTouches[0];
                 if (!touch) {
-                    console.log("No touch detected");
                     return;
                 }
 
                 // Verify the touch is within the dpad element
                 if (!isTouchInElement(touch, dpadRef.current)) {
-                    console.log("Touch not within d-pad element");
                     return;
                 }
 
                 // NOW prevent default since we're handling this touch
                 e.preventDefault();
                 e.stopPropagation();
-
-                console.log("D-pad touch registered", {
-                    x: touch.clientX,
-                    y: touch.clientY,
-                    element: dpadRef.current?.getBoundingClientRect(),
-                });
 
                 // Register this touch as a dpad touch
                 setActiveTouchIds((prev) => ({
@@ -447,11 +407,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Handle joystick touch start
         const handleJoystickTouchStart = useCallback(
             (e: TouchEvent) => {
-                console.log("Joystick touch start detected");
-
                 // Only process if we don't already have a joystick touch active
                 if (joystickTouch.current) {
-                    console.log("Joystick touch already active, ignoring");
                     return;
                 }
 
@@ -459,15 +416,12 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 if (!touch) return;
 
                 if (!isTouchInElement(touch, joystickRef.current)) {
-                    console.log("Touch not within joystick element");
                     return;
                 }
 
                 // NOW prevent default since we're handling this touch
                 e.preventDefault();
                 e.stopPropagation();
-
-                console.log("Joystick touch registered");
 
                 // Register this touch as a joystick touch
                 setActiveTouchIds((prev) => ({
@@ -492,8 +446,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Handle global touch starts - route to appropriate handler
         const handleGlobalTouchStart = useCallback(
             (e: TouchEvent) => {
-                console.log("Global touch start", e.touches.length);
-
                 // Only process touches if they're actually in our control areas
                 let handledTouch = false;
 
@@ -502,14 +454,12 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
 
                     // Check if touch is in D-pad
                     if (isTouchInElement(touch, dpadRef.current)) {
-                        console.log("Touch detected in d-pad");
                         handleDpadTouchStart(e);
                         handledTouch = true;
                         return; // Only handle one touch at a time
                     }
                     // Check if touch is in joystick
                     else if (isTouchInElement(touch, joystickRef.current)) {
-                        console.log("Touch detected in joystick");
                         handleJoystickTouchStart(e);
                         handledTouch = true;
                         return; // Only handle one touch at a time
@@ -518,9 +468,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
 
                 // If touch wasn't in our controls, don't prevent default or stop propagation
                 if (!handledTouch) {
-                    console.log(
-                        "Touch not in controls, allowing normal handling"
-                    );
                     return;
                 }
             },
@@ -551,25 +498,10 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         dpadTouch.current.currentX = touch.clientX;
                         dpadTouch.current.currentY = touch.clientY;
 
-                        console.log("D-pad touch move:", {
-                            identifier: touch.identifier,
-                            oldPos: { x: oldX, y: oldY },
-                            newPos: { x: touch.clientX, y: touch.clientY },
-                            startPos: {
-                                x: dpadTouch.current.startX,
-                                y: dpadTouch.current.startY,
-                            },
-                            dx: touch.clientX - dpadTouch.current.startX,
-                            dy: touch.clientY - dpadTouch.current.startY,
-                        });
-
                         handledTouch = true;
 
                         // Restart continuous movement if not already running
                         if (!animationFrameIdRef.current) {
-                            console.log(
-                                "Restarting continuous movement from touch move"
-                            );
                             startContinuousMovement();
                         }
                     } else if (
@@ -581,10 +513,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         e.stopPropagation();
                         joystickTouch.current.currentX = touch.clientX;
                         joystickTouch.current.currentY = touch.clientY;
-                        console.log("Joystick touch move:", {
-                            identifier: touch.identifier,
-                            pos: { x: touch.clientX, y: touch.clientY },
-                        });
+
                         updateJoystickPosition();
                         handledTouch = true;
                     }
@@ -601,20 +530,11 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Handle touch end - with complete cleanup
         const handleTouchEnd = useCallback(
             (e: TouchEvent) => {
-                console.log("Touch end detected", e.changedTouches.length);
-
                 let handledTouch = false;
 
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     const touch = e.changedTouches[i];
                     const touchType = activeTouchIds[touch.identifier];
-
-                    console.log(
-                        "Touch end type:",
-                        touchType,
-                        "id:",
-                        touch.identifier
-                    );
 
                     // Only handle touches that we've been tracking
                     if (touchType) {
@@ -635,8 +555,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                             dpadTouch.current &&
                             touch.identifier === dpadTouch.current.identifier
                         ) {
-                            console.log("D-pad touch ended, cleaning up");
-
                             // Clean up any active key presses
                             if (dpadTouch.current.activeKeys) {
                                 if (dpadTouch.current.activeKeys.w)
@@ -695,8 +613,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                             touch.identifier ===
                                 joystickTouch.current.identifier
                         ) {
-                            console.log("Joystick touch ended, resetting");
-
                             joystickTouch.current = null;
 
                             // Smoothly reset rotation
@@ -746,8 +662,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
 
         // Clean up animation frames and key events on unmount - FIXED to prevent infinite re-renders
         useEffect(() => {
-            console.log("Setting up touch event listeners");
-
             // Store reference to simulateKeyEvent for cleanup
             const currentSimulateKeyEvent = simulateKeyEvent;
 
@@ -780,21 +694,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 capture: false,
             });
 
-            // Log the d-pad element's position and size
-            if (dpadRef.current) {
-                const rect = dpadRef.current.getBoundingClientRect();
-                console.log("D-pad element position and size:", {
-                    left: rect.left,
-                    top: rect.top,
-                    width: rect.width,
-                    height: rect.height,
-                    bottom: rect.bottom,
-                    right: rect.right,
-                });
-            }
-
             return () => {
-                console.log("Cleaning up touch event listeners");
                 // Cancel any animation frames
                 if (animationFrameIdRef.current) {
                     cancelAnimationFrame(animationFrameIdRef.current);
@@ -890,8 +790,6 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 joystickKnobRef.current.style.transform = "translate(0px, 0px)";
                 joystickKnobRef.current.style.boxShadow = "none";
             }
-
-            console.log("VirtualControls initial state reset");
         }, [setVirtualMovement, setVirtualRotation]);
 
         // Dynamic styles based on performance settings

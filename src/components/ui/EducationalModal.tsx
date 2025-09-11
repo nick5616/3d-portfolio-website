@@ -307,6 +307,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     }, [isOpen, isMobile]);
 
     const handleClose = () => {
+        console.log("handleClose");
         if (dontShowAgain) {
             localStorage.setItem("dontShowWelcome", "true");
         }
@@ -325,7 +326,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     if (!isOpen) return null;
 
     const modalStyle = isMobile
-        ? { pointerEvents: "auto" as const, zIndex: 10000 }
+        ? { pointerEvents: "auto" as const, zIndex: 60 }
         : { pointerEvents: "auto" as const };
 
     return (
@@ -336,6 +337,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={handleClose}
+                onTouchEnd={handleClose}
             />
 
             <div
@@ -345,11 +347,13 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         : "w-full max-w-3xl mx-4 p-6"
                 }`}
                 onClick={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
             >
                 {/* Close button */}
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                    onTouchEnd={handleClose}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
                 >
                     <svg
                         className="w-6 h-6"
@@ -434,7 +438,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                             </div>
                                         </div>
                                         <div className="text-sm text-white/50 text-center mb-4">
-                                            Tap objects to interact
+                                            Tap objects to interact with them
                                         </div>
                                         {!isLandscape && (
                                             <div className="mb-6">
@@ -569,6 +573,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         </label>
                         <button
                             onClick={handleClose}
+                            onTouchEnd={handleClose}
                             className={`px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all`}
                         >
                             Let's Begin
