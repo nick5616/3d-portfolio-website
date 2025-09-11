@@ -77,85 +77,92 @@ const QuickAccess: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { isMobile } = useDeviceDetection();
     if (isMobile) return null;
     return (
-        <div
-            className={`grid grid-cols-3 ${
-                isMobile ? "gap-2" : "gap-4"
-            } w-full`}
-        >
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    teleportToRoom("gallery", [7, 1.5, 0], [0, 0, 0]);
-                    onClose();
-                }}
-                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+        <>
+            <div className="flex flex-col mb-4 font-semibold text-lg">
+                Quick Access
+            </div>
+            <div
+                className={`grid grid-cols-3 ${
+                    isMobile ? "gap-2" : "gap-4"
+                } w-full`}
             >
-                <h3
-                    className={`font-semibold ${
-                        isMobile ? "text-sm mb-1" : "mb-2"
-                    }`}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        teleportToRoom("gallery", [7, 1.5, 0], [0, 0, 0]);
+                        onClose();
+                    }}
+                    className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                 >
-                    Art Gallery
-                </h3>
-                <p
-                    className={`${
-                        isMobile ? "text-xs" : "text-sm"
-                    } text-gray-400`}
+                    <h3
+                        className={`font-semibold ${
+                            isMobile ? "text-sm mb-1" : "mb-2"
+                        }`}
+                    >
+                        Art Gallery
+                    </h3>
+                    <p
+                        className={`${
+                            isMobile ? "text-xs" : "text-sm"
+                        } text-gray-400`}
+                    >
+                        {isMobile
+                            ? "View artwork"
+                            : "View my artwork collection"}
+                    </p>
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        teleportToRoom("projects", [0, 1.5, 7], [0, 0, 0]);
+                        onClose();
+                    }}
+                    className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                 >
-                    {isMobile ? "View artwork" : "View my artwork collection"}
-                </p>
-            </button>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    teleportToRoom("projects", [0, 1.5, 7], [0, 0, 0]);
-                    onClose();
-                }}
-                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
-            >
-                <h3
-                    className={`font-semibold ${
-                        isMobile ? "text-sm mb-1" : "mb-2"
-                    }`}
+                    <h3
+                        className={`font-semibold ${
+                            isMobile ? "text-sm mb-1" : "mb-2"
+                        }`}
+                    >
+                        Software
+                    </h3>
+                    <p
+                        className={`${
+                            isMobile ? "text-xs" : "text-sm"
+                        } text-gray-400`}
+                    >
+                        {isMobile ? "View projects" : "Check out my projects"}
+                    </p>
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        teleportToRoom(
+                            "about",
+                            [-2.5, 1.6, 0],
+                            [0, -Math.PI / 2, 0]
+                        );
+                        onClose();
+                    }}
+                    className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
                 >
-                    Software
-                </h3>
-                <p
-                    className={`${
-                        isMobile ? "text-xs" : "text-sm"
-                    } text-gray-400`}
-                >
-                    {isMobile ? "View projects" : "Check out my projects"}
-                </p>
-            </button>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    teleportToRoom(
-                        "about",
-                        [-2.5, 1.6, 0],
-                        [0, -Math.PI / 2, 0]
-                    );
-                    onClose();
-                }}
-                className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
-            >
-                <h3
-                    className={`font-semibold ${
-                        isMobile ? "text-sm mb-1" : "mb-2"
-                    }`}
-                >
-                    Activities
-                </h3>
-                <p
-                    className={`${
-                        isMobile ? "text-xs" : "text-sm"
-                    } text-gray-400`}
-                >
-                    {isMobile ? "Interactive" : "Interactive experiences"}
-                </p>
-            </button>
-        </div>
+                    <h3
+                        className={`font-semibold ${
+                            isMobile ? "text-sm mb-1" : "mb-2"
+                        }`}
+                    >
+                        Activities
+                    </h3>
+                    <p
+                        className={`${
+                            isMobile ? "text-xs" : "text-sm"
+                        } text-gray-400`}
+                    >
+                        {isMobile ? "Interactive" : "Interactive experiences"}
+                    </p>
+                </button>
+            </div>
+        </>
     );
 };
 
@@ -385,13 +392,6 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         </p>
                     </div>
 
-                    {/* Quick Access */}
-                    {!isMobile && (
-                        <div className="mb-8">
-                            <QuickAccess onClose={handleClose} />
-                        </div>
-                    )}
-
                     {/* Basic Controls */}
                     <div className={isMobile ? "flex-grow" : "mb-8"}>
                         <h2
@@ -542,6 +542,13 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Quick Access */}
+                    {!isMobile && (
+                        <div className="mb-8">
+                            <QuickAccess onClose={handleClose} />
                         </div>
                     )}
 
