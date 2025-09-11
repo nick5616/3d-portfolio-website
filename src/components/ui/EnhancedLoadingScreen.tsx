@@ -68,6 +68,7 @@ export const EnhancedLoadingScreen: React.FC = () => {
                     camera={{ position: [0, 0, 5], fov: 75 }}
                     style={{ background: "black" }}
                 >
+                    <color attach="background" args={["#000000"]} />
                     <LoadingEffectsRenderer effectType={CURRENT_EFFECT} />
                 </Canvas>
             </div>
@@ -76,15 +77,12 @@ export const EnhancedLoadingScreen: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-center bg-transparent">
                 <div className="max-w-sm w-full px-4">
                     <div className="relative">
-                        {/* Progress bar background */}
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                            {/* Progress bar fill */}
                             <div
                                 className="h-full bg-white rounded-full transition-all duration-300 ease-out"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
-                        {/* Loading phase text */}
                         <div className="mt-4 text-center text-white text-sm font-medium">
                             {loadingPhase === "initial" && (
                                 <>Loading Assets... {Math.round(progress)}%</>
