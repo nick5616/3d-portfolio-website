@@ -337,7 +337,6 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             <div
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={handleClose}
-                onTouchEnd={handleClose}
             />
 
             <div
@@ -347,12 +346,10 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         : "w-full max-w-3xl mx-4 p-6"
                 }`}
                 onClick={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
             >
                 {/* Close button */}
                 <button
                     onClick={handleClose}
-                    onTouchEnd={handleClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
                 >
                     <svg
@@ -572,8 +569,10 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                             <span>Don't show this again</span>
                         </label>
                         <button
-                            onClick={handleClose}
-                            onTouchEnd={handleClose}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleClose();
+                            }}
                             className={`px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all`}
                         >
                             Let's Begin
