@@ -52,6 +52,8 @@ interface ConsoleState {
     input: string;
     history: string[];
     isProcessing: boolean;
+    scrollOffset: number; // How many lines to scroll up from the bottom
+    rainbowMode: boolean; // Whether to show debug colors
 }
 
 interface SceneState {
@@ -101,8 +103,13 @@ interface SceneState {
     appendConsoleInput: (text: string) => void;
     backspaceConsoleInput: () => void;
     pushConsoleHistory: (line: string) => void;
+    replaceLastConsoleHistory: (line: string) => void;
     clearConsole: () => void;
     setConsoleProcessing: (processing: boolean) => void;
+    scrollConsoleUp: () => void;
+    scrollConsoleDown: () => void;
+    resetConsoleScroll: () => void;
+    toggleRainbowMode: () => void;
     // General scene actions
     setIsInteracting: (interacting: boolean) => void;
     updateCameraData: (cameraData: CameraData) => void;
@@ -183,6 +190,8 @@ export const useSceneStore = create<SceneState>((set) => {
             input: "",
             history: [],
             isProcessing: false,
+            scrollOffset: 0,
+            rainbowMode: false,
         },
         // Virtual controls state
         virtualMovement: {
@@ -260,6 +269,16 @@ export const useSceneStore = create<SceneState>((set) => {
                     history: [...state.console.history, line],
                 },
             })),
+        replaceLastConsoleHistory: (line) =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    history:
+                        state.console.history.length > 0
+                            ? [...state.console.history.slice(0, -1), line]
+                            : [line],
+                },
+            })),
         clearConsole: () =>
             set((state) => ({
                 console: { ...state.console, history: [], input: "" },
@@ -267,6 +286,42 @@ export const useSceneStore = create<SceneState>((set) => {
         setConsoleProcessing: (processing) =>
             set((state) => ({
                 console: { ...state.console, isProcessing: processing },
+            })),
+        scrollConsoleUp: () =>
+            set((state) => {
+                const MAX_VISIBLE_LINES = 6;
+                const maxOffset = Math.max(
+                    0,
+                    state.console.history.length - MAX_VISIBLE_LINES
+                );
+
+                return {
+                    console: {
+                        ...state.console,
+                        scrollOffset: Math.min(
+                            state.console.scrollOffset + 1,
+                            maxOffset
+                        ),
+                    },
+                };
+            }),
+        scrollConsoleDown: () =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    scrollOffset: Math.max(state.console.scrollOffset - 1, 0),
+                },
+            })),
+        resetConsoleScroll: () =>
+            set((state) => ({
+                console: { ...state.console, scrollOffset: 0 },
+            })),
+        toggleRainbowMode: () =>
+            set((state) => ({
+                console: {
+                    ...state.console,
+                    rainbowMode: !state.console.rainbowMode,
+                },
             })),
 
         setIsInteracting: (interacting) => set({ isInteracting: interacting }),

@@ -183,8 +183,55 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
         return lines;
     };
 
-    // Build console screen text
-    const consoleLines = consoleState.history.slice(-8); // last N lines
+    // Build console screen text with scrolling
+    const MAX_VISIBLE_LINES = 6; // Maximum lines visible on screen
+    const totalLines = consoleState.history.length;
+    const startIndex = Math.max(
+        0,
+        totalLines - MAX_VISIBLE_LINES - consoleState.scrollOffset
+    );
+    const endIndex = totalLines - consoleState.scrollOffset;
+    const consoleLines = consoleState.history.slice(startIndex, endIndex);
+
+    // ROYGBIV colors for debugging spacing
+    const debugColors = [
+        "#ff0000",
+        "#ff8800",
+        "#ffff00",
+        "#00ff00",
+        "#0088ff",
+        "#0000ff",
+        "#8800ff",
+    ];
+
+    // Function to get color for a line based on its position in history
+    const getLineColor = (lineIndex: number, isInput: boolean): string => {
+        // If rainbow mode is off, use normal green
+        if (!consoleState.rainbowMode) {
+            return "#00ff88";
+        }
+
+        const fullHistoryIndex = startIndex + lineIndex;
+
+        if (isInput) {
+            // For inputs, use the same color as the response that follows
+            // Find the next non-input line to get the response color
+            let responseIndex = fullHistoryIndex + 1;
+            while (
+                responseIndex < consoleState.history.length &&
+                consoleState.history[responseIndex].startsWith(">")
+            ) {
+                responseIndex++;
+            }
+            // If we found a response, use its color, otherwise use the input's own color
+            if (responseIndex < consoleState.history.length) {
+                return debugColors[responseIndex % debugColors.length];
+            }
+        }
+
+        // For responses, cycle through ROYGBIV based on position in full history
+        return debugColors[fullHistoryIndex % debugColors.length];
+    };
 
     // Create the prompt display with cursor positioning
     const createPromptWithCursor = (): string[] => {
@@ -334,23 +381,55 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
             {/* Console screen - lines stacked, prompt at bottom */}
             {consoleState.isActive && (
                 <group position={[0, 0.05, 0.103]}>
-                    {/* History lines - adjust position based on wrapped input lines */}
-                    {consoleLines.map((line, idx) => (
-                        <Text
-                            key={idx}
-                            position={[-0.82, -idx * 0.2 + 0.3, 0]}
-                            fontSize={0.07}
-                            color="#00ff88"
-                            anchorX="left"
-                            anchorY="middle"
-                            maxWidth={1.5}
-                            overflowWrap="break-word"
-                        >
-                            {line}
-                        </Text>
-                    ))}
+                    {/* History lines with smart spacing */}
+                    {consoleLines.map((line, idx) => {
+                        // Calculate Y position based on spacing from previous lines
+                        let yPosition = 0.3; // Start position
 
-                    {/* Render wrapped prompt lines */}
+                        // Calculate spacing for each line in order
+                        for (let i = 0; i < idx; i++) {
+                            const currentLineInLoop = consoleLines[i];
+                            const nextLineInLoop = consoleLines[i + 1];
+
+                            // Determine spacing after current line
+                            let spacing = 0.2; // Default spacing
+
+                            if (i + 1 < consoleLines.length) {
+                                const isCurrentInput =
+                                    currentLineInLoop.startsWith(">");
+                                const isNextInput =
+                                    nextLineInLoop.startsWith(">");
+
+                                // If current is input and next is response: normal spacing
+                                // If current is response and next is response: tight spacing
+                                // If current is response and next is input: normal spacing
+                                if (!isCurrentInput && !isNextInput) {
+                                    spacing = 0.1; // Tight spacing between consecutive responses
+                                } else {
+                                    spacing = 0.2; // Normal spacing for other transitions
+                                }
+                            }
+
+                            yPosition -= spacing;
+                        }
+
+                        return (
+                            <Text
+                                key={`${startIndex + idx}`}
+                                position={[-0.82, yPosition, 0]}
+                                fontSize={0.07}
+                                color={getLineColor(idx, line.startsWith(">"))}
+                                anchorX="left"
+                                anchorY="middle"
+                                maxWidth={1.5}
+                                overflowWrap="break-word"
+                            >
+                                {line}
+                            </Text>
+                        );
+                    })}
+
+                    {/* Render wrapped prompt lines - always at the top */}
                     {createPromptWithCursor().map((line, idx) => (
                         <Text
                             key={`prompt-${idx}`}

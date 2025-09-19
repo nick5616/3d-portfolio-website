@@ -274,10 +274,6 @@ export const CourageExperience: React.FC = () => {
                         setIsHoveringComputer(false);
                     },
                     onTrigger: (action: TriggerAction) => {
-                        console.log(
-                            "Computer interaction triggered:",
-                            action.type
-                        );
                         if (action.type === "keypress") {
                             setConsoleActive(true);
                         }
