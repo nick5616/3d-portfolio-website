@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { CourageComputer } from "../../models/CourageComputer";
 import { useSceneStore } from "../../../stores/sceneStore";
+import {
+    InteractionRaycaster,
+    TriggerAction,
+} from "../../core/InteractionRaycaster";
+import * as THREE from "three";
 
 export const CourageExperience: React.FC = () => {
-    const { setConsoleActive } = useSceneStore();
+    const { setConsoleActive, console: consoleState } = useSceneStore();
+    const computerRef = useRef<THREE.Mesh>(null);
+    const [isHoveringComputer, setIsHoveringComputer] = useState(false);
 
     return (
         <group>
@@ -161,21 +168,26 @@ export const CourageExperience: React.FC = () => {
             </group>
 
             {/* The Courage Computer on the desk */}
-            <CourageComputer
-                position={[0, 1.5, -3]}
-                rotation={[0, 0, 0]}
-                scale={[0.6, 0.6, 0.6]}
-            />
+            <group>
+                <CourageComputer
+                    position={[0, 1.5, -3]}
+                    rotation={[0, 0, 0]}
+                    scale={[0.6, 0.6, 0.6]}
+                />
+                {/* Interaction mesh positioned at the computer screen */}
+                <mesh ref={computerRef} position={[0, 1.5, -3]} visible={true}>
+                    <boxGeometry args={[1.5, 1.2, 0.5]} />
+                    <meshBasicMaterial
+                        transparent
+                        opacity={0.1}
+                        wireframe={true}
+                        color="#00ff00"
+                    />
+                </mesh>
+            </group>
 
             {/* Keyboard on the desk */}
-            <group
-                position={[0, 0.85, -2.8]}
-                rotation={[0, 0, 0]}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setConsoleActive(true);
-                }}
-            >
+            <group position={[0, 0.85, -2.8]} rotation={[0, 0, 0]}>
                 {/* Keyboard base */}
                 <mesh position={[0, 0, 0]}>
                     <boxGeometry args={[0.4, 0.02, 0.15]} />
@@ -239,6 +251,79 @@ export const CourageExperience: React.FC = () => {
                     ))
                 )}
             </group>
+
+            {/* Computer Interaction */}
+            <InteractionRaycaster
+                target={computerRef}
+                config={{
+                    maxDistance: 6,
+                    includeChildren: false,
+                    rayOrigin: "center",
+                    triggerActions: [
+                        { type: "keypress", key: "e", cooldown: 300 },
+                        { type: "hover" },
+                    ],
+                }}
+                callbacks={{
+                    onRayEnter: () => {
+                        console.log("Ray entered computer");
+                        setIsHoveringComputer(true);
+                    },
+                    onRayExit: () => {
+                        console.log("Ray exited computer");
+                        setIsHoveringComputer(false);
+                    },
+                    onTrigger: (action: TriggerAction) => {
+                        console.log(
+                            "Computer interaction triggered:",
+                            action.type
+                        );
+                        if (action.type === "keypress") {
+                            setConsoleActive(true);
+                        }
+                    },
+                }}
+                visual={{
+                    prompt: {
+                        content: (
+                            <div
+                                style={{
+                                    background: "rgba(0, 0, 0, 0.9)",
+                                    color: "white",
+                                    padding: "10px 16px",
+                                    borderRadius: "6px",
+                                    fontSize: "16px",
+                                    fontFamily: "Arial, sans-serif",
+                                    whiteSpace: "nowrap",
+                                    border: "2px solid rgba(255, 255, 255, 0.3)",
+                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+                                }}
+                            >
+                                Press{" "}
+                                <kbd
+                                    style={{
+                                        background: "#fff",
+                                        color: "#000",
+                                        padding: "3px 8px",
+                                        borderRadius: "4px",
+                                        fontSize: "14px",
+                                        fontWeight: "bold",
+                                        boxShadow:
+                                            "0 2px 4px rgba(0, 0, 0, 0.3)",
+                                    }}
+                                >
+                                    E
+                                </kbd>{" "}
+                                to interact
+                            </div>
+                        ),
+                        offset: [0, 0.6, 0],
+                        visible: isHoveringComputer && !consoleState.isActive,
+                        distanceScale: true,
+                        fadeTime: 300,
+                    },
+                }}
+            />
 
             {/* Warm homey lighting like in the show */}
             <pointLight

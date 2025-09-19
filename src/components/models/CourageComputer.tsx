@@ -27,7 +27,6 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
     const [currentText, setCurrentText] = useState("COMPUTER");
     const [isTyping, setIsTyping] = useState(false);
     const [cursor, setCursor] = useState("_");
-
     // Snarky AI messages
     const snarkyMessages = [
         "WHAT DO YOU WANT?",
@@ -49,17 +48,6 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
             emissive: "#003333",
             emissiveIntensity: 0.3,
             roughness: 0.9,
-        });
-    }, []);
-
-    // Text material with CRT glow
-    const textMaterial = useMemo(() => {
-        return new THREE.MeshStandardMaterial({
-            color: "#00ff88",
-            emissive: "#00ff88",
-            emissiveIntensity: 0.8,
-            transparent: true,
-            opacity: 0.9,
         });
     }, []);
 
@@ -171,9 +159,34 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
         // No glass animation needed anymore
     });
 
+    // Text wrapping configuration
+    const MAX_CHARS_PER_LINE = 34;
+
+    // Function to wrap text and return wrapped lines
+    const wrapText = (text: string, maxChars: number): string[] => {
+        if (text.length <= maxChars) return [text];
+
+        const lines: string[] = [];
+        let currentIndex = 0;
+
+        while (currentIndex < text.length) {
+            const endIndex = Math.min(currentIndex + maxChars, text.length);
+            lines.push(text.slice(currentIndex, endIndex));
+            currentIndex = endIndex;
+        }
+
+        return lines;
+    };
+
     // Build console screen text
     const consoleLines = consoleState.history.slice(-8); // last N lines
-    const promptLine = `> ${consoleState.input}${cursor}`;
+
+    // Create the prompt display with cursor positioning
+    const createPromptWithCursor = (): string[] => {
+        const inputWithCursor = `${consoleState.input}${cursor}`;
+        const promptWithCursor = `> ${inputWithCursor}`;
+        return wrapText(promptWithCursor, MAX_CHARS_PER_LINE);
+    };
 
     return (
         <group position={position} rotation={rotation} scale={scale}>
@@ -316,10 +329,27 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
             {/* Console screen - lines stacked, prompt at bottom */}
             {consoleState.isActive && (
                 <group position={[0, 0.05, 0.103]}>
+                    {/* History lines - adjust position based on wrapped input lines */}
                     {consoleLines.map((line, idx) => (
                         <Text
                             key={idx}
-                            position={[0, -0.3 + idx * 0.08, 0]}
+                            position={[-0.82, -idx * 0.12 + 0.3, 0]}
+                            fontSize={0.07}
+                            color="#00ff88"
+                            anchorX="left"
+                            anchorY="middle"
+                            maxWidth={1.5}
+                            overflowWrap="break-word"
+                        >
+                            {line}
+                        </Text>
+                    ))}
+
+                    {/* Render wrapped prompt lines */}
+                    {createPromptWithCursor().map((line, idx) => (
+                        <Text
+                            key={`prompt-${idx}`}
+                            position={[-0.82, 0.45 - idx * 0.08, 0]}
                             fontSize={0.07}
                             color="#00ff88"
                             anchorX="left"
@@ -329,16 +359,6 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                             {line}
                         </Text>
                     ))}
-                    <Text
-                        position={[-0.82, 0.4, 0]}
-                        fontSize={0.07}
-                        color="#00ff88"
-                        anchorX="left"
-                        anchorY="middle"
-                        maxWidth={1.5}
-                    >
-                        {promptLine}
-                    </Text>
                 </group>
             )}
 

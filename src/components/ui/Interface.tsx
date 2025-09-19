@@ -7,7 +7,6 @@ import { MouseStateIndicator } from "./MouseStateIndicator";
 import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
 import { MathGameOverlay } from "./MathGameOverlay";
-import { PositionDebug } from "./PositionDebug";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
@@ -139,7 +138,7 @@ export default function Interface() {
                     >
                         <div className="flex items-center gap-2">
                             <span className="inline-block w-2 h-2 bg-blue-400 rounded-full" />
-                            <span>Console Mode (Esc to exit)</span>
+                            <span>Press escape to leave</span>
                         </div>
                     </div>
                 </div>
