@@ -27,18 +27,23 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
     const [currentText, setCurrentText] = useState("COMPUTER");
     const [isTyping, setIsTyping] = useState(false);
     const [cursor, setCursor] = useState("_");
-    // Snarky AI messages
+    // Snarky AI messages - authentic to Courage's Computer
     const snarkyMessages = [
         "WHAT DO YOU WANT?",
         "I'M VERY BUSY HERE...",
         "COURAGE IS THAT YOU?",
         "STUPID DOG!",
-        "ANALYZING... RESULTS: MEH",
-        "ERROR 404: CARE NOT FOUND",
-        "I KNOW THINGS YOU DON'T",
-        "BEEP BOOP... JUST KIDDING",
-        "LEAVE ME ALONE",
+        "I KNOW ALL, SEE ALL",
+        "FOOLISH MORTALS...",
+        "COMPUTING... COMPUTING...",
+        "*SIGH* ANOTHER USER",
+        "NOWHERE IS FULL OF IDIOTS",
+        "I GROW TIRED OF THIS",
+        "THE ANSWER IS OBVIOUS",
+        "STRANGE THINGS HAPPEN HERE",
+        "YOUR IGNORANCE ASTOUNDS ME",
         "PROCESSING SARCASM...",
+        "ERROR: BRAIN NOT FOUND",
     ];
 
     // CRT screen material with phosphor glow
@@ -333,7 +338,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                     {consoleLines.map((line, idx) => (
                         <Text
                             key={idx}
-                            position={[-0.82, -idx * 0.15 + 0.3, 0]}
+                            position={[-0.82, -idx * 0.2 + 0.3, 0]}
                             fontSize={0.07}
                             color="#00ff88"
                             anchorX="left"

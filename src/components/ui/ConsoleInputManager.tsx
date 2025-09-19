@@ -54,10 +54,10 @@ export const ConsoleInputManager: React.FC = () => {
         setConsoleProcessing(true);
         try {
             // Use Netlify function endpoint
-            const endpoint = import.meta.env.DEV 
-                ? "/.netlify/functions/console-chat" 
+            const endpoint = import.meta.env.DEV
+                ? "/.netlify/functions/console-chat"
                 : "/api/console-chat";
-            
+
             const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
