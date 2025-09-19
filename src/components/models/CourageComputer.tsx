@@ -333,7 +333,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                     {consoleLines.map((line, idx) => (
                         <Text
                             key={idx}
-                            position={[-0.82, -idx * 0.12 + 0.3, 0]}
+                            position={[-0.82, -idx * 0.15 + 0.3, 0]}
                             fontSize={0.07}
                             color="#00ff88"
                             anchorX="left"

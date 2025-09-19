@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
 export const ConsoleInputManager: React.FC = () => {
@@ -24,24 +24,41 @@ export const ConsoleInputManager: React.FC = () => {
     }, [consoleState.isActive, setIsInteracting]);
 
     // Escape exits console and returns to look mode (pointer lock)
-    const exitConsole = () => {
+    const exitConsole = useCallback(() => {
         setConsoleActive(false);
         setIsInteracting(false);
         const canvas = document.querySelector("canvas");
         if (canvas) {
             canvas.requestPointerLock();
         }
-    };
+    }, [setConsoleActive, setIsInteracting]);
 
     // Submit input to backend LLM
-    const submitLine = async () => {
+    const submitLine = useCallback(async () => {
         const input = consoleState.input.trim();
-        if (!input || consoleState.isProcessing) return;
+        console.log(
+            "submitLine called with input:",
+            input,
+            "isProcessing:",
+            consoleState.isProcessing
+        );
+        if (!input || consoleState.isProcessing) {
+            console.log(
+                "Submission blocked - empty input or already processing"
+            );
+            return;
+        }
+        console.log("Adding to history and clearing input");
         pushConsoleHistory(`> ${input}`);
         setConsoleInput("");
         setConsoleProcessing(true);
         try {
-            const res = await fetch("/api/console-chat", {
+            // Use Netlify function endpoint
+            const endpoint = import.meta.env.DEV 
+                ? "/.netlify/functions/console-chat" 
+                : "/api/console-chat";
+            
+            const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -62,7 +79,14 @@ export const ConsoleInputManager: React.FC = () => {
         } finally {
             setConsoleProcessing(false);
         }
-    };
+    }, [
+        consoleState.input,
+        consoleState.isProcessing,
+        consoleState.history,
+        pushConsoleHistory,
+        setConsoleInput,
+        setConsoleProcessing,
+    ]);
 
     useEffect(() => {
         if (!consoleState.isActive) return;
@@ -77,6 +101,10 @@ export const ConsoleInputManager: React.FC = () => {
                 return;
             }
             if (e.key === "Enter" || e.code === "NumpadEnter") {
+                console.log(
+                    "Enter pressed, submitting line. Current input:",
+                    consoleState.input
+                );
                 submitLine();
                 return;
             }
@@ -95,7 +123,13 @@ export const ConsoleInputManager: React.FC = () => {
         return () => {
             document.removeEventListener("keydown", handleKeyDown, true);
         };
-    }, [consoleState.isActive, appendConsoleInput, backspaceConsoleInput]);
+    }, [
+        consoleState.isActive,
+        appendConsoleInput,
+        backspaceConsoleInput,
+        submitLine,
+        exitConsole,
+    ]);
 
     return null;
 };
