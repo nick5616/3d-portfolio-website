@@ -304,7 +304,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                                 action={`to enter ${theme.label}`}
                             />
                         ),
-                        offset: [0, 1.5, 0],
+                        offset: [0, 0.5, 0],
                         visible: isHoveringFromCenter,
                         distanceScale: true,
                         style: {
