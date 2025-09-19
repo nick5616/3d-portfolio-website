@@ -19,6 +19,7 @@ export const useAzureArtByIndex = (
     const [error, setError] = useState<string | null>(null);
     const [artPieceName, setArtPieceName] = useState<string>("");
     const [artPieceMetadata, setArtPieceMetadata] = useState<any>(null);
+    const [artPieceExists, setArtPieceExists] = useState<boolean>(false);
 
     useEffect(() => {
         const loadArtPiece = async () => {
@@ -42,12 +43,14 @@ export const useAzureArtByIndex = (
                     setArtPieceMetadata(null);
                     setArtPieceName("");
                     setImageUrl("");
+                    setArtPieceExists(false);
                     setIsLoading(false);
                     return;
                 }
 
                 setArtPieceMetadata(pieceMetadata);
                 setArtPieceName(pieceMetadata.fileName);
+                setArtPieceExists(true);
 
                 // If not enabled for network loading or Azure usage disabled, stop here
                 if (!enabled || !useAzureStorage) {
@@ -84,5 +87,6 @@ export const useAzureArtByIndex = (
         error,
         artPieceName,
         artPieceMetadata,
+        artPieceExists,
     };
 };

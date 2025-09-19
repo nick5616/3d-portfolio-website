@@ -1,6 +1,6 @@
 import { useLoader, useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useAzureArtByIndex } from "../../hooks/useAzureArtByIndex";
 import { ArtPlaque } from "./ArtPlaque";
@@ -86,6 +86,7 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         isLoading,
         error,
         artPieceName,
+        artPieceExists,
     } = useAzureArtByIndex(artPieceIndex, useAzureStorage, isNear);
 
     const finalArtPieceName = artPieceName;
@@ -171,6 +172,11 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
 
     // If not near, or no valid image, show empty frame (aesthetic placeholder)
     const hasImage = Boolean(finalImageUrl);
+
+    // Don't render anything if the art piece doesn't exist
+    if (!artPieceExists && !isLoading) {
+        return null;
+    }
 
     return (
         <group

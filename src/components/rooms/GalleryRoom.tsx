@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
@@ -148,22 +148,36 @@ const buildGalleryLayout = (
 };
 
 export const GalleryRoom: React.FC<GalleryRoomProps> = ({
-    config,
     materials,
     wallThickness,
     width,
     height,
     depth,
 }) => {
+    const [availableArtCount, setAvailableArtCount] = useState<number>(0);
+
     React.useEffect(() => {
         ArtPieceMapper.clearCache();
+
+        // Get the actual number of available art pieces
+        ArtPieceMapper.getArtPieceCount().then((count) => {
+            setAvailableArtCount(count);
+        });
     }, []);
 
-    const totalFrames = 44; // reduced overall to lighten density
-    const layout = useMemo(
-        () => buildGalleryLayout(totalFrames, width, depth, wallThickness),
-        [totalFrames, width, depth, wallThickness]
-    );
+    // Use the actual number of available art pieces instead of a fixed number
+    const layout = useMemo(() => {
+        if (availableArtCount === 0) {
+            // Return empty layout while loading
+            return [];
+        }
+        return buildGalleryLayout(
+            availableArtCount,
+            width,
+            depth,
+            wallThickness
+        );
+    }, [availableArtCount, width, depth, wallThickness]);
 
     return (
         <>
