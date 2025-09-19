@@ -1,5 +1,6 @@
 import { BlobServiceClient } from "@azure/storage-blob";
 import { azureStorageConfig } from "../configs/azureConfig";
+import { loadingManager } from "./loadingManager";
 
 // Configuration interface for Azure Storage
 interface AzureStorageConfig {
@@ -36,10 +37,28 @@ export class AzureStorageService {
         this.blobServiceClient = new BlobServiceClient(config.sasUrl);
         // The SAS URL already points to the container, so we use empty string
         this.containerClient = this.blobServiceClient.getContainerClient("");
+
+        // Register this service with the loading manager
+        loadingManager.setAzureStorageService(this);
     }
 
     /**
-     * Get the URL for a specific art piece by name
+     * Get the URL for a specific art piece by name using the loading manager
+     * @param artPieceName - The name of the art piece (without extension)
+     * @param fileName - The actual file name with extension
+     * @param priority - Priority for loading (higher = more important)
+     * @returns Promise<string> - The blob URL
+     */
+    async getArtPieceUrlQueued(
+        artPieceName: string,
+        fileName?: string,
+        priority: number = 0
+    ): Promise<string> {
+        return loadingManager.loadArtPiece(artPieceName, fileName, priority);
+    }
+
+    /**
+     * Get the URL for a specific art piece by name (direct method, bypasses queue)
      * @param artPieceName - The name of the art piece (without extension)
      * @param fileName - The actual file name with extension
      * @returns Promise<string> - The blob URL
@@ -201,7 +220,7 @@ export class AzureStorageService {
         try {
             // Try to list blobs to test connection
             const iterator = this.containerClient.listBlobsFlat();
-            const firstBlob = await iterator.next();
+            await iterator.next();
 
             return { success: true };
         } catch (error) {

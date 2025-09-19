@@ -39,10 +39,11 @@ const useImageWithFallback = (imageUrl: string) => {
             setError(null);
 
             try {
-                // First, try to get the Azure URL
-                const azureUrl = await azureStorageService.getArtPieceUrl(
+                // First, try to get the Azure URL using the loading manager
+                const azureUrl = await azureStorageService.getArtPieceUrlQueued(
                     imageUrl,
-                    imageUrl
+                    imageUrl,
+                    0 // Default priority
                 );
                 setFinalImageUrl(azureUrl);
                 console.log(`✓ ArtFrame: Loaded from Azure - ${imageUrl}`);

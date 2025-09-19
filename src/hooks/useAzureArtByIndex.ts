@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { azureStorageService } from "../utils/azureStorage";
 import { ArtPieceMapper } from "../utils/artPieceMapper";
-import { getArtPieceByIndex } from "../configs/artMetadata";
 
 /**
  * Hook for loading art pieces from Azure Storage by index
@@ -57,10 +56,11 @@ export const useAzureArtByIndex = (
                     return;
                 }
 
-                // Fetch Azure URL
-                const url = await azureStorageService.getArtPieceUrl(
+                // Fetch Azure URL using the loading manager queue
+                const url = await azureStorageService.getArtPieceUrlQueued(
                     pieceMetadata.fileName,
-                    pieceMetadata.fileName
+                    pieceMetadata.fileName,
+                    0 // Default priority
                 );
                 setImageUrl(url);
             } catch (err) {

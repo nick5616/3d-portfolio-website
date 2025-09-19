@@ -23,8 +23,10 @@ export const useAzureArt = (artPieceName: string) => {
                 setIsLoading(true);
                 setError(null);
 
-                const url = await azureStorageService.getArtPieceUrl(
-                    artPieceName
+                const url = await azureStorageService.getArtPieceUrlQueued(
+                    artPieceName,
+                    undefined,
+                    0 // Default priority
                 );
                 setImageUrl(url);
             } catch (err) {
