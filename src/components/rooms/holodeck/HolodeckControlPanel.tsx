@@ -161,7 +161,7 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
         { experience: "off" as const, label: "Off", color: "#666", icon: "" },
         {
             experience: "computer" as const,
-            label: "Courage",
+            label: "Coward Dog",
             color: "#ff6600",
             icon: "",
         },
