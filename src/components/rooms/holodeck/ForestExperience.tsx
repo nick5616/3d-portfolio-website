@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -66,20 +65,31 @@ export const ForestExperience: React.FC = () => {
     // Initialize fairy lights, particles, and trees (static positions)
     useEffect(() => {
         // Generate tree positions once and store them
-        const initialTrees: Tree[] = Array.from({ length: 6 }).map((_, i) => {
-            const angle = (i / 6) * Math.PI * 2;
+        // Control panel is at [3.45, 2, 0] - avoid placing trees in front of it
+        const initialTrees: Tree[] = [];
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        while (initialTrees.length < 6 && attempts < maxAttempts) {
+            const angle = Math.random() * Math.PI * 2;
             const radius = 2.5 + Math.random() * 1.2;
-            return {
-                position: [
-                    Math.cos(angle) * radius,
-                    0,
-                    Math.sin(angle) * radius,
-                ] as [number, number, number],
-                height: 2.5 + Math.random() * 1,
-                trunkRadius: 0.15 + Math.random() * 0.1,
-                foliageSize: 1 + Math.random() * 0.5,
-            };
-        });
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+
+            // Check if this position would block the control panel
+            // Control panel is at [3.45, 2, 0], so avoid area around x > 2.5 and z between -1.5 and 1.5
+            const blocksControlPanel = x > 2.5 && Math.abs(z) < 1.5;
+
+            if (!blocksControlPanel) {
+                initialTrees.push({
+                    position: [x, 0, z] as [number, number, number],
+                    height: 2.5 + Math.random() * 1,
+                    trunkRadius: 0.15 + Math.random() * 0.1,
+                    foliageSize: 1 + Math.random() * 0.5,
+                });
+            }
+            attempts++;
+        }
         setTrees(initialTrees);
 
         const initialFairyLights: FairyLight[] = Array.from({ length: 12 }).map(
