@@ -331,19 +331,18 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 "
             style={modalStyle}
         >
             <div
-                className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+                className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm "
                 onClick={handleClose}
             />
-
             <div
-                className={`relative bg-gray-900 rounded-xl shadow-2xl border border-white/10 ${
+                className={`relative bg-gray-900 rounded-xl shadow-2xl border border-white/10 overflow-y-auto h-[90%] ${
                     isMobile
                         ? "w-full h-full m-0 rounded-none flex flex-col justify-between"
-                        : "w-full max-w-3xl mx-4 p-6"
+                        : "w-full max-w-3xl p-4"
                 }`}
                 onClick={(e) => e.stopPropagation()}
             >
