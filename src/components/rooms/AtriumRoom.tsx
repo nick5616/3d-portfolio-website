@@ -111,49 +111,14 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
 
     // Initialize enhanced effects
     useEffect(() => {
-        // Create grassy textured floor
-        if (!grassFloorRef.current && scene) {
-            grassMaterialRef.current = createGrassFloorShader();
-
-            // Create a large floor plane that covers the room more completely
-            const floorGeometry = new THREE.PlaneGeometry(
-                width * 0.98,
-                depth * 0.98,
-                128,
-                128
-            );
-            grassFloorRef.current = new THREE.Mesh(
-                floorGeometry,
-                grassMaterialRef.current
-            );
-
-            // Position the floor horizontally at ground level
-            grassFloorRef.current.rotation.x = -Math.PI / 2;
-            grassFloorRef.current.position.y = 0.01; // Slightly above ground to avoid z-fighting
-
-            scene.add(grassFloorRef.current);
-        }
-
-        return () => {
-            // Cleanup
-            if (grassFloorRef.current) {
-                scene.remove(grassFloorRef.current);
-            }
-        };
+        // Note: Grass floor removed - now using stone floor material from enhanced materials
+        // The stone floor is applied through the BaseRoom component using materials.floor
     }, [scene, width, depth]);
 
     // Animation loop for shader uniforms - throttled for performance
     useFrame((state) => {
-        const elapsed = state.clock.elapsedTime;
-
-        // Only update grass shader on high quality settings, and throttle updates
-        if (grassMaterialRef.current && performance.quality === "high") {
-            // Update less frequently to reduce GPU load
-            if (Math.floor(elapsed * 30) % 2 === 0) {
-                // Update every other frame at 30fps
-                grassMaterialRef.current.uniforms.time.value = elapsed;
-            }
-        }
+        // Note: Grass shader animation removed - now using static stone floor material
+        // No animation needed for the stone floor PBR material
     });
 
     return (

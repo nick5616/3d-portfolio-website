@@ -295,6 +295,127 @@ export class EnhancedMaterialSystem {
         return fallbackMaterial;
     }
 
+    // Wall Stone 029 PBR Material for Floor
+    createWallStone029FloorPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "wallStone029FloorPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first - stone-like color
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#8B8B8B", // Stone grey color
+            roughness: 0.7,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 6; // All PBR textures available
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material with enhanced PBR properties
+                const material = new THREE.MeshStandardMaterial({
+                    // Base color map
+                    map: textures.baseColor,
+                    // Enhanced normal mapping for detailed surface relief
+                    normalMap: textures.normal,
+                    normalScale: new THREE.Vector2(1.5, 1.5), // Good detail for stone
+                    // Roughness map for realistic surface variation
+                    roughnessMap: textures.roughness,
+                    roughness: 0.6, // Base roughness for stone
+                    // Ambient occlusion for realistic shadows and depth
+                    aoMap: textures.ao,
+                    aoMapIntensity: 1.3, // Enhanced AO for stone depth
+                    // Displacement mapping for 3D stone details
+                    displacementMap: textures.height,
+                    displacementScale: 0.15, // Subtle displacement for stone texture
+                    displacementBias: -0.05, // Slight offset for depth
+                    // Material detail for additional surface variation
+                    emissiveMap: textures.materialDetail,
+                    emissiveIntensity: 0.05, // Very subtle emissive detail
+                    // Environment mapping for realistic reflections
+                    envMapIntensity: 0.6,
+                    side: THREE.DoubleSide,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load ALL available textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Wall_Stone_029_SD/Wall_Stone_029_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load stone base color texture:", error)
+        );
+        textures.normal = textureLoader.load(
+            "/images/Wall_Stone_029_SD/Wall_Stone_029_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load stone normal texture:", error)
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Wall_Stone_029_SD/Wall_Stone_029_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load stone roughness texture:", error)
+        );
+        textures.ao = textureLoader.load(
+            "/images/Wall_Stone_029_SD/Wall_Stone_029_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load stone AO texture:", error)
+        );
+        textures.height = textureLoader.load(
+            "/images/Wall_Stone_029_SD/Wall_Stone_029_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load stone height texture:", error)
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Wall_Stone_029_SD/material_1917.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load stone material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for optimal stone floor display
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(3, 3); // Larger repeat for floor coverage
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            // Ensure proper color space for accurate color reproduction
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
     // Marble White PBR Material - simplified to prevent z-fighting
     createMarbleWhitePBRMaterial(): THREE.MeshStandardMaterial {
         const cacheKey = "marbleWhitePBR";
@@ -737,6 +858,7 @@ export class EnhancedMaterialSystem {
                 return {
                     ...base,
                     walls: this.createMarbleWhitePBRMaterial(),
+                    floor: this.createWallStone029FloorPBRMaterial(),
                     ceiling: this.createWoodCeilingCoffersPBRMaterial(),
                     enhanced: {
                         // caustics: this.createCausticsShader(),
@@ -796,11 +918,7 @@ export class EnhancedMaterialSystem {
                         side: THREE.DoubleSide,
                         envMapIntensity: 1.2, // Enhanced environment reflections
                     }),
-                    floor: new THREE.MeshStandardMaterial({
-                        color: "#e0e0e0",
-                        roughness: 0.3,
-                        metalness: 0.1,
-                    }),
+                    floor: this.createWallStone029FloorPBRMaterial(),
                     ceiling: this.createWoodCeilingCoffersPBRMaterial(),
                 };
             case "gallery":

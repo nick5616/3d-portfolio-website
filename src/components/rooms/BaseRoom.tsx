@@ -93,7 +93,7 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
             >
                 <mesh position={[0, -0.1, 0]}>
                     <boxGeometry args={[width, 0.2, depth]} />
-                    <meshStandardMaterial color="#444444" />
+                    <primitive object={materials.floor} attach="material" />
                 </mesh>
             </RigidBody>
             {/* Ceiling */}
