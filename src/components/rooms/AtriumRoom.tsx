@@ -159,16 +159,27 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
     return (
         <>
             <group>
-                {/* Central ambient light */}
+                {/* Enhanced central ambient light */}
                 <pointLight
-                    position={[0, height * 0.8, 0]}
-                    intensity={0.8}
-                    distance={20}
-                    color="#F0F8FF"
-                    decay={2}
+                    position={[0, height * 0.9, 0]}
+                    intensity={1.2}
+                    distance={25}
+                    color="#FFFFFF"
+                    decay={1.5}
                 />
 
-                {/* Basic rim lighting */}
+                {/* Ceiling-focused lighting to showcase wood coffers */}
+                <spotLight
+                    position={[0, height * 0.6, 0]}
+                    target-position={[0, height, 0]}
+                    intensity={1.5}
+                    distance={15}
+                    angle={Math.PI / 3}
+                    penumbra={0.3}
+                    color="#FFF8DC" // Warm white to enhance wood tones
+                />
+
+                {/* Enhanced rim lighting with warmer tones */}
                 {Array.from({ length: 4 }, (_, i) => {
                     const angle = (i / 4) * Math.PI * 2;
                     const radius = 10;
@@ -177,13 +188,68 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                             key={i}
                             position={[
                                 Math.cos(angle) * radius,
-                                height * 0.7,
+                                height * 0.8,
                                 Math.sin(angle) * radius,
                             ]}
-                            intensity={0.3}
+                            intensity={0.6}
+                            distance={15}
+                            color="#FFF8DC"
+                            decay={1.8}
+                        />
+                    );
+                })}
+
+                {/* Additional upward lighting to illuminate ceiling details */}
+                <pointLight
+                    position={[0, height * 0.5, 0]}
+                    intensity={0.8}
+                    distance={20}
+                    color="#FFFACD"
+                    decay={2}
+                />
+
+                {/* Central ceiling lighting - like a beautiful chandelier effect */}
+                <pointLight
+                    position={[0, height * 0.95, 0]}
+                    intensity={2.0}
+                    distance={30}
+                    color="#FFFFFF"
+                    decay={1.2}
+                />
+
+                {/* Distributed ceiling lights for even illumination */}
+                {Array.from({ length: 9 }, (_, i) => {
+                    const gridSize = 3;
+                    const x = ((i % gridSize) - 1) * (width * 0.3);
+                    const z = (Math.floor(i / gridSize) - 1) * (depth * 0.3);
+                    return (
+                        <pointLight
+                            key={`ceiling-${i}`}
+                            position={[x, height * 0.92, z]}
+                            intensity={0.8}
                             distance={12}
-                            color="#F0F8FF"
-                            decay={2}
+                            color="#FFF8DC"
+                            decay={1.5}
+                        />
+                    );
+                })}
+
+                {/* Wall washing lights to make walls shine */}
+                {Array.from({ length: 4 }, (_, i) => {
+                    const angle = (i / 4) * Math.PI * 2;
+                    const radius = width * 0.4;
+                    const x = Math.cos(angle) * radius;
+                    const z = Math.sin(angle) * radius;
+                    return (
+                        <spotLight
+                            key={`wall-wash-${i}`}
+                            position={[x * 0.7, height * 0.8, z * 0.7]}
+                            target-position={[x, height * 0.5, z]}
+                            intensity={1.2}
+                            distance={20}
+                            angle={Math.PI / 4}
+                            penumbra={0.4}
+                            color="#FFFFFF"
                         />
                     );
                 })}

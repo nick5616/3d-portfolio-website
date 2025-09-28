@@ -164,6 +164,137 @@ export class EnhancedMaterialSystem {
         return fallbackMaterial;
     }
 
+    // Wood Ceiling Coffers PBR Material
+    createWoodCeilingCoffersPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "woodCeilingCoffersPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first - grey wood color to match texture
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#A0A0A0", // Grey wood color to match actual texture
+            roughness: 0.6,
+            metalness: 0.2, // Slightly more metallic for gold accents
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 7; // All PBR textures + Material_ file
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material with optimized PBR properties
+                const material = new THREE.MeshStandardMaterial({
+                    // Base color map - ensure proper color reproduction
+                    map: textures.baseColor,
+                    // Enhanced normal mapping for detailed surface relief
+                    normalMap: textures.normal,
+                    normalScale: new THREE.Vector2(2.0, 2.0), // Increased for more pronounced coffer details
+                    // Roughness map for realistic surface variation
+                    roughnessMap: textures.roughness,
+                    roughness: 0.4, // Base roughness for wood
+                    // Metallic map for gold accent variation
+                    metalnessMap: textures.metallic,
+                    metalness: 0.3, // Higher metalness to enhance gold accents
+                    // Ambient occlusion for realistic shadows and depth
+                    aoMap: textures.ao,
+                    aoMapIntensity: 1.5, // Enhanced AO for better depth
+                    // Displacement mapping for 3D coffer details
+                    displacementMap: textures.height,
+                    displacementScale: 0.3, // Increased for more pronounced coffers
+                    displacementBias: -0.15, // Better offset for depth
+                    // Material detail as emissive for gold accent enhancement
+                    emissiveMap: textures.materialDetail,
+                    emissiveIntensity: 0.2, // Enhanced emissive for gold accents
+                    // Environment mapping for realistic reflections
+                    envMapIntensity: 0.8,
+                    side: THREE.DoubleSide,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_basecolor.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load wood base color texture:", error)
+        );
+        textures.normal = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_normal.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load wood normal texture:", error)
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_roughness.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load wood roughness texture:", error)
+        );
+        textures.metallic = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_metallic.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load wood metallic texture:", error)
+        );
+        textures.ao = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_ambientOcclusion.jpg",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load wood AO texture:", error)
+        );
+        textures.height = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Wood_Ceiling_Coffers_001_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load wood height texture:", error)
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Wood_Ceiling_Coffers_001_SD/Material_1495.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load wood material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for optimal coffer pattern display and color accuracy
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1.5, 1.5); // Slightly reduced repeat for better detail visibility
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            // Ensure proper color space for accurate color reproduction
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
     // Marble White PBR Material - simplified to prevent z-fighting
     createMarbleWhitePBRMaterial(): THREE.MeshStandardMaterial {
         const cacheKey = "marbleWhitePBR";
@@ -174,17 +305,18 @@ export class EnhancedMaterialSystem {
             ) as THREE.MeshStandardMaterial;
         }
 
-        // Create a fallback material first
+        // Create a fallback material first - enhanced for shine
         const fallbackMaterial = new THREE.MeshStandardMaterial({
-            color: "#f5f5f5", // Marble-like color
-            roughness: 0.3,
-            metalness: 0.1,
+            color: "#f8f8f8", // Brighter marble-like color
+            roughness: 0.1, // Much smoother for shine
+            metalness: 0.3, // More metallic for reflections
             side: THREE.DoubleSide,
             transparent: false,
             alphaTest: 0,
             polygonOffset: true,
             polygonOffsetFactor: 5.0,
             polygonOffsetUnits: 5.0,
+            envMapIntensity: 1.2, // Enhanced environment reflections
             name: `marble-wall-${Math.random()}`,
         });
 
@@ -196,25 +328,36 @@ export class EnhancedMaterialSystem {
         textureLoader.load(
             "/images/Marble_White_006_SD/Marble_White_006_basecolor.jpg",
             (texture) => {
-                // Texture loaded successfully, update the material
-                const material = new THREE.MeshStandardMaterial({
+                // Configure texture settings for enhanced appearance FIRST
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2, 2);
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.generateMipmaps = true;
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+
+                // Update the existing fallback material with the loaded texture
+                fallbackMaterial.map = texture;
+                fallbackMaterial.needsUpdate = true;
+
+                // Also create a new enhanced material and cache it
+                const enhancedMaterial = new THREE.MeshStandardMaterial({
                     map: texture,
+                    roughness: 0.1, // Very smooth for marble shine
+                    metalness: 0.3, // Enhanced metallic properties
                     side: THREE.DoubleSide,
                     transparent: false,
                     alphaTest: 0,
                     polygonOffset: true,
                     polygonOffsetFactor: 5.0,
                     polygonOffsetUnits: 5.0,
-                    name: `marble-wall-${Math.random()}`,
+                    envMapIntensity: 1.2, // Enhanced reflections
+                    name: `marble-wall-enhanced`,
                 });
 
-                // Configure texture settings
-                texture.wrapS = THREE.RepeatWrapping;
-                texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(2, 2);
-
                 // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                this.materialCache.set(cacheKey, enhancedMaterial);
             },
             undefined,
             (error) => console.warn("Failed to load marble texture:", error)
@@ -594,6 +737,7 @@ export class EnhancedMaterialSystem {
                 return {
                     ...base,
                     walls: this.createMarbleWhitePBRMaterial(),
+                    ceiling: this.createWoodCeilingCoffersPBRMaterial(),
                     enhanced: {
                         // caustics: this.createCausticsShader(),
                         stoneColumn: this.createStoneColumnPBRMaterial(),
@@ -646,24 +790,18 @@ export class EnhancedMaterialSystem {
             case "atrium":
                 return {
                     walls: new THREE.MeshStandardMaterial({
-                        color: "#ffffff",
-                        roughness: 0.3,
-                        metalness: 0.1,
-                        // side: THREE.DoubleSide,
+                        color: "#f8f8f8", // Brighter marble-like color
+                        roughness: 0.1, // Much smoother for shine
+                        metalness: 0.3, // More metallic for reflections
+                        side: THREE.DoubleSide,
+                        envMapIntensity: 1.2, // Enhanced environment reflections
                     }),
                     floor: new THREE.MeshStandardMaterial({
                         color: "#e0e0e0",
                         roughness: 0.3,
                         metalness: 0.1,
                     }),
-                    ceiling: new THREE.MeshStandardMaterial({
-                        color: "#ffffff",
-                        roughness: 0.2,
-                        metalness: 0.05,
-                        emissive: "#ffffff",
-                        emissiveIntensity: 0.1,
-                        side: THREE.DoubleSide,
-                    }),
+                    ceiling: this.createWoodCeilingCoffersPBRMaterial(),
                 };
             case "gallery":
                 return {
