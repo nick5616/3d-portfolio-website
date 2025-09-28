@@ -188,23 +188,7 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                     );
                 })}
             </group>
-            {/* Glass Display - Recessed */}
-            <group position={[0, height * 0.5, depth / 2 - 0.5]}>
-                {/* Glass pane with 3D depth */}
-                <mesh>
-                    <boxGeometry args={[width * 0.85, height * 0.5, 0.3]} />
-                    <meshPhysicalMaterial
-                        transparent
-                        opacity={0.15}
-                        transmission={0.85}
-                        thickness={0.3}
-                        roughness={0.02}
-                        metalness={0.0}
-                        clearcoat={1.0}
-                        clearcoatRoughness={0.05}
-                    />
-                </mesh>
-            </group>
+            {/* Glass Display removed to prevent z-fighting with marble wall */}
         </>
     );
 };

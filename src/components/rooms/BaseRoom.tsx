@@ -28,9 +28,9 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
 }) => {
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
 
-    // Memoize wall configurations
-    const wallConfigs = useMemo(
-        () => [
+    // Memoize wall configurations - skip shared walls to prevent z-fighting
+    const wallConfigs = useMemo(() => {
+        const walls = [
             {
                 id: "north",
                 position: new THREE.Vector3(0, height / 2, -depth / 2 + 0.01),
@@ -55,9 +55,10 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 rotation: new THREE.Euler(0, Math.PI / 2, 0),
                 isVertical: true,
             },
-        ],
-        [width, height, depth]
-    );
+        ];
+
+        return walls;
+    }, [width, height, depth, config.id]);
 
     return (
         <>

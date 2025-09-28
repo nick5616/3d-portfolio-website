@@ -3,7 +3,7 @@ import { Preload } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
-import { getRoomMaterials } from "../../configs/materials";
+import { getEnhancedRoomMaterials } from "../../configs/enhancedMaterials";
 import { BaseRoom } from "../rooms/BaseRoom";
 import { AtriumRoom } from "../rooms/AtriumRoom";
 import { GalleryRoom } from "../rooms/GalleryRoom";
@@ -20,7 +20,7 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
     const [width, height, depth] = config.dimensions;
     const wallThickness = 0.5;
-    const materials = getRoomMaterials(config.id);
+    const materials = getEnhancedRoomMaterials(config.id);
 
     // Simple wall rendering - just render solid walls
     const renderWall = useMemo(

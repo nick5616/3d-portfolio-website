@@ -1,124 +1,28 @@
-import * as THREE from 'three';
-import { RoomMaterials } from '../types/material.types';
+import * as THREE from "three";
+import { RoomMaterials } from "../types/material.types";
 
 // Enhanced material system with custom shaders
 export class EnhancedMaterialSystem {
-  private static instance: EnhancedMaterialSystem;
-  private shaderUpdateCallbacks: Map<string, (elapsed: number) => void> = new Map();
+    private static instance: EnhancedMaterialSystem;
+    private shaderUpdateCallbacks: Map<string, (elapsed: number) => void> =
+        new Map();
+    private materialCache: Map<string, THREE.Material> = new Map();
 
-  static getInstance(): EnhancedMaterialSystem {
-    if (!EnhancedMaterialSystem.instance) {
-      EnhancedMaterialSystem.instance = new EnhancedMaterialSystem();
+    static getInstance(): EnhancedMaterialSystem {
+        if (!EnhancedMaterialSystem.instance) {
+            EnhancedMaterialSystem.instance = new EnhancedMaterialSystem();
+        }
+        return EnhancedMaterialSystem.instance;
     }
-    return EnhancedMaterialSystem.instance;
-  }
 
-  // ATRIUM SHADERS
-  createKintsugiMarbleShader(): THREE.ShaderMaterial {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        kintsugiIntensity: { value: 0.8 },
-        marbleScale: { value: 2.0 },
-        veinScale: { value: 8.0 }
-      },
-      vertexShader: `
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying vec2 vUv;
-        
-        void main() {
-          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-          vNormal = normalize(normalMatrix * normal);
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float time;
-        uniform float kintsugiIntensity;
-        uniform float marbleScale;
-        uniform float veinScale;
-        
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying vec2 vUv;
-        
-        // Noise functions
-        float random(vec2 st) {
-          return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-        }
-        
-        float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          float a = random(i);
-          float b = random(i + vec2(1.0, 0.0));
-          float c = random(i + vec2(0.0, 1.0));
-          float d = random(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
-        
-        float worleyNoise(vec2 st) {
-          vec2 i_st = floor(st);
-          vec2 f_st = fract(st);
-          float minDist = 1.0;
-          
-          for (int y = -1; y <= 1; y++) {
-            for (int x = -1; x <= 1; x++) {
-              vec2 neighbor = vec2(float(x), float(y));
-              vec2 point = random(i_st + neighbor) * vec2(1.0);
-              vec2 diff = neighbor + point - f_st;
-              float dist = length(diff);
-              minDist = min(minDist, dist);
-            }
-          }
-          return minDist;
-        }
-        
-        void main() {
-          // Base marble pattern
-          float marbleNoise = noise(vWorldPosition.xz * marbleScale);
-          float marblePattern = smoothstep(0.3, 0.7, marbleNoise);
-          
-          // Golden veins using worley noise
-          float veinNoise = worleyNoise(vWorldPosition.xz * veinScale);
-          float veinMask = smoothstep(0.85, 0.95, veinNoise);
-          
-          // Animated glow for veins
-          float glowPulse = sin(time * 2.0) * 0.5 + 0.5;
-          float veinGlow = veinMask * kintsugiIntensity * glowPulse;
-          
-          // Colors
-          vec3 marbleColor = vec3(0.96, 0.96, 0.98);
-          vec3 veinColor = vec3(1.0, 0.84, 0.0); // Gold
-          
-          // Final color mixing
-          vec3 finalColor = mix(marbleColor, veinColor, veinMask);
-          vec3 emissive = veinColor * veinGlow;
-          
-          gl_FragColor = vec4(finalColor + emissive * 0.3, 1.0);
-        }
-      `,
-      side: THREE.DoubleSide
-    });
-
-    this.shaderUpdateCallbacks.set('kintsugi', (elapsed: number) => {
-      material.uniforms.time.value = elapsed;
-    });
-
-    return material;
-  }
-
-  createCausticsShader(): THREE.ShaderMaterial {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        causticsScale: { value: 4.0 },
-        causticsSpeed: { value: 0.8 }
-      },
-      vertexShader: `
+    createCausticsShader(): THREE.ShaderMaterial {
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0.0 },
+                causticsScale: { value: 4.0 },
+                causticsSpeed: { value: 0.8 },
+            },
+            vertexShader: `
         varying vec3 vWorldPosition;
         varying vec2 vUv;
         
@@ -128,7 +32,7 @@ export class EnhancedMaterialSystem {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+            fragmentShader: `
         uniform float time;
         uniform float causticsScale;
         uniform float causticsSpeed;
@@ -168,63 +72,196 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(emissive, causticIntensity * 0.6);
         }
       `,
-      transparent: true,
-      blending: THREE.AdditiveBlending
-    });
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+        });
 
-    this.shaderUpdateCallbacks.set('caustics', (elapsed: number) => {
-      material.uniforms.time.value = elapsed;
-    });
+        this.shaderUpdateCallbacks.set("caustics", (elapsed: number) => {
+            material.uniforms.time.value = elapsed;
+        });
 
-    return material;
-  }
+        return material;
+    }
 
-  // GALLERY SHADERS
-  createGalleryWallMaterial(): THREE.MeshPhysicalMaterial {
-    return new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      roughness: 0.1,
-      metalness: 0.0,
-      clearcoat: 0.3,
-      clearcoatRoughness: 0.1,
-      reflectivity: 0.1,
-      side: THREE.DoubleSide
-    });
-  }
+    // Stone Column PBR Material - cached for performance
+    createStoneColumnPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "stoneColumnPBR";
 
-  createArtFrameSpotlight(
-    position: THREE.Vector3, 
-    target: THREE.Vector3, 
-    intensity: number = 0.8,
-    angle: number = 0.4,
-    penumbra: number = 0.5
-  ): THREE.SpotLight {
-    const spotlight = new THREE.SpotLight(0xffffff, intensity, 50, angle, penumbra);
-    spotlight.position.copy(position);
-    spotlight.target.position.copy(target);
-    spotlight.castShadow = true;
-    
-    // Enhanced shadow settings
-    spotlight.shadow.mapSize.width = 2048;
-    spotlight.shadow.mapSize.height = 2048;
-    spotlight.shadow.camera.near = 0.1;
-    spotlight.shadow.camera.far = 50;
-    spotlight.shadow.bias = -0.0001;
-    spotlight.shadow.normalBias = 0.02;
-    
-    return spotlight;
-  }
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
 
-  // PROJECTS SHADERS
-  createHolographicShader(): THREE.ShaderMaterial {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        hologramIntensity: { value: 0.8 },
-        scanlineFreq: { value: 50.0 },
-        glitchAmount: { value: 0.1 }
-      },
-      vertexShader: `
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#8B7355", // Stone-like color
+            roughness: 0.8,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 4; // Removed metallic texture
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    side: THREE.DoubleSide,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Stylized_Stone_Column_001_SD/Stylized_Stone_Column_001_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load base color texture:", error)
+        );
+        textures.normal = textureLoader.load(
+            "/images/Stylized_Stone_Column_001_SD/Stylized_Stone_Column_001_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load normal texture:", error)
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Stylized_Stone_Column_001_SD/Stylized_Stone_Column_001_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load roughness texture:", error)
+        );
+        textures.ao = textureLoader.load(
+            "/images/Stylized_Stone_Column_001_SD/Stylized_Stone_Column_001_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) => console.warn("Failed to load AO texture:", error)
+        );
+
+        // Configure texture settings
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+        });
+
+        return fallbackMaterial;
+    }
+
+    // Marble White PBR Material - simplified to prevent z-fighting
+    createMarbleWhitePBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "marbleWhitePBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#f5f5f5", // Marble-like color
+            roughness: 0.3,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+            transparent: false,
+            alphaTest: 0,
+            polygonOffset: true,
+            polygonOffsetFactor: 5.0,
+            polygonOffsetUnits: 5.0,
+            name: `marble-wall-${Math.random()}`,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+
+        textureLoader.load(
+            "/images/Marble_White_006_SD/Marble_White_006_basecolor.jpg",
+            (texture) => {
+                // Texture loaded successfully, update the material
+                const material = new THREE.MeshStandardMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: false,
+                    alphaTest: 0,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 5.0,
+                    polygonOffsetUnits: 5.0,
+                    name: `marble-wall-${Math.random()}`,
+                });
+
+                // Configure texture settings
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2, 2);
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            },
+            undefined,
+            (error) => console.warn("Failed to load marble texture:", error)
+        );
+
+        return fallbackMaterial;
+    }
+
+    createArtFrameSpotlight(
+        position: THREE.Vector3,
+        target: THREE.Vector3,
+        intensity: number = 0.8,
+        angle: number = 0.4,
+        penumbra: number = 0.5
+    ): THREE.SpotLight {
+        const spotlight = new THREE.SpotLight(
+            0xffffff,
+            intensity,
+            50,
+            angle,
+            penumbra
+        );
+        spotlight.position.copy(position);
+        spotlight.target.position.copy(target);
+        spotlight.castShadow = true;
+
+        // Enhanced shadow settings
+        spotlight.shadow.mapSize.width = 2048;
+        spotlight.shadow.mapSize.height = 2048;
+        spotlight.shadow.camera.near = 0.1;
+        spotlight.shadow.camera.far = 50;
+        spotlight.shadow.bias = -0.0001;
+        spotlight.shadow.normalBias = 0.02;
+
+        return spotlight;
+    }
+
+    // PROJECTS SHADERS
+    createHolographicShader(): THREE.ShaderMaterial {
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0.0 },
+                hologramIntensity: { value: 0.8 },
+                scanlineFreq: { value: 50.0 },
+                glitchAmount: { value: 0.1 },
+            },
+            vertexShader: `
         varying vec3 vWorldPosition;
         varying vec3 vNormal;
         varying vec2 vUv;
@@ -236,7 +273,7 @@ export class EnhancedMaterialSystem {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+            fragmentShader: `
         uniform float time;
         uniform float hologramIntensity;
         uniform float scanlineFreq;
@@ -271,25 +308,25 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(finalColor, finalIntensity * 0.7);
         }
       `,
-      transparent: true,
-      side: THREE.DoubleSide
-    });
+            transparent: true,
+            side: THREE.DoubleSide,
+        });
 
-    this.shaderUpdateCallbacks.set('holographic', (elapsed: number) => {
-      material.uniforms.time.value = elapsed;
-    });
+        this.shaderUpdateCallbacks.set("holographic", (elapsed: number) => {
+            material.uniforms.time.value = elapsed;
+        });
 
-    return material;
-  }
+        return material;
+    }
 
-  createFuturisticWallShader(): THREE.ShaderMaterial {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        circuitIntensity: { value: 0.3 },
-        techGlowColor: { value: new THREE.Vector3(0.0, 1.0, 1.0) }
-      },
-      vertexShader: `
+    createFuturisticWallShader(): THREE.ShaderMaterial {
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0.0 },
+                circuitIntensity: { value: 0.3 },
+                techGlowColor: { value: new THREE.Vector3(0.0, 1.0, 1.0) },
+            },
+            vertexShader: `
         varying vec3 vWorldPosition;
         varying vec2 vUv;
         
@@ -299,7 +336,7 @@ export class EnhancedMaterialSystem {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+            fragmentShader: `
         uniform float time;
         uniform float circuitIntensity;
         uniform vec3 techGlowColor;
@@ -328,27 +365,165 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(baseColor + emissive, 1.0);
         }
       `,
-      side: THREE.DoubleSide
-    });
+            side: THREE.DoubleSide,
+        });
 
-    this.shaderUpdateCallbacks.set('futuristicWall', (elapsed: number) => {
-      material.uniforms.time.value = elapsed;
-    });
+        this.shaderUpdateCallbacks.set("futuristicWall", (elapsed: number) => {
+            material.uniforms.time.value = elapsed;
+        });
 
-    return material;
-  }
+        return material;
+    }
 
-  // ABOUT ROOM SHADERS
-  createWireframeGridShader(): THREE.ShaderMaterial {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 },
-        gridScale: { value: 1.0 },
-        lineWidth: { value: 0.02 },
-        gridIntensity: { value: 1.0 },
-        dataFlowSpeed: { value: 1.0 }
-      },
-      vertexShader: `
+    // WALL NOISE SHADER - adds texture and depth to walls
+    createWallNoiseShader(): THREE.ShaderMaterial {
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0.0 },
+                noiseScale: { value: 2.0 },
+                noiseIntensity: { value: 0.3 },
+                baseColor: { value: new THREE.Vector3(0.96, 0.96, 0.98) },
+                noiseColor: { value: new THREE.Vector3(0.9, 0.9, 0.95) },
+                normalStrength: { value: 0.5 },
+            },
+            vertexShader: `
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+        varying vec3 vTangent;
+        varying vec3 vBitangent;
+        
+        void main() {
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vNormal = normalize(normalMatrix * normal);
+          vUv = uv;
+          
+          // Calculate tangent and bitangent for normal mapping
+          vec3 tangent = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+          vec3 bitangent = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+          vTangent = tangent;
+          vBitangent = bitangent;
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+            fragmentShader: `
+        uniform float time;
+        uniform float noiseScale;
+        uniform float noiseIntensity;
+        uniform vec3 baseColor;
+        uniform vec3 noiseColor;
+        uniform float normalStrength;
+        
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+        varying vec3 vTangent;
+        varying vec3 vBitangent;
+        
+        // Noise functions
+        float random(vec2 st) {
+          return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+        }
+        
+        float noise(vec2 st) {
+          vec2 i = floor(st);
+          vec2 f = fract(st);
+          float a = random(i);
+          float b = random(i + vec2(1.0, 0.0));
+          float c = random(i + vec2(0.0, 1.0));
+          float d = random(i + vec2(1.0, 1.0));
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+        }
+        
+        float fbm(vec2 st) {
+          float value = 0.0;
+          float amplitude = 0.5;
+          float frequency = 1.0;
+          
+          for (int i = 0; i < 4; i++) {
+            value += amplitude * noise(st);
+            st *= 2.0;
+            amplitude *= 0.5;
+          }
+          return value;
+        }
+        
+        // Calculate normal from height field
+        vec3 calculateNormal(vec2 uv, float height) {
+          float eps = 0.01;
+          float hL = fbm(uv + vec2(-eps, 0.0));
+          float hR = fbm(uv + vec2(eps, 0.0));
+          float hD = fbm(uv + vec2(0.0, -eps));
+          float hU = fbm(uv + vec2(0.0, eps));
+          
+          vec3 normal = normalize(vec3(
+            (hL - hR) / (2.0 * eps),
+            (hD - hU) / (2.0 * eps),
+            1.0
+          ));
+          
+          return normal;
+        }
+        
+        void main() {
+          // Create noise pattern based on world position
+          vec2 noiseUV = vWorldPosition.xz * noiseScale;
+          float noisePattern = fbm(noiseUV);
+          
+          // Add some variation based on UV coordinates
+          float uvNoise = noise(vUv * 4.0) * 0.3;
+          noisePattern += uvNoise;
+          
+          // Create height field for normal mapping
+          float height = noisePattern * noiseIntensity;
+          
+          // Calculate perturbed normal
+          vec3 perturbedNormal = calculateNormal(noiseUV, height);
+          
+          // Transform normal to world space
+          mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
+          vec3 worldNormal = normalize(TBN * perturbedNormal);
+          
+          // Mix base color with noise color
+          vec3 finalColor = mix(baseColor, noiseColor, noisePattern * noiseIntensity);
+          
+          // Enhanced lighting with normal mapping
+          vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+          float lightIntensity = dot(worldNormal, lightDir) * 0.5 + 0.5;
+          
+          // Add some rim lighting for depth
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          float rim = 1.0 - max(dot(worldNormal, viewDir), 0.0);
+          rim = pow(rim, 2.0);
+          
+          vec3 rimColor = vec3(0.8, 0.9, 1.0) * rim * 0.3;
+          
+          gl_FragColor = vec4(finalColor * lightIntensity + rimColor, 1.0);
+        }
+      `,
+            side: THREE.DoubleSide,
+        });
+
+        this.shaderUpdateCallbacks.set("wallNoise", (elapsed: number) => {
+            material.uniforms.time.value = elapsed;
+        });
+
+        return material;
+    }
+
+    // ABOUT ROOM SHADERS
+    createWireframeGridShader(): THREE.ShaderMaterial {
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0.0 },
+                gridScale: { value: 1.0 },
+                lineWidth: { value: 0.02 },
+                gridIntensity: { value: 1.0 },
+                dataFlowSpeed: { value: 1.0 },
+            },
+            vertexShader: `
         varying vec3 vWorldPosition;
         varying vec2 vUv;
         
@@ -358,7 +533,7 @@ export class EnhancedMaterialSystem {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+            fragmentShader: `
         uniform float time;
         uniform float gridScale;
         uniform float lineWidth;
@@ -397,179 +572,210 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(finalColor, finalIntensity * 0.8);
         }
       `,
-      transparent: true,
-      side: THREE.DoubleSide
-    });
+            transparent: true,
+            side: THREE.DoubleSide,
+        });
 
-    this.shaderUpdateCallbacks.set('wireframeGrid', (elapsed: number) => {
-      material.uniforms.time.value = elapsed;
-    });
+        this.shaderUpdateCallbacks.set("wireframeGrid", (elapsed: number) => {
+            material.uniforms.time.value = elapsed;
+        });
 
-    return material;
-  }
-
-  // PARTICLE SYSTEMS
-  createMistParticles(scene: THREE.Scene, count: number = 100): { particles: THREE.Points, animateMist: (elapsed: number) => void } {
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    const alphas = new Float32Array(count);
-    
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 40;
-      positions[i * 3 + 1] = Math.random() * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
-      
-      sizes[i] = Math.random() * 2 + 1;
-      alphas[i] = Math.random() * 0.5 + 0.1;
+        return material;
     }
-    
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
-    
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0.0 }
-      },
-      vertexShader: `
-        attribute float size;
-        attribute float alpha;
-        varying float vAlpha;
-        
-        void main() {
-          vAlpha = alpha;
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * (300.0 / -mvPosition.z);
-          gl_Position = projectionMatrix * mvPosition;
+
+    // Enhanced Room Materials
+    getEnhancedRoomMaterials(
+        roomId: string
+    ): RoomMaterials & { enhanced?: any } {
+        const base = this.getBaseMaterials(roomId);
+
+        switch (roomId) {
+            case "atrium":
+                return {
+                    ...base,
+                    walls: this.createMarbleWhitePBRMaterial(),
+                    enhanced: {
+                        // caustics: this.createCausticsShader(),
+                        stoneColumn: this.createStoneColumnPBRMaterial(),
+                    },
+                };
+
+            case "gallery":
+                return {
+                    ...base,
+                    walls: new THREE.MeshStandardMaterial({
+                        color: 0xffffff, // Simple white
+                        roughness: 0.4,
+                        metalness: 0.1,
+                        // side: THREE.DoubleSide,
+                    }),
+                    enhanced: {
+                        createSpotlight:
+                            this.createArtFrameSpotlight.bind(this),
+                    },
+                };
+
+            case "projects":
+                return {
+                    ...base,
+                    walls: this.createFuturisticWallShader(),
+                    enhanced: {
+                        holographic: this.createHolographicShader(),
+                    },
+                };
+
+            case "about":
+                return {
+                    ...base,
+                    walls: this.createWallNoiseShader(),
+                    enhanced: {
+                        wireframeGrid: this.createWireframeGridShader(),
+                    },
+                };
+
+            default:
+                return {
+                    ...base,
+                    walls: this.createWallNoiseShader(),
+                };
         }
-      `,
-      fragmentShader: `
-        varying float vAlpha;
-        
-        void main() {
-          float dist = distance(gl_PointCoord, vec2(0.5));
-          if (dist > 0.5) discard;
-          
-          float opacity = (1.0 - dist * 2.0) * vAlpha;
-          gl_FragColor = vec4(1.0, 1.0, 1.0, opacity * 0.3);
+    }
+
+    private getBaseMaterials(roomId: string): RoomMaterials {
+        switch (roomId) {
+            case "atrium":
+                return {
+                    walls: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.3,
+                        metalness: 0.1,
+                        // side: THREE.DoubleSide,
+                    }),
+                    floor: new THREE.MeshStandardMaterial({
+                        color: "#e0e0e0",
+                        roughness: 0.3,
+                        metalness: 0.1,
+                    }),
+                    ceiling: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.2,
+                        metalness: 0.05,
+                        emissive: "#ffffff",
+                        emissiveIntensity: 0.1,
+                        side: THREE.DoubleSide,
+                    }),
+                };
+            case "gallery":
+                return {
+                    walls: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.4,
+                        metalness: 0.1,
+                        side: THREE.DoubleSide,
+                    }),
+                    floor: new THREE.MeshStandardMaterial({
+                        color: "#e8e8e8",
+                        roughness: 0.5,
+                        metalness: 0.1,
+                    }),
+                    ceiling: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.3,
+                        metalness: 0.2,
+                        emissive: "#ffd700",
+                        emissiveIntensity: 0.05,
+                        side: THREE.DoubleSide,
+                    }),
+                    dividers: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.7,
+                        metalness: 0.0,
+                        side: THREE.DoubleSide,
+                    }),
+                };
+            case "projects":
+                return {
+                    walls: new THREE.MeshStandardMaterial({
+                        color: "#1a1a1a",
+                        roughness: 0.7,
+                        metalness: 0.3,
+                        side: THREE.DoubleSide,
+                    }),
+                    floor: new THREE.MeshStandardMaterial({
+                        color: "#2a2a2a",
+                        roughness: 0.6,
+                        metalness: 0.2,
+                    }),
+                    ceiling: new THREE.MeshStandardMaterial({
+                        color: "#0a0a0a",
+                        roughness: 0.8,
+                        metalness: 0.4,
+                        emissive: "#00ffff",
+                        emissiveIntensity: 0.1,
+                        side: THREE.DoubleSide,
+                    }),
+                };
+            case "about":
+                return {
+                    walls: new THREE.MeshStandardMaterial({
+                        color: "#f0e6d3",
+                        roughness: 0.6,
+                        metalness: 0.1,
+                        side: THREE.DoubleSide,
+                    }),
+                    floor: new THREE.MeshStandardMaterial({
+                        color: "#e6d5c3",
+                        roughness: 0.5,
+                        metalness: 0.1,
+                    }),
+                    ceiling: new THREE.MeshStandardMaterial({
+                        color: "#f5e6d3",
+                        roughness: 0.4,
+                        metalness: 0.05,
+                        emissive: "#ffa500",
+                        emissiveIntensity: 0.05,
+                        side: THREE.DoubleSide,
+                    }),
+                };
+            default:
+                console.log("default base materials");
+                return {
+                    walls: new THREE.MeshStandardMaterial({
+                        color: "#f5f5f5",
+                        roughness: 0.3,
+                        metalness: 0.1,
+                        side: THREE.DoubleSide,
+                    }),
+                    floor: new THREE.MeshStandardMaterial({
+                        color: "#e0e0e0",
+                        roughness: 0.3,
+                        metalness: 0.1,
+                    }),
+                    ceiling: new THREE.MeshStandardMaterial({
+                        color: "#ffffff",
+                        roughness: 0.2,
+                        metalness: 0.05,
+                        side: THREE.DoubleSide,
+                    }),
+                };
         }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-    
-    const particles = new THREE.Points(geometry, material);
-    
-    const animateMist = (elapsed: number) => {
-      const positions = particles.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < count; i++) {
-        positions[i * 3 + 1] += Math.sin(elapsed * 0.5 + i) * 0.01;
-        if (positions[i * 3 + 1] > 10) positions[i * 3 + 1] = 0;
-      }
-      particles.geometry.attributes.position.needsUpdate = true;
-    };
-    
-    scene.add(particles);
-    return { particles, animateMist };
-  }
-
-  // Enhanced Room Materials
-  getEnhancedRoomMaterials(roomId: string): RoomMaterials & { enhanced?: any } {
-    const base = this.getBaseMaterials(roomId);
-    
-    switch (roomId) {
-      case 'atrium':
-        return {
-          ...base,
-          walls: this.createKintsugiMarbleShader(),
-          enhanced: {
-            caustics: this.createCausticsShader(),
-            mist: (scene: THREE.Scene) => this.createMistParticles(scene)
-          }
-        };
-        
-      case 'gallery':
-        return {
-          ...base,
-          walls: this.createGalleryWallMaterial(),
-          enhanced: {
-            createSpotlight: this.createArtFrameSpotlight.bind(this)
-          }
-        };
-        
-      case 'projects':
-        return {
-          ...base,
-          walls: this.createFuturisticWallShader(),
-          enhanced: {
-            holographic: this.createHolographicShader()
-          }
-        };
-        
-      case 'about':
-        return {
-          ...base,
-          enhanced: {
-            wireframeGrid: this.createWireframeGridShader()
-          }
-        };
-        
-      default:
-        return base;
     }
-  }
 
-  private getBaseMaterials(roomId: string): RoomMaterials {
-    switch (roomId) {
-      case 'atrium':
-        return {
-          walls: new THREE.MeshStandardMaterial({ color: '#f5f5f5', roughness: 0.3, metalness: 0.1, side: THREE.DoubleSide }),
-          floor: new THREE.MeshStandardMaterial({ color: '#e0e0e0', roughness: 0.3, metalness: 0.1 }),
-          ceiling: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.2, metalness: 0.05, emissive: '#ffffff', emissiveIntensity: 0.1, side: THREE.DoubleSide })
-        };
-      case 'gallery':
-        return {
-          walls: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4, metalness: 0.1, side: THREE.DoubleSide }),
-          floor: new THREE.MeshStandardMaterial({ color: '#e8e8e8', roughness: 0.5, metalness: 0.1 }),
-          ceiling: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.3, metalness: 0.2, emissive: '#ffd700', emissiveIntensity: 0.05, side: THREE.DoubleSide }),
-          dividers: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.7, metalness: 0.0, side: THREE.DoubleSide })
-        };
-      case 'projects':
-        return {
-          walls: new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.7, metalness: 0.3, side: THREE.DoubleSide }),
-          floor: new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.6, metalness: 0.2 }),
-          ceiling: new THREE.MeshStandardMaterial({ color: '#0a0a0a', roughness: 0.8, metalness: 0.4, emissive: '#00ffff', emissiveIntensity: 0.1, side: THREE.DoubleSide })
-        };
-      case 'about':
-        return {
-          walls: new THREE.MeshStandardMaterial({ color: '#f0e6d3', roughness: 0.6, metalness: 0.1, side: THREE.DoubleSide }),
-          floor: new THREE.MeshStandardMaterial({ color: '#e6d5c3', roughness: 0.5, metalness: 0.1 }),
-          ceiling: new THREE.MeshStandardMaterial({ color: '#f5e6d3', roughness: 0.4, metalness: 0.05, emissive: '#ffa500', emissiveIntensity: 0.05, side: THREE.DoubleSide })
-        };
-      default:
-        return {
-          walls: new THREE.MeshStandardMaterial({ color: '#f5f5f5', roughness: 0.3, metalness: 0.1, side: THREE.DoubleSide }),
-          floor: new THREE.MeshStandardMaterial({ color: '#e0e0e0', roughness: 0.3, metalness: 0.1 }),
-          ceiling: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.2, metalness: 0.05, side: THREE.DoubleSide })
-        };
+    // Update all shader uniforms
+    updateShaders(elapsed: number): void {
+        this.shaderUpdateCallbacks.forEach((callback) => {
+            callback(elapsed);
+        });
     }
-  }
-
-  // Update all shader uniforms
-  updateShaders(elapsed: number): void {
-    this.shaderUpdateCallbacks.forEach((callback) => {
-      callback(elapsed);
-    });
-  }
 }
 
 // Export enhanced materials function
 export const getEnhancedRoomMaterials = (roomId: string) => {
-  return EnhancedMaterialSystem.getInstance().getEnhancedRoomMaterials(roomId);
+    return EnhancedMaterialSystem.getInstance().getEnhancedRoomMaterials(
+        roomId
+    );
 };
 
 export const updateAllShaders = (elapsed: number) => {
-  EnhancedMaterialSystem.getInstance().updateShaders(elapsed);
+    EnhancedMaterialSystem.getInstance().updateShaders(elapsed);
 };
