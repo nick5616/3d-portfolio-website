@@ -78,13 +78,13 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 shadow-mapSize={[1024, 1024]}
                 shadow-bias={-0.0001}
             />
-            {/* Single corner light for depth */}
-            <pointLight
+            {/* Single corner light for depth - reduced for atrium */}
+            {/* <pointLight
                 position={[0, height / 2, 0]}
-                intensity={0.3}
+                intensity={config.id === "atrium" ? 0.1 : 0.3}
                 distance={Math.max(width, depth)}
                 decay={1.5}
-            />
+            /> */}
             {/* Floor */}
             <RigidBody
                 type="fixed"

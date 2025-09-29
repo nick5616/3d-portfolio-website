@@ -152,18 +152,18 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [0, 0, 0] as [number, number, number],
         dimensions: [20, 7.5, 20], // width, height, depth (reduced height by 25%)
         lightPreset: {
-            ambient: { intensity: 0.5, color: "#ffffff" },
+            ambient: { intensity: 0.1, color: "#ffff00" }, // Reduced from 0.5
             directional: {
                 position: [10, 7.5, 0] as [number, number, number],
-                intensity: 0.8,
-                color: "#ffffff",
+                intensity: 0.0002, // Reduced from 0.8
+                color: "#ffff00",
             },
             spots: [
                 {
                     position: [0, 6, 0] as [number, number, number],
                     target: [0, 0, 0] as [number, number, number],
-                    intensity: 1,
-                    color: "#ffffff",
+                    intensity: 0.3, // Reduced from 1
+                    color: "#ffff00",
                 },
             ],
         },

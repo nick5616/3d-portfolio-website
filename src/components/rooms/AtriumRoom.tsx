@@ -106,45 +106,31 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
 }) => {
     const { scene } = useThree();
     const { performance } = useSceneStore();
-    const grassFloorRef = useRef<THREE.Mesh | null>(null);
-    const grassMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-
-    // Initialize enhanced effects
-    useEffect(() => {
-        // Note: Grass floor removed - now using stone floor material from enhanced materials
-        // The stone floor is applied through the BaseRoom component using materials.floor
-    }, [scene, width, depth]);
-
-    // Animation loop for shader uniforms - throttled for performance
-    useFrame((state) => {
-        // Note: Grass shader animation removed - now using static stone floor material
-        // No animation needed for the stone floor PBR material
-    });
 
     return (
         <>
             <group>
-                {/* Enhanced central ambient light */}
+                {/* Central ambient light - reduced intensity */}
                 <pointLight
                     position={[0, height * 0.9, 0]}
-                    intensity={1.2}
+                    intensity={0.4}
                     distance={25}
-                    color="#FFFFFF"
+                    color="#FFFF99"
                     decay={1.5}
                 />
 
-                {/* Ceiling-focused lighting to showcase wood coffers */}
+                {/* Subtle ceiling spotlight for wood coffers */}
                 <spotLight
                     position={[0, height * 0.6, 0]}
                     target-position={[0, height, 0]}
-                    intensity={1.5}
+                    intensity={0.6}
                     distance={15}
                     angle={Math.PI / 3}
                     penumbra={0.3}
                     color="#FFF8DC" // Warm white to enhance wood tones
                 />
 
-                {/* Enhanced rim lighting with warmer tones */}
+                {/* Reduced rim lighting */}
                 {Array.from({ length: 4 }, (_, i) => {
                     const angle = (i / 4) * Math.PI * 2;
                     const radius = 10;
@@ -156,7 +142,7 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                                 height * 0.8,
                                 Math.sin(angle) * radius,
                             ]}
-                            intensity={0.6}
+                            intensity={0.2}
                             distance={15}
                             color="#FFF8DC"
                             decay={1.8}
@@ -164,40 +150,14 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                     );
                 })}
 
-                {/* Additional upward lighting to illuminate ceiling details */}
+                {/* Central ceiling lighting - reduced intensity */}
                 <pointLight
-                    position={[0, height * 0.5, 0]}
-                    intensity={0.8}
-                    distance={20}
-                    color="#FFFACD"
-                    decay={2}
+                    position={[0, height * 0.85, 0]}
+                    intensity={8}
+                    distance={0}
+                    color="#FFFFaa"
+                    decay={0.4}
                 />
-
-                {/* Central ceiling lighting - like a beautiful chandelier effect */}
-                <pointLight
-                    position={[0, height * 0.95, 0]}
-                    intensity={2.0}
-                    distance={30}
-                    color="#FFFFFF"
-                    decay={1.2}
-                />
-
-                {/* Distributed ceiling lights for even illumination */}
-                {Array.from({ length: 9 }, (_, i) => {
-                    const gridSize = 3;
-                    const x = ((i % gridSize) - 1) * (width * 0.3);
-                    const z = (Math.floor(i / gridSize) - 1) * (depth * 0.3);
-                    return (
-                        <pointLight
-                            key={`ceiling-${i}`}
-                            position={[x, height * 0.92, z]}
-                            intensity={0.8}
-                            distance={12}
-                            color="#FFF8DC"
-                            decay={1.5}
-                        />
-                    );
-                })}
 
                 {/* Wall washing lights to make walls shine */}
                 {Array.from({ length: 4 }, (_, i) => {
@@ -219,7 +179,6 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({
                     );
                 })}
             </group>
-            {/* Glass Display removed to prevent z-fighting with marble wall */}
         </>
     );
 };

@@ -164,6 +164,359 @@ export class EnhancedMaterialSystem {
         return fallbackMaterial;
     }
 
+    // Tiles 062 PBR Material for Walls
+    createTiles062WallPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "tiles062WallPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#f0f0f0", // Light grey color for tiles
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 6; // Base color, normal, roughness, AO, height, material
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    displacementMap: textures.height,
+                    emissiveMap: textures.materialDetail,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    displacementScale: 0.1,
+                    displacementBias: -0.05,
+                    emissiveIntensity: 0.1,
+                    side: THREE.DoubleSide,
+                    roughness: 0.4,
+                    metalness: 0.1,
+                    envMapIntensity: 0.3,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Tiles_062_SD/Tiles_062_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_062 base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Tiles_062_SD/Tiles_062_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load Tiles_062 normal texture:", error)
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Tiles_062_SD/Tiles_062_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_062 roughness texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Tiles_062_SD/Tiles_062_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load Tiles_062 AO texture:", error)
+        );
+        textures.height = textureLoader.load(
+            "/images/Tiles_062_SD/Tiles_062_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load Tiles_062 height texture:", error)
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Tiles_062_SD/material_2002.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_062 material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 2); // 2x2 tiling for walls
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
+    // Ceiling Drop Tiles PBR Material
+    createCeilingDropTilesPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "ceilingDropTilesPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#f0f0f0", // Light grey color for ceiling tiles
+            roughness: 0.3,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 4; // Base color, normal, roughness, AO
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    side: THREE.DoubleSide,
+                    roughness: 0.3,
+                    metalness: 0.1,
+                    envMapIntensity: 0.3,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Ceiling_Drop_Tiles_001_SD/Ceiling_Drop_Tiles_001_basecolor.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load ceiling drop tiles base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Ceiling_Drop_Tiles_001_SD/Ceiling_Drop_Tiles_001_normal.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load ceiling drop tiles normal texture:",
+                    error
+                )
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Ceiling_Drop_Tiles_001_SD/Ceiling_Drop_Tiles_001_roughness.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load ceiling drop tiles roughness texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Ceiling_Drop_Tiles_001_SD/Ceiling_Drop_Tiles_001_ambientOcclusion.jpg",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load ceiling drop tiles AO texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(4, 4); // 4x4 tiling for ceiling coverage
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
+    // Tiles Flutted 001 PBR Material for Floor
+    createTilesFlutted001FloorPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "tilesFlutted001FloorPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#f0f0f0", // Light grey color for tiles
+            roughness: 0.5,
+            metalness: 0.1,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 6; // Base color, normal, roughness, AO, height, material
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    displacementMap: textures.height,
+                    emissiveMap: textures.materialDetail,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    displacementScale: 0.15,
+                    displacementBias: -0.08,
+                    emissiveIntensity: 0.1,
+                    side: THREE.DoubleSide,
+                    roughness: 0.5,
+                    metalness: 0.1,
+                    envMapIntensity: 0.3,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/Tiles_Fluted_001_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/Tiles_Fluted_001_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 normal texture:",
+                    error
+                )
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/Tiles_Fluted_001_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 roughness texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/Tiles_Fluted_001_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 AO texture:",
+                    error
+                )
+        );
+        textures.height = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/Tiles_Fluted_001_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 height texture:",
+                    error
+                )
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Tiles_Flutted_001_SD/material_1902.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Tiles_Flutted_001 material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(3, 3); // 3x3 tiling for floor
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
     // Wood Ceiling Coffers PBR Material
     createWoodCeilingCoffersPBRMaterial(): THREE.MeshStandardMaterial {
         const cacheKey = "woodCeilingCoffersPBR";
@@ -857,9 +1210,9 @@ export class EnhancedMaterialSystem {
             case "atrium":
                 return {
                     ...base,
-                    walls: this.createMarbleWhitePBRMaterial(),
-                    floor: this.createWallStone029FloorPBRMaterial(),
-                    ceiling: this.createWoodCeilingCoffersPBRMaterial(),
+                    walls: this.createTiles062WallPBRMaterial(),
+                    floor: this.createTilesFlutted001FloorPBRMaterial(),
+                    ceiling: this.createCeilingDropTilesPBRMaterial(),
                     enhanced: {
                         // caustics: this.createCausticsShader(),
                         stoneColumn: this.createStoneColumnPBRMaterial(),
@@ -911,15 +1264,9 @@ export class EnhancedMaterialSystem {
         switch (roomId) {
             case "atrium":
                 return {
-                    walls: new THREE.MeshStandardMaterial({
-                        color: "#f8f8f8", // Brighter marble-like color
-                        roughness: 0.1, // Much smoother for shine
-                        metalness: 0.3, // More metallic for reflections
-                        side: THREE.DoubleSide,
-                        envMapIntensity: 1.2, // Enhanced environment reflections
-                    }),
-                    floor: this.createWallStone029FloorPBRMaterial(),
-                    ceiling: this.createWoodCeilingCoffersPBRMaterial(),
+                    walls: this.createTiles062WallPBRMaterial(),
+                    floor: this.createTilesFlutted001FloorPBRMaterial(),
+                    ceiling: this.createCeilingDropTilesPBRMaterial(),
                 };
             case "gallery":
                 return {
