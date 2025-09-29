@@ -40,7 +40,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "An innovative 3D e-commerce platform featuring interactive product models powered by Google Model Viewer. Users can rotate, zoom, and explore products in 3D before purchasing.",
         screenshotUrl: "/screenshots/curie-shop-desktop.png",
-        position: [-9, 2, -3],
+        position: [-9.7, 2, -3],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#999999",
@@ -56,7 +56,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "Mobile view of the innovative 3D e-commerce platform with touch-optimized controls for exploring interactive product models.",
         screenshotUrl: "/screenshots/curie-shop-mobile.png",
-        position: [-9, 2, 0],
+        position: [-9.7, 2, 0],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#999999",
@@ -72,7 +72,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "Personal portfolio website showcasing development work and projects with modern design and interactive elements.",
         screenshotUrl: "/screenshots/nicolas-portfolio.png",
-        position: [-9, 2, 3],
+        position: [-9.7, 2, 3],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -91,7 +91,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A stunning collection of digital art pieces created by Saucedog, featuring vibrant colors and unique artistic styles.",
         screenshotUrl: "/screenshots/saucedog-art.png",
-        position: [9, 2, 0],
+        position: [9.7, 2, 0],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#ffffff",
@@ -107,7 +107,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A mobile fitness app that helps you track your progress and stay motivated with personalized coaching features.",
         screenshotUrl: "/screenshots/pocket-coach.png",
-        position: [9, 2, -3],
+        position: [9.7, 2, -3],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#00FF00",
@@ -123,7 +123,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A mobile gaming platform for discovering and tracking video game quests and achievements with social features.",
         screenshotUrl: "/screenshots/vgq-mobile.png",
-        position: [9, 2, 3],
+        position: [9.7, 2, 3],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#ff00ff",
@@ -141,7 +141,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A comprehensive gaming platform for discovering and tracking video game quests and achievements with detailed analytics.",
         screenshotUrl: "/screenshots/vgq-desktop.png",
-        position: [-5, 2, -9],
+        position: [-5, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -158,7 +158,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A 3D shopping shelf and examine experience with interactive product models powered by Google Model Viewer.",
         screenshotUrl: "/screenshots/curie-world.png",
-        position: [5, 2, -9],
+        position: [5, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#dddddd",

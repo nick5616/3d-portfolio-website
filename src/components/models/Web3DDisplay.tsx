@@ -476,142 +476,6 @@ const ProximityLoadingOverlay: React.FC<{
     </div>
 );
 
-const CRTGlassPanel: React.FC<CRTGlassPanelProps> = ({
-    displayWidth,
-    displayHeight,
-    isMobileDisplay,
-    position,
-}) => {
-    // Create custom shader material for CRT glass effect
-    const glassMaterial = useMemo(() => {
-        const material = new THREE.MeshPhysicalMaterial({
-            transparent: true,
-            opacity: 0.25,
-            transmission: 0.75,
-            roughness: 0.02,
-            metalness: 0.0,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.005,
-            ior: 1.52,
-            thickness: 0.08,
-            color: new THREE.Color(0.88, 1.0, 0.92),
-            side: THREE.DoubleSide,
-            depthWrite: false,
-            reflectivity: 0.15,
-        });
-
-        return material;
-    }, []);
-
-    // Create curved geometry for CRT glass
-    const glassGeometry = useMemo(() => {
-        const width = displayWidth / 400;
-        const height = displayHeight / 400;
-
-        const radius = Math.max(width, height) * 0.8;
-
-        const geometry = new THREE.SphereGeometry(
-            radius,
-            64,
-            32,
-            Math.PI * 0.4,
-            Math.PI * 0.2,
-            Math.PI * 0.4,
-            Math.PI * 0.2
-        );
-
-        const scaleX = width / (radius * Math.PI * 0.2);
-        const scaleY = height / (radius * Math.PI * 0.2);
-        const scaleZ = 1.5;
-
-        geometry.scale(scaleX, scaleY, scaleZ);
-        geometry.translate(0, 0, 0.08);
-
-        return geometry;
-    }, [displayWidth, displayHeight]);
-
-    const meshRef = useRef<THREE.Mesh>(null);
-
-    const glassPosition: [number, number, number] = [0, 0, 0.02];
-
-    return (
-        <group>
-            {/* Retro CRT Monitor Housing */}
-            <group>
-                {/* Main CRT Body - Deep box like 2000s monitors */}
-                <mesh position={[0, 0, -0.3]}>
-                    <boxGeometry
-                        args={[
-                            displayWidth / 400 + 0.3,
-                            displayHeight / 400 + 0.3,
-                            0.6,
-                        ]}
-                    />
-                    <meshStandardMaterial
-                        color="#e8e8e8"
-                        roughness={0.4}
-                        metalness={0.1}
-                    />
-                </mesh>
-
-                {/* Front Bezel */}
-                <mesh position={[0, 0, 0.01]}>
-                    <boxGeometry
-                        args={[
-                            displayWidth / 400 + 0.15,
-                            displayHeight / 400 + 0.15,
-                            0.08,
-                        ]}
-                    />
-                    <meshStandardMaterial
-                        color="#f0f0f0"
-                        roughness={0.3}
-                        metalness={0.05}
-                    />
-                </mesh>
-
-                {/* Power LED */}
-                <mesh
-                    position={[
-                        (displayWidth / 400 + 0.15) / 2 - 0.05,
-                        -(displayHeight / 400 + 0.15) / 2 + 0.05,
-                        0.05,
-                    ]}
-                >
-                    <sphereGeometry args={[0.008, 8, 8]} />
-                    <meshStandardMaterial
-                        color="#00ff00"
-                        emissive="#00ff00"
-                        emissiveIntensity={0.5}
-                    />
-                </mesh>
-
-                {/* Brand Label */}
-                <mesh
-                    position={[
-                        -(displayWidth / 400 + 0.15) / 2 + 0.1,
-                        -(displayHeight / 400 + 0.15) / 2 + 0.03,
-                        0.05,
-                    ]}
-                >
-                    <planeGeometry args={[0.15, 0.03]} />
-                    <meshStandardMaterial color="#333333" />
-                </mesh>
-            </group>
-
-            {/* Curved CRT Glass with proper positioning */}
-            <mesh
-                position={glassPosition}
-                geometry={glassGeometry}
-                material={glassMaterial}
-                ref={meshRef}
-                renderOrder={-5}
-                raycast={() => null}
-            />
-        </group>
-    );
-};
-
 export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     position,
     rotation = [0, 0, 0],
@@ -782,44 +646,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                         roughness={isMobileDisplay ? 0.1 : 0.2}
                     />
                 </mesh>
-            )}
-
-            {/* Stand and base - only for non-CRT displays */}
-            {!crtStyle && (
-                <>
-                    <mesh
-                        position={[
-                            0,
-                            -(
-                                displayHeight / 400 +
-                                (isMobileDisplay ? 0.05 : 0.1)
-                            ) /
-                                2 -
-                                0.15,
-                            0.15,
-                        ]}
-                        rotation={[-Math.PI / 6, 0, 0]}
-                    >
-                        <boxGeometry args={[0.4, 1.2, 0.05]} />
-                        <meshStandardMaterial color="#2c2c2c" metalness={0.6} />
-                    </mesh>
-
-                    <mesh
-                        position={[
-                            0,
-                            -(
-                                displayHeight / 400 +
-                                (isMobileDisplay ? 0.05 : 0.1)
-                            ) /
-                                2 -
-                                0.8,
-                            0.4,
-                        ]}
-                    >
-                        <boxGeometry args={[0.6, 0.1, 0.4]} />
-                        <meshStandardMaterial color="#1a1a1a" metalness={0.6} />
-                    </mesh>
-                </>
             )}
 
             {/* Web content using Html component */}
@@ -1478,9 +1304,16 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
             {/* Display point light */}
             <pointLight
-                position={[0, 0, 0]}
+                position={[0, 2, 2]}
+                intensity={1}
+                distance={7}
+                color={lightColor}
+                decay={0.2}
+            />
+            <pointLight
+                position={[0, -1, 1]}
                 intensity={2}
-                distance={5}
+                distance={7}
                 color={lightColor}
                 decay={0.2}
             />

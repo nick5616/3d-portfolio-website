@@ -3,7 +3,7 @@ import { RoomConfig, InteractiveElement } from "../types/scene.types";
 
 const ART_GALLERY_CEILING_HEIGHT = 7.5;
 const ATRIUM_CEILING_HEIGHT = 7.5;
-const PROJECTS_CEILING_HEIGHT = 10;
+const PROJECTS_CEILING_HEIGHT = 6;
 const ABOUT_CEILING_HEIGHT = 8;
 
 const createArtLayout = (): InteractiveElement[] => [
@@ -375,7 +375,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "projects",
         name: "Software Projects",
         position: [0, 0, -20] as [number, number, number],
-        dimensions: [20, 10, 20],
+        dimensions: [20, PROJECTS_CEILING_HEIGHT, 20],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#ffffff" },
             directional: {
@@ -417,7 +417,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "about",
         name: "Play Place",
         position: [20, 0, 0] as [number, number, number],
-        dimensions: [8, 8, 8],
+        dimensions: [8, ABOUT_CEILING_HEIGHT, 8],
         lightPreset: {
             ambient: { intensity: 0.4, color: "#FFF5E1" },
             directional: {

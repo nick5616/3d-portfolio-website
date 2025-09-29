@@ -7,12 +7,11 @@ import { Door } from "./Door";
 import { RouterIntegration } from "./RouterIntegration";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
-import { roomConfigs } from "../../configs/rooms";
 import { updateAllShaders } from "../../configs/enhancedMaterials";
 
 export const SceneManager: React.FC = () => {
     const { scene, gl } = useThree();
-    const { currentRoom, loadRoom, performance } = useSceneStore();
+    const { currentRoom, performance } = useSceneStore();
     const fpsGraph = useRef<number[]>([]);
 
     // Throttling refs to reduce update frequency
@@ -70,6 +69,54 @@ export const SceneManager: React.FC = () => {
         }
     });
 
+    // Helper functions for room-specific environments
+    const getEnvironmentPreset = (
+        roomId: string | undefined
+    ):
+        | "studio"
+        | "apartment"
+        | "forest"
+        | "lobby"
+        | "city"
+        | "dawn"
+        | "night"
+        | "park"
+        | "sunset"
+        | "warehouse" => {
+        switch (roomId) {
+            case "projects":
+                return "studio"; // Clean, neutral environment for sci-fi
+            case "gallery":
+                return "apartment"; // Warm, indoor environment
+            case "atrium":
+                return "forest"; // Natural environment for atrium
+            case "about":
+                return "lobby"; // Neutral indoor environment
+            default:
+                return "city"; // Default fallback
+        }
+    };
+
+    const getEnvironmentIntensity = (
+        roomId: string | undefined,
+        quality: string
+    ): number => {
+        const baseIntensity = quality === "low" ? 0.3 : 0.6;
+
+        switch (roomId) {
+            case "projects":
+                return baseIntensity * 0.4; // Very low for sci-fi room to avoid unwanted reflections
+            case "gallery":
+                return baseIntensity * 0.8; // Slightly reduced for gallery
+            case "atrium":
+                return baseIntensity * 1.2; // Enhanced for natural feel
+            case "about":
+                return baseIntensity * 0.7; // Reduced for about room
+            default:
+                return baseIntensity;
+        }
+    };
+
     return (
         <>
             <RouterIntegration />
@@ -90,11 +137,14 @@ export const SceneManager: React.FC = () => {
                 shadow-camera-bottom={-50}
             />
 
-            {/* Environment with enhanced settings */}
+            {/* Room-specific environment */}
             <Environment
-                preset="city"
+                preset={getEnvironmentPreset(currentRoom?.id)}
                 background={false}
-                environmentIntensity={performance.quality === "low" ? 0.3 : 0.6}
+                environmentIntensity={getEnvironmentIntensity(
+                    currentRoom?.id,
+                    performance.quality
+                )}
             />
 
             <CameraController />
