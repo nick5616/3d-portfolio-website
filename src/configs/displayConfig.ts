@@ -8,6 +8,7 @@ export interface DisplayConfig {
     rotation?: [number, number, number];
     scale?: [number, number, number];
     crtStyle?: boolean; // Enable 3D CRT monitor styling with thick curved glass and retro box
+    lightColor?: string; // Hex color code for the omnidirectional point light emitted by the display
     responsive: {
         desktop: {
             width: number;
@@ -42,6 +43,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [-9, 2, -3],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#999999",
         responsive: {
             desktop: desktopDimensions.imaginaryDesktop,
             mobile: mobileDimensions.pixel7,
@@ -57,6 +59,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [-9, 2, 0],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#999999",
         responsive: {
             desktop: mobileDimensions.iPhoneSE,
             mobile: mobileDimensions.pixel7,
@@ -73,6 +76,7 @@ export const displaysConfig: DisplayConfig[] = [
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
+        lightColor: "#ffff00",
         responsive: {
             desktop: desktopDimensions.imaginaryDesktop,
             mobile: mobileDimensions.pixel7,
@@ -90,6 +94,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [9, 2, 0],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#ffffff",
         responsive: {
             desktop: desktopDimensions.imaginaryDesktop,
             mobile: mobileDimensions.pixel7,
@@ -105,6 +110,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [9, 2, -3],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#00FF00",
         responsive: {
             desktop: mobileDimensions.iPhoneSE,
             mobile: { width: 280, height: 580 },
@@ -120,6 +126,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [9, 2, 3],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#ff00ff",
         responsive: {
             desktop: { width: 320, height: 680 },
             mobile: { width: 300, height: 600 },
@@ -138,6 +145,7 @@ export const displaysConfig: DisplayConfig[] = [
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
+        lightColor: "#ff00ff",
         responsive: {
             desktop: { width: 1200, height: 800 },
             mobile: { width: 375, height: 667 },
@@ -153,6 +161,7 @@ export const displaysConfig: DisplayConfig[] = [
         position: [5, 2, -9],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
+        lightColor: "#dddddd",
         responsive: {
             desktop: { width: 900, height: 650 },
             mobile: { width: 375, height: 667 },

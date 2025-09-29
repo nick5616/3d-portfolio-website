@@ -78,6 +78,33 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 shadow-mapSize={[1024, 1024]}
                 shadow-bias={-0.0001}
             />
+
+            {/* Spot lights from configuration */}
+            {config.lightPreset.spots?.map((spot, index) => (
+                <spotLight
+                    key={`spot-${index}`}
+                    position={spot.position}
+                    target-position={spot.target}
+                    intensity={spot.intensity}
+                    color={spot.color}
+                    shadow-mapSize={[512, 512]}
+                    shadow-bias={-0.0001}
+                    angle={Math.PI / 4}
+                    penumbra={0.3}
+                />
+            ))}
+
+            {/* Central point light for projects room */}
+            {config.id === "projects" && (
+                <pointLight
+                    position={[0, height * 0.8, 0]}
+                    intensity={1.5}
+                    distance={Math.max(width, depth) * 1.5}
+                    color="#ffffff"
+                    decay={0.2}
+                />
+            )}
+
             {/* Single corner light for depth - reduced for atrium */}
             {/* <pointLight
                 position={[0, height / 2, 0]}

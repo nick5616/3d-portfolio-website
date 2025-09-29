@@ -517,6 +517,134 @@ export class EnhancedMaterialSystem {
         return fallbackMaterial;
     }
 
+    // Sci-Fi Panel 001 PBR Material for Walls
+    createSciFiPanel001WallPBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "sciFiPanel001WallPBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#2a2a2a", // Dark grey color for sci-fi panels
+            roughness: 0.3,
+            metalness: 0.8,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 6; // Base color, normal, roughness, AO, height, metallic
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    displacementMap: textures.height,
+                    metalnessMap: textures.metallic,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    displacementScale: 0.1,
+                    displacementBias: -0.05,
+                    side: THREE.DoubleSide,
+                    roughness: 0.3,
+                    metalness: 0.8,
+                    envMapIntensity: 0.5,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 normal texture:",
+                    error
+                )
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 roughness texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 AO texture:",
+                    error
+                )
+        );
+        textures.height = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 height texture:",
+                    error
+                )
+        );
+        textures.metallic = textureLoader.load(
+            "/images/Sci_fi_Panel_001_SD/Sci_fi_Panel_001_metallic.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Sci_fi_Panel_001 metallic texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 2); // 2x2 tiling for walls
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
     // Wood Ceiling Coffers PBR Material
     createWoodCeilingCoffersPBRMaterial(): THREE.MeshStandardMaterial {
         const cacheKey = "woodCeilingCoffersPBR";
@@ -1239,7 +1367,7 @@ export class EnhancedMaterialSystem {
             case "projects":
                 return {
                     ...base,
-                    walls: this.createFuturisticWallShader(),
+                    walls: this.createSciFiPanel001WallPBRMaterial(),
                     enhanced: {
                         holographic: this.createHolographicShader(),
                     },
@@ -1289,12 +1417,7 @@ export class EnhancedMaterialSystem {
                 };
             case "projects":
                 return {
-                    walls: new THREE.MeshStandardMaterial({
-                        color: "#1a1a1a",
-                        roughness: 0.7,
-                        metalness: 0.3,
-                        side: THREE.DoubleSide,
-                    }),
+                    walls: this.createSciFiPanel001WallPBRMaterial(),
                     floor: new THREE.MeshStandardMaterial({
                         color: "#2a2a2a",
                         roughness: 0.6,

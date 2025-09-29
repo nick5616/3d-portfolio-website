@@ -22,6 +22,7 @@ export interface Web3DDisplayProps {
     screenshotUrl?: string;
     description?: string;
     crtStyle?: boolean;
+    lightColor?: string; // Hex color code for the omnidirectional point light
     responsive?: {
         desktop: { width: number; height: number };
         mobile: { width: number; height: number };
@@ -622,6 +623,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     screenshotUrl,
     description,
     crtStyle = false,
+    lightColor = "#ffffff",
     responsive,
 }) => {
     const displayRef = useRef<THREE.Group>(null);
@@ -1473,6 +1475,15 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                     )}
                 </div>
             </Html>
+
+            {/* Display point light */}
+            <pointLight
+                position={[0, 0, 0]}
+                intensity={2}
+                distance={5}
+                color={lightColor}
+                decay={0.2}
+            />
         </group>
     );
 };
