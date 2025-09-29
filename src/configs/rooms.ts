@@ -1,6 +1,11 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
 
+const ART_GALLERY_CEILING_HEIGHT = 7.5;
+const ATRIUM_CEILING_HEIGHT = 7.5;
+const PROJECTS_CEILING_HEIGHT = 10;
+const ABOUT_CEILING_HEIGHT = 8;
+
 const createArtLayout = (): InteractiveElement[] => [
     // North wall (-x)
     {
@@ -150,7 +155,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "atrium",
         name: "Atrium",
         position: [0, 0, 0] as [number, number, number],
-        dimensions: [20, 7.5, 20], // width, height, depth (reduced height by 25%)
+        dimensions: [20, ATRIUM_CEILING_HEIGHT, 20], // width, height, depth (reduced height by 25%)
         lightPreset: {
             ambient: { intensity: 0.1, color: "#ffff00" }, // Reduced from 0.5
             directional: {
@@ -237,12 +242,12 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "gallery",
         name: "Art Gallery",
         position: [-20, 0, 0] as [number, number, number],
-        dimensions: [20, 10, 20],
+        dimensions: [20, ART_GALLERY_CEILING_HEIGHT, 20],
         lightPreset: {
-            ambient: { intensity: 1.0, color: "#ffffff" }, // Increased from 0.4
+            ambient: { intensity: 1, color: "#ffffff" }, // Increased from 0.4
             directional: {
                 position: [5, 5, 0] as [number, number, number],
-                intensity: 1.0, // Increased from 0.5
+                intensity: 2, // Increased from 0.5
                 color: "#ffffff",
             },
             spots: [
@@ -250,25 +255,25 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 ...Array(6)
                     .fill(0)
                     .map((_, i) => ({
-                        position: [-8, 6, -7 + i * 3] as [
+                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
                             number,
                             number,
                             number
                         ],
-                        target: [-9, 2, -7 + i * 3] as [number, number, number],
-                        intensity: 0.6, // Reduced from 1.2
+                        target: [-8, 2, -8] as [number, number, number],
+                        intensity: 1.2, // Reduced from 1.2
                         color: "#ffffff",
                     })),
                 // South wall spotlights
                 ...Array(6)
                     .fill(0)
                     .map((_, i) => ({
-                        position: [8, 6, -7 + i * 3] as [
+                        position: [8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
                             number,
                             number,
                             number
                         ],
-                        target: [9, 2, -7 + i * 3] as [number, number, number],
+                        target: [8, 2, -8] as [number, number, number],
                         intensity: 0.6,
                         color: "#ffffff",
                     })),
@@ -276,12 +281,12 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 ...Array(6)
                     .fill(0)
                     .map((_, i) => ({
-                        position: [-7 + i * 3, 6, -8] as [
+                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
                             number,
                             number,
                             number
                         ],
-                        target: [-7 + i * 3, 2, -9] as [number, number, number],
+                        target: [-8, 2, -8] as [number, number, number],
                         intensity: 0.6,
                         color: "#ffffff",
                     })),
@@ -289,15 +294,56 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 ...Array(6)
                     .fill(0)
                     .map((_, i) => ({
-                        position: [-7 + i * 3, 6, 8] as [
+                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
                             number,
                             number,
                             number
                         ],
-                        target: [-7 + i * 3, 2, 9] as [number, number, number],
+                        target: [-8, 2, 8] as [number, number, number],
                         intensity: 0.6,
                         color: "#ffffff",
                     })),
+                // Corner down lights - 4 point lights in ceiling corners
+                {
+                    position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-8, 0, -8] as [number, number, number],
+                    intensity: 8,
+                    color: "#ffffff",
+                },
+                {
+                    position: [8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [8, 0, -8] as [number, number, number],
+                    intensity: 0.8,
+                    color: "#ffffff",
+                },
+                {
+                    position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-8, 0, 8] as [number, number, number],
+                    intensity: 0.8,
+                    color: "#ffffff",
+                },
+                {
+                    position: [8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [8, 0, 8] as [number, number, number],
+                    intensity: 0.8,
+                    color: "#ffffff",
+                },
             ],
         },
         defaultEntrance: {
@@ -309,7 +355,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-atrium-from-gallery",
                 targetRoomId: "atrium",
-                position: [9.5, 0, 0] as [number, number, number],
+                position: [9.73, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,

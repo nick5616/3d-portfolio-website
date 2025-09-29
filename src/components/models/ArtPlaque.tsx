@@ -82,7 +82,7 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                 {/* Description */}
                 {description && (
                     <Text
-                        position={[0, 0, 0]}
+                        position={[0, -0.05, 0]}
                         fontSize={0.025}
                         color="#ffffff"
                         anchorX="center"

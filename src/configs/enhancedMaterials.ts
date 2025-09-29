@@ -1228,6 +1228,8 @@ export class EnhancedMaterialSystem {
                         metalness: 0.1,
                         // side: THREE.DoubleSide,
                     }),
+                    floor: this.createTilesFlutted001FloorPBRMaterial(),
+                    ceiling: this.createCeilingDropTilesPBRMaterial(),
                     enhanced: {
                         createSpotlight:
                             this.createArtFrameSpotlight.bind(this),
@@ -1276,19 +1278,8 @@ export class EnhancedMaterialSystem {
                         metalness: 0.1,
                         side: THREE.DoubleSide,
                     }),
-                    floor: new THREE.MeshStandardMaterial({
-                        color: "#e8e8e8",
-                        roughness: 0.5,
-                        metalness: 0.1,
-                    }),
-                    ceiling: new THREE.MeshStandardMaterial({
-                        color: "#ffffff",
-                        roughness: 0.3,
-                        metalness: 0.2,
-                        emissive: "#ffd700",
-                        emissiveIntensity: 0.05,
-                        side: THREE.DoubleSide,
-                    }),
+                    floor: this.createTilesFlutted001FloorPBRMaterial(),
+                    ceiling: this.createCeilingDropTilesPBRMaterial(),
                     dividers: new THREE.MeshStandardMaterial({
                         color: "#ffffff",
                         roughness: 0.7,

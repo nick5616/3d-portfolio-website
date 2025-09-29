@@ -36,9 +36,7 @@ const buildGalleryLayout = (
     const outerZ = depth / 2 - wallThickness / 2; // wall face z
     const outerX = width / 2 - wallThickness / 2; // wall face x
 
-    const heights = [2.1, 2.8, 3.5]; // vertical variance for interior rows
-    const baseY = 2.5;
-    const altY = 3.4;
+    const centerY = 2.8; // consistent vertical center for all art pieces
     const smallScale: [number, number, number] = [1.0, 1.0, 1];
     const largeScale: [number, number, number] = [1.2, 1.2, 1];
 
@@ -55,21 +53,21 @@ const buildGalleryLayout = (
     // Outer walls
     [-7.5, -4.5, -1.5, 1.5, 4.5, 7.5].forEach((x, i) => {
         add(
-            [x, i % 2 === 0 ? baseY : altY, -outerZ],
+            [x, centerY, -outerZ],
             [0, 0, 0],
             i % 3 === 0 ? largeScale : smallScale
         );
     });
     [-7.5, -4.5, -1.5, 1.5, 4.5, 7.5].forEach((x, i) => {
         add(
-            [x, i % 2 === 0 ? baseY : altY, outerZ],
+            [x, centerY, outerZ],
             [0, Math.PI, 0],
             i % 3 === 1 ? largeScale : smallScale
         );
     });
     [-7.5, -4.5, -1.5, 1.5, 4.5, 7.5].forEach((z, i) => {
         add(
-            [-outerX, i % 2 === 0 ? baseY : altY, z],
+            [-outerX, centerY, z],
             [0, Math.PI / 2, 0],
             i % 3 === 2 ? largeScale : smallScale
         );
@@ -78,7 +76,7 @@ const buildGalleryLayout = (
         .filter((z) => z < -2.5 || z > 2.5)
         .forEach((z, i) => {
             add(
-                [outerX, i % 2 === 0 ? baseY : altY, z],
+                [outerX, centerY, z],
                 [0, -Math.PI / 2, 0],
                 i % 3 === 0 ? largeScale : smallScale
             );
@@ -102,20 +100,18 @@ const buildGalleryLayout = (
     interiorXs.forEach((x) => {
         if (x < 0) {
             // Left interior wall at x = -width/4, face toward +x
-            verticalZs.forEach((z, i) => {
-                const y = heights[i % heights.length];
+            verticalZs.forEach((z) => {
                 add(
-                    [x + wallThickness / 2, y, z],
+                    [x + wallThickness / 2, centerY, z],
                     [0, Math.PI / 2, 0],
                     smallScale
                 );
             });
         } else {
             // Right interior wall at x = +width/4, face toward -x
-            verticalZs.forEach((z, i) => {
-                const y = heights[(i + 1) % heights.length];
+            verticalZs.forEach((z) => {
                 add(
-                    [x - wallThickness / 2, y, z],
+                    [x - wallThickness / 2, centerY, z],
                     [0, -Math.PI / 2, 0],
                     smallScale
                 );
@@ -133,15 +129,11 @@ const buildGalleryLayout = (
     for (let x = startX; x <= endX + 0.001; x += step) {
         horizontalXs.push(parseFloat(x.toFixed(2)));
     }
-    horizontalXs.forEach((x, i) => {
-        // Raise frames near intersections to avoid overlap with vertical-wall frames
-        const nearIntersection =
-            Math.abs(Math.abs(x) - interiorHalfSpanX) < 2.2;
-        const y = nearIntersection ? 3.5 : heights[i % heights.length];
+    horizontalXs.forEach((x) => {
         // Face toward +z
-        add([x, y, wallThickness / 2], [0, 0, 0], smallScale);
+        add([x, centerY, wallThickness / 2], [0, 0, 0], smallScale);
         // Face toward -z
-        add([x, y, -wallThickness / 2], [0, Math.PI, 0], smallScale);
+        add([x, centerY, -wallThickness / 2], [0, Math.PI, 0], smallScale);
     });
 
     return frames.slice(0, count);
