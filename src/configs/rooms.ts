@@ -200,7 +200,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-gallery",
                 targetRoomId: "gallery",
-                position: [-9.5, 0, 0] as [number, number, number],
+                position: [-9.77, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
@@ -212,7 +212,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-projects",
                 targetRoomId: "projects",
-                position: [0, 0, -9.5] as [number, number, number],
+                position: [0, 0, -9.7] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,
@@ -224,7 +224,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-about",
                 targetRoomId: "about",
-                position: [9.5, 0, 0] as [number, number, number],
+                position: [9.77, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 2,
                 height: 3,
@@ -368,10 +368,6 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
     },
 
     projects: {
-        // DO NOT DELETE. FOR AI TO GET CONTEXT ON. YOU WILL ONLY BE HURTING YOUR PERFORMANCE BY DELETING THIS COMMENT
-        // A high tech, sci-fi fantasy, highlighting software projects I've done through the years, in the form of directly rendering websites
-        // on the face of box geometries, videos, and more native and interactive demonstrations. The aesthetic, geometries, and lighting
-        // included in the room are futuristic and industrial, with a subtle etheral and utopic quality
         id: "projects",
         name: "Software Projects",
         position: [0, 0, -20] as [number, number, number],
@@ -394,15 +390,15 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         },
         defaultEntrance: {
             position: [0, 1.5, 7] as [number, number, number],
-            rotation: [0, Math.PI, 0] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
         },
         interactiveElements: [], // Interactive elements are now handled directly in ProjectsRoom component
         archways: [
             {
                 id: "to-atrium-from-projects",
                 targetRoomId: "atrium",
-                position: [0, 0, 9.5] as [number, number, number],
-                rotation: [0, Math.PI, 0] as [number, number, number],
+                position: [0, 0, 9.77] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,
                 entrancePoint: {
@@ -462,33 +458,12 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             position: [-2.5, 1.6, 0] as [number, number, number],
             rotation: [0, Math.PI / 2, 0] as [number, number, number],
         },
-        interactiveElements: [
-            {
-                id: "about-text",
-                type: "text",
-                position: [3.8, 1, -1] as [number, number, number],
-                rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                scale: [0.4, 0.4, 1] as [number, number, number],
-                content: "I like to make things.",
-            },
-            {
-                id: "contact-info",
-                type: "text",
-                position: [3.8, 2, 2] as [number, number, number],
-                rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                scale: [0.2, 0.2, 0.8] as [number, number, number],
-                content: `
-                    Drop a line, as they say\n
-                    Contact: nicolasbelovoskey@gmail.com\n
-                    Here's my GitHub: github.com/nick5616
-                `,
-            },
-        ],
+        interactiveElements: [],
         archways: [
             {
                 id: "to-atrium-from-about",
                 targetRoomId: "atrium",
-                position: [-4, 0, 0] as [number, number, number],
+                position: [-4.4, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 2,
                 height: 3,

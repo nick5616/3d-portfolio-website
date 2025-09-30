@@ -1,6 +1,5 @@
-import { useRef, useMemo } from "react";
+import { useMemo } from "react";
 import { Preload } from "@react-three/drei";
-import * as THREE from "three";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import { getEnhancedRoomMaterials } from "../../configs/enhancedMaterials";
@@ -17,7 +16,6 @@ interface RoomProps {
 }
 
 export const Room: React.FC<RoomProps> = ({ config }) => {
-    const directionalLightRef = useRef<THREE.DirectionalLight>(null);
     const [width, height, depth] = config.dimensions;
     const wallThickness = 0.5;
     const materials = getEnhancedRoomMaterials(config.id);
@@ -120,7 +118,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     <RigidBody type="fixed" colliders="cuboid">
                         <mesh position={[0, -0.25, 0]}>
                             <boxGeometry args={[8, 0.5, 8]} />
-                            <meshStandardMaterial color="#444444" />
+                            <primitive
+                                object={materials.floor}
+                                attach="material"
+                            />
                         </mesh>
                     </RigidBody>
                     {renderRoomComponent()}

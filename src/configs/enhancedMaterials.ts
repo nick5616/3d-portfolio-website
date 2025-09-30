@@ -517,6 +517,282 @@ export class EnhancedMaterialSystem {
         return fallbackMaterial;
     }
 
+    // Wood Floor 014 PBR Material for Floor
+    createWoodFloor014PBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "woodFloor014PBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#8B4513", // Wood brown color
+            roughness: 0.6,
+            metalness: 0.0,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 6; // Base color, normal, roughness, AO, height, material
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    aoMap: textures.ao,
+                    displacementMap: textures.height,
+                    emissiveMap: textures.materialDetail,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    displacementScale: 0.1,
+                    displacementBias: -0.05,
+                    emissiveIntensity: 0.05,
+                    side: THREE.DoubleSide,
+                    roughness: 0.6,
+                    metalness: 0.0,
+                    envMapIntensity: 0.3,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Wood_Floor_014_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Wood_Floor_014 base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Wood_Floor_014_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Wood_Floor_014 normal texture:",
+                    error
+                )
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Wood_Floor_014_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Wood_Floor_014 roughness texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Wood_Floor_014_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn("Failed to load Wood_Floor_014 AO texture:", error)
+        );
+        textures.height = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Wood_Floor_014_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Wood_Floor_014 height texture:",
+                    error
+                )
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Wood_Floor_014_SD/Material_2006.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Wood_Floor_014 material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(4, 4); // 4x4 tiling for wood floor
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
+    // Fabric Padded 008 PBR Material for Holodeck
+    createFabricPadded008PBRMaterial(): THREE.MeshStandardMaterial {
+        const cacheKey = "fabricPadded008PBR";
+
+        if (this.materialCache.has(cacheKey)) {
+            return this.materialCache.get(
+                cacheKey
+            ) as THREE.MeshStandardMaterial;
+        }
+
+        // Create a fallback material first
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+            color: "#f0f0f0", // Light fabric color
+            roughness: 0.8,
+            metalness: 0.0,
+            side: THREE.DoubleSide,
+        });
+
+        // Cache the fallback material temporarily
+        this.materialCache.set(cacheKey, fallbackMaterial);
+
+        const textureLoader = new THREE.TextureLoader();
+        let loadedTextures = 0;
+        const totalTextures = 8; // All PBR textures + material detail
+
+        const textures: { [key: string]: THREE.Texture } = {};
+
+        const onTextureLoad = () => {
+            loadedTextures++;
+            if (loadedTextures === totalTextures) {
+                // All textures loaded, create the final material
+                const material = new THREE.MeshStandardMaterial({
+                    map: textures.baseColor,
+                    normalMap: textures.normal,
+                    roughnessMap: textures.roughness,
+                    metalnessMap: textures.metallic,
+                    aoMap: textures.ao,
+                    displacementMap: textures.height,
+                    emissiveMap: textures.materialDetail,
+                    normalScale: new THREE.Vector2(1.5, 1.5),
+                    displacementScale: 0.05,
+                    displacementBias: -0.025,
+                    emissiveIntensity: 0.02,
+                    side: THREE.DoubleSide,
+                    roughness: 0.8,
+                    metalness: 0.0,
+                    envMapIntensity: 0.2,
+                });
+
+                // Update the cached material
+                this.materialCache.set(cacheKey, material);
+            }
+        };
+
+        // Load textures with proper callbacks
+        textures.baseColor = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_basecolor.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 base color texture:",
+                    error
+                )
+        );
+        textures.normal = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_normal.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 normal texture:",
+                    error
+                )
+        );
+        textures.roughness = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_roughness.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 roughness texture:",
+                    error
+                )
+        );
+        textures.metallic = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_metallic.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 metallic texture:",
+                    error
+                )
+        );
+        textures.ao = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_ambientOcclusion.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 AO texture:",
+                    error
+                )
+        );
+        textures.height = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_height.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 height texture:",
+                    error
+                )
+        );
+        textures.anisotropy = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/Fabric_Padded_008_anisotropy.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 anisotropy texture:",
+                    error
+                )
+        );
+        textures.materialDetail = textureLoader.load(
+            "/images/Fabric_Padded_008_SD/material_1910.png",
+            onTextureLoad,
+            undefined,
+            (error) =>
+                console.warn(
+                    "Failed to load Fabric_Padded_008 material detail texture:",
+                    error
+                )
+        );
+
+        // Configure texture settings for proper tiling
+        Object.values(textures).forEach((texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 2); // 2x2 tiling for fabric
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        return fallbackMaterial;
+    }
+
     // Sci-Fi Panel 001 PBR Material for Walls
     createSciFiPanel001WallPBRMaterial(): THREE.MeshStandardMaterial {
         const cacheKey = "sciFiPanel001WallPBR";
@@ -1601,7 +1877,7 @@ export class EnhancedMaterialSystem {
                         metalness: 0.1,
                         // side: THREE.DoubleSide,
                     }),
-                    floor: this.createTilesFlutted001FloorPBRMaterial(),
+                    floor: this.createWoodFloor014PBRMaterial(),
                     ceiling: this.createCeilingDropTilesPBRMaterial(),
                     enhanced: {
                         createSpotlight:
@@ -1670,25 +1946,9 @@ export class EnhancedMaterialSystem {
                 };
             case "about":
                 return {
-                    walls: new THREE.MeshStandardMaterial({
-                        color: "#f0e6d3",
-                        roughness: 0.6,
-                        metalness: 0.1,
-                        side: THREE.DoubleSide,
-                    }),
-                    floor: new THREE.MeshStandardMaterial({
-                        color: "#e6d5c3",
-                        roughness: 0.5,
-                        metalness: 0.1,
-                    }),
-                    ceiling: new THREE.MeshStandardMaterial({
-                        color: "#f5e6d3",
-                        roughness: 0.4,
-                        metalness: 0.05,
-                        emissive: "#ffa500",
-                        emissiveIntensity: 0.05,
-                        side: THREE.DoubleSide,
-                    }),
+                    walls: this.createFabricPadded008PBRMaterial(),
+                    floor: this.createFabricPadded008PBRMaterial(),
+                    ceiling: this.createFabricPadded008PBRMaterial(),
                 };
             default:
                 console.log("default base materials");

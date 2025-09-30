@@ -1,17 +1,21 @@
 import React from "react";
 import * as THREE from "three";
+import { EnhancedMaterialSystem } from "../../../configs/enhancedMaterials";
 
 interface HolodeckGridProps {
     gridWallsRef: React.RefObject<THREE.Group>;
 }
 
 export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
+    const materialSystem = EnhancedMaterialSystem.getInstance();
+    const fabricMaterial = materialSystem.createFabricPadded008PBRMaterial();
+
     return (
         <group ref={gridWallsRef}>
             {/* Floor grid - positioned to align with archway entrance */}
             <mesh position={[-0.5, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[8, 8]} />
-                <meshStandardMaterial color="#f0f0f0" />
+                <primitive object={fabricMaterial} attach="material" />
             </mesh>
 
             {/* Grid lines on floor */}
@@ -76,7 +80,7 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
                 >
                     <mesh>
                         <planeGeometry args={[wall.width, 5]} />
-                        <meshStandardMaterial color="#f0f0f0" />
+                        <primitive object={fabricMaterial} attach="material" />
                     </mesh>
                     {/* Wall grid lines */}
                     {Array.from({ length: Math.round(wall.width * 2) + 1 }).map(
@@ -113,7 +117,7 @@ export const HolodeckGrid: React.FC<HolodeckGridProps> = ({ gridWallsRef }) => {
             {/* Ceiling grid */}
             <mesh position={[-0.5, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[8, 8]} />
-                <meshStandardMaterial color="#f0f0f0" />
+                <primitive object={fabricMaterial} attach="material" />
             </mesh>
 
             {/* Grid lines on ceiling */}
