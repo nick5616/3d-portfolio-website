@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useCallback } from "react";
 import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
@@ -10,12 +10,28 @@ import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { logEdgeDebugInfo } from "../../utils/edgeDebug";
 import { EnhancedLoadingScreen } from "../ui/EnhancedLoadingScreen";
+import { RoomTransitionLoadingScreen } from "../ui/RoomTransitionLoadingScreen";
 
 export const Scene: React.FC = () => {
-    const { performance, currentRoom } = useSceneStore();
+    const {
+        performance,
+        currentRoom,
+        roomTransitionLoading,
+        roomTransitionFrom,
+        roomTransitionTo,
+        setRoomTransitionLoading,
+    } = useSceneStore();
     const { isMobile } = useDeviceDetection();
     const { isHardwareAccelerationDisabled, isDetecting } =
         useHardwareAcceleration();
+
+    // Stable callback for room transition completion
+    const handleRoomTransitionComplete = useCallback(() => {
+        console.log(
+            `🏠 Scene: Room transition complete, hiding loading screen`
+        );
+        setRoomTransitionLoading(false);
+    }, [setRoomTransitionLoading]);
 
     // Configure rendering parameters based on quality setting and device
     const glParams = useMemo(() => {
@@ -240,6 +256,12 @@ export const Scene: React.FC = () => {
     return (
         <div className="w-full h-full relative">
             <EnhancedLoadingScreen />
+            <RoomTransitionLoadingScreen
+                isVisible={roomTransitionLoading}
+                fromRoom={roomTransitionFrom || undefined}
+                toRoom={roomTransitionTo || undefined}
+                onComplete={handleRoomTransitionComplete}
+            />
             <Canvas
                 className="main-canvas"
                 gl={glParams}

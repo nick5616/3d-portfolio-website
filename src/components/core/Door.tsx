@@ -46,8 +46,13 @@ const InteractionPrompt: React.FC<{ action: string }> = ({ action }) => (
 );
 
 export const Door: React.FC<DoorProps> = ({ archway }) => {
-    const { teleportToRoom, lastTeleportTime, playerVelocity } =
-        useSceneStore();
+    const {
+        teleportToRoom,
+        lastTeleportTime,
+        playerVelocity,
+        currentRoom,
+        setRoomTransitionLoading,
+    } = useSceneStore();
     const [isInTrigger, setIsInTrigger] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isHoveringFromCenter, setIsHoveringFromCenter] = useState(false);
@@ -145,6 +150,13 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             return;
         }
 
+        // Start room transition loading screen
+        const fromRoom = currentRoom?.id || "unknown";
+        const toRoom = archway.targetRoomId;
+
+        console.log(`🏠 Starting room transition: ${fromRoom} → ${toRoom}`);
+        setRoomTransitionLoading(true, fromRoom, toRoom);
+
         // Use entrance point if available, otherwise use archway position
         const entrancePosition = archway.entrancePoint?.position || [
             archway.position[0],
@@ -163,12 +175,21 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         console.log(`📍 Teleporting to:`, entrancePosition);
         console.log(`🔄 With 180° rotation:`, entranceRotation);
 
-        teleportToRoom(
-            archway.targetRoomId,
-            entrancePosition as [number, number, number],
-            entranceRotation as [number, number, number]
-        );
-    }, [archway, teleportToRoom, isMovingTowardDoor]);
+        // Delay the actual teleportation to allow loading screen to show
+        setTimeout(() => {
+            teleportToRoom(
+                archway.targetRoomId,
+                entrancePosition as [number, number, number],
+                entranceRotation as [number, number, number]
+            );
+        }, 100);
+    }, [
+        archway,
+        teleportToRoom,
+        isMovingTowardDoor,
+        currentRoom,
+        setRoomTransitionLoading,
+    ]);
 
     const handleDoorClick = () => {
         handleTeleport();

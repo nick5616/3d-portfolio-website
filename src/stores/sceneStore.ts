@@ -149,6 +149,16 @@ interface SceneState {
     holodeckLoading: boolean;
     holodeckLoadingExperience: string | null;
     setHolodeckLoading: (loading: boolean, experience?: string | null) => void;
+
+    // Room transition loading state
+    roomTransitionLoading: boolean;
+    roomTransitionFrom: string | null;
+    roomTransitionTo: string | null;
+    setRoomTransitionLoading: (
+        loading: boolean,
+        from?: string | null,
+        to?: string | null
+    ) => void;
 }
 
 export const useSceneStore = create<SceneState>((set) => {
@@ -470,6 +480,24 @@ export const useSceneStore = create<SceneState>((set) => {
             // This preserves the experience during the fade-out phase
             if (experience !== undefined) {
                 updates.holodeckLoadingExperience = experience;
+            }
+
+            set(updates);
+        },
+
+        // Room transition loading state
+        roomTransitionLoading: false,
+        roomTransitionFrom: null,
+        roomTransitionTo: null,
+        setRoomTransitionLoading: (loading, from, to) => {
+            const updates: any = { roomTransitionLoading: loading };
+
+            // Only update the room info if provided
+            if (from !== undefined) {
+                updates.roomTransitionFrom = from;
+            }
+            if (to !== undefined) {
+                updates.roomTransitionTo = to;
             }
 
             set(updates);
