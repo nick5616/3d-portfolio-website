@@ -30,7 +30,7 @@ export const SceneManager: React.FC = () => {
 
     useEffect(() => {
         // Initialize scene with enhanced settings
-        scene.fog = new THREE.Fog("#000000", 10, 20);
+        scene.fog = new THREE.Fog("#000000", 20, 30);
 
         // Enable shadows for enhanced lighting
         gl.shadowMap.enabled = true;
