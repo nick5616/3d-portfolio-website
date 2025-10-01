@@ -33,7 +33,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             ],
         },
         defaultEntrance: {
-            position: [0, 1.5, 5] as [number, number, number],
+            position: [0, 1.5, 12] as [number, number, number],
             rotation: [0, Math.PI, 0] as [number, number, number],
         },
         interactiveElements: [

@@ -269,7 +269,7 @@ export const Scene: React.FC = () => {
                     fov: isMobile ? 80 : 75,
                     near: 0.1,
                     far: isMobile ? 500 : 1000,
-                    position: [0, 1.8, 5], // Adjusted to match room entrance heights
+                    position: [0, 1.8, 12], // Spawn further back to avoid cylinder
                 }}
                 shadows={performance.quality !== "low" && !isMobile}
                 dpr={dpr}

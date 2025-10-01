@@ -150,7 +150,7 @@ export const PlayerBody: React.FC = () => {
             type="dynamic"
             enabledRotations={[false, false, false]}
             lockRotations
-            position={playerPosition} // Use position from store
+            position={[0, 1.5, 6]} // Spawn closer to cylinder but still outside it
             friction={20}
             restitution={0}
             // Add collision groups
