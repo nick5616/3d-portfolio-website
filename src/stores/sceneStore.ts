@@ -170,7 +170,7 @@ export const useSceneStore = create<SceneState>((set) => {
     return {
         currentRoom: null, // Don't set a default room
         cameraTarget: new THREE.Vector3(0, 0, 0),
-        cameraRotation: undefined,
+        cameraRotation: [0, 0, 0],
         playerPosition: [0, 0, 0], // Don't set a default position
         playerVelocity: [0, 0, 0], // Initialize player velocity
         shouldTeleportPlayer: false,
