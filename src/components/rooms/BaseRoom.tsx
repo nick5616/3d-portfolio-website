@@ -133,8 +133,8 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 colliders="cuboid"
                 collisionGroups={interactionGroups(0, [0])}
             >
-                <mesh position={[0, -0.1, 0]}>
-                    <boxGeometry args={[width, 0.2, depth]} />
+                <mesh position={[0, -0.05, 0]}>
+                    <boxGeometry args={[width, 0.1, depth]} />
                     <primitive object={materials.floor} attach="material" />
                 </mesh>
             </RigidBody>
@@ -144,8 +144,8 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 colliders="cuboid"
                 collisionGroups={interactionGroups(0, [0])}
             >
-                <mesh position={[0, height + 0.1, 0]}>
-                    <boxGeometry args={[width, 0.2, depth]} />
+                <mesh position={[0, height + 0.05, 0]}>
+                    <boxGeometry args={[width, 0.1, depth]} />
                     <primitive object={materials.ceiling} attach="material" />
                 </mesh>
             </RigidBody>

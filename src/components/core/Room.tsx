@@ -16,7 +16,7 @@ interface RoomProps {
 
 export const Room: React.FC<RoomProps> = ({ config }) => {
     const [width, height, depth] = config.dimensions;
-    const wallThickness = 0.5;
+    const wallThickness = 0.1; // Reduced thickness for better performance
     const materials = getEnhancedRoomMaterials(config.id);
 
     // Simple wall rendering - just render solid walls

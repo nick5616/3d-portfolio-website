@@ -98,7 +98,7 @@ export class EnhancedMaterialSystem {
             color: "#8B7355", // Stone-like color
             roughness: 0.8,
             metalness: 0.1,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -120,7 +120,7 @@ export class EnhancedMaterialSystem {
                     roughnessMap: textures.roughness,
                     aoMap: textures.ao,
                     normalScale: new THREE.Vector2(1.0, 1.0),
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                 });
 
                 // Update the cached material
@@ -179,7 +179,7 @@ export class EnhancedMaterialSystem {
             color: "#f0f0f0", // Light grey color for tiles
             roughness: 0.4,
             metalness: 0.1,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -206,7 +206,7 @@ export class EnhancedMaterialSystem {
                     displacementScale: 0.1,
                     displacementBias: -0.05,
                     emissiveIntensity: 0.1,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.4,
                     metalness: 0.1,
                     envMapIntensity: 0.3,
@@ -299,7 +299,7 @@ export class EnhancedMaterialSystem {
             color: "#f0f0f0", // Light grey color for ceiling tiles
             roughness: 0.3,
             metalness: 0.1,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -321,7 +321,7 @@ export class EnhancedMaterialSystem {
                     roughnessMap: textures.roughness,
                     aoMap: textures.ao,
                     normalScale: new THREE.Vector2(1.0, 1.0),
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.3,
                     metalness: 0.1,
                     envMapIntensity: 0.3,
@@ -403,7 +403,7 @@ export class EnhancedMaterialSystem {
             color: "#f0f0f0", // Light grey color for tiles
             roughness: 0.5,
             metalness: 0.1,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -430,7 +430,7 @@ export class EnhancedMaterialSystem {
                     displacementScale: 0.15,
                     displacementBias: -0.08,
                     emissiveIntensity: 0.1,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.5,
                     metalness: 0.1,
                     envMapIntensity: 0.3,
@@ -532,7 +532,7 @@ export class EnhancedMaterialSystem {
             color: "#8B4513", // Wood brown color
             roughness: 0.6,
             metalness: 0.0,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -559,7 +559,7 @@ export class EnhancedMaterialSystem {
                     displacementScale: 0.1,
                     displacementBias: -0.05,
                     emissiveIntensity: 0.05,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.6,
                     metalness: 0.0,
                     envMapIntensity: 0.3,
@@ -658,7 +658,7 @@ export class EnhancedMaterialSystem {
             color: "#f0f0f0", // Light fabric color
             roughness: 0.8,
             metalness: 0.0,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -686,7 +686,7 @@ export class EnhancedMaterialSystem {
                     displacementScale: 0.05,
                     displacementBias: -0.025,
                     emissiveIntensity: 0.02,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.8,
                     metalness: 0.0,
                     envMapIntensity: 0.2,
@@ -808,7 +808,7 @@ export class EnhancedMaterialSystem {
             color: "#2a2a2a", // Dark grey color for sci-fi panels
             roughness: 0.3,
             metalness: 0.8,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -834,7 +834,7 @@ export class EnhancedMaterialSystem {
                     normalScale: new THREE.Vector2(1.0, 1.0),
                     displacementScale: 0.1,
                     displacementBias: -0.05,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.3,
                     metalness: 0.8,
                     envMapIntensity: 0.5,
@@ -936,7 +936,7 @@ export class EnhancedMaterialSystem {
             color: "#f0f0f0", // Light grey color for concrete ceiling
             roughness: 0.6,
             metalness: 0.0,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -961,7 +961,7 @@ export class EnhancedMaterialSystem {
                     normalScale: new THREE.Vector2(1.0, 1.0),
                     displacementScale: 0.1,
                     displacementBias: -0.05,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.6,
                     metalness: 0.0,
                     envMapIntensity: 0.3,
@@ -1053,7 +1053,7 @@ export class EnhancedMaterialSystem {
             color: "#2a2a2a", // Dark grey color for sci-fi metal plates
             roughness: 0.2,
             metalness: 0.9,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -1079,7 +1079,7 @@ export class EnhancedMaterialSystem {
                     normalScale: new THREE.Vector2(1.0, 1.0),
                     displacementScale: 0.1,
                     displacementBias: -0.05,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     roughness: 0.2,
                     metalness: 0.9,
                     envMapIntensity: 0.5,
@@ -1181,7 +1181,7 @@ export class EnhancedMaterialSystem {
             color: "#A0A0A0", // Grey wood color to match actual texture
             roughness: 0.6,
             metalness: 0.2, // Slightly more metallic for gold accents
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -1221,7 +1221,7 @@ export class EnhancedMaterialSystem {
                     emissiveIntensity: 0.2, // Enhanced emissive for gold accents
                     // Environment mapping for realistic reflections
                     envMapIntensity: 0.8,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                 });
 
                 // Update the cached material
@@ -1312,7 +1312,7 @@ export class EnhancedMaterialSystem {
             color: "#8B8B8B", // Stone grey color
             roughness: 0.7,
             metalness: 0.1,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         // Cache the fallback material temporarily
@@ -1349,7 +1349,7 @@ export class EnhancedMaterialSystem {
                     emissiveIntensity: 0.05, // Very subtle emissive detail
                     // Environment mapping for realistic reflections
                     envMapIntensity: 0.6,
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                 });
 
                 // Update the cached material
@@ -1433,7 +1433,7 @@ export class EnhancedMaterialSystem {
             color: "#f8f8f8", // Brighter marble-like color
             roughness: 0.1, // Much smoother for shine
             metalness: 0.3, // More metallic for reflections
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
             transparent: false,
             alphaTest: 0,
             polygonOffset: true,
@@ -1469,7 +1469,7 @@ export class EnhancedMaterialSystem {
                     map: texture,
                     roughness: 0.1, // Very smooth for marble shine
                     metalness: 0.3, // Enhanced metallic properties
-                    side: THREE.DoubleSide,
+                    side: THREE.FrontSide, // Only render front faces for better performance
                     transparent: false,
                     alphaTest: 0,
                     polygonOffset: true,
@@ -1575,7 +1575,7 @@ export class EnhancedMaterialSystem {
         }
       `,
             transparent: true,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         this.shaderUpdateCallbacks.set("holographic", (elapsed: number) => {
@@ -1631,7 +1631,7 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(baseColor + emissive, 1.0);
         }
       `,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         this.shaderUpdateCallbacks.set("futuristicWall", (elapsed: number) => {
@@ -1769,7 +1769,7 @@ export class EnhancedMaterialSystem {
           gl_FragColor = vec4(finalColor * lightIntensity + rimColor, 1.0);
         }
       `,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         this.shaderUpdateCallbacks.set("wallNoise", (elapsed: number) => {
@@ -1839,7 +1839,7 @@ export class EnhancedMaterialSystem {
         }
       `,
             transparent: true,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide, // Only render front faces for better performance
         });
 
         this.shaderUpdateCallbacks.set("wireframeGrid", (elapsed: number) => {
@@ -1875,7 +1875,6 @@ export class EnhancedMaterialSystem {
                         color: 0xffffff, // Simple white
                         roughness: 0.4,
                         metalness: 0.1,
-                        // side: THREE.DoubleSide,
                     }),
                     floor: this.createWoodFloor014PBRMaterial(),
                     ceiling: this.createCeilingDropTilesPBRMaterial(),
@@ -1927,7 +1926,7 @@ export class EnhancedMaterialSystem {
                         color: "#ffffff",
                         roughness: 0.4,
                         metalness: 0.1,
-                        side: THREE.DoubleSide,
+                        side: THREE.FrontSide, // Only render front faces for better performance
                     }),
                     floor: this.createTilesFlutted001FloorPBRMaterial(),
                     ceiling: this.createCeilingDropTilesPBRMaterial(),
@@ -1935,7 +1934,7 @@ export class EnhancedMaterialSystem {
                         color: "#ffffff",
                         roughness: 0.7,
                         metalness: 0.0,
-                        side: THREE.DoubleSide,
+                        side: THREE.FrontSide, // Only render front faces for better performance
                     }),
                 };
             case "projects":
@@ -1957,18 +1956,19 @@ export class EnhancedMaterialSystem {
                         color: "#f5f5f5",
                         roughness: 0.3,
                         metalness: 0.1,
-                        side: THREE.DoubleSide,
+                        side: THREE.FrontSide, // Only render front faces for better performance
                     }),
                     floor: new THREE.MeshStandardMaterial({
                         color: "#e0e0e0",
                         roughness: 0.3,
                         metalness: 0.1,
+                        side: THREE.FrontSide, // Only render front faces for better performance
                     }),
                     ceiling: new THREE.MeshStandardMaterial({
                         color: "#ffffff",
                         roughness: 0.2,
                         metalness: 0.05,
-                        side: THREE.DoubleSide,
+                        side: THREE.FrontSide, // Only render front faces for better performance
                     }),
                 };
         }

@@ -39,13 +39,14 @@ export const atriumMaterials = {
         color: "#f5f5f5",
         roughness: 0.3,
         metalness: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
         envMapIntensity: 0.5,
     }),
     floor: new THREE.MeshStandardMaterial({
         color: "#e0e0e0",
         roughness: 0.3,
         metalness: 0.1,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     ceiling: new THREE.MeshStandardMaterial({
         map: ceilingDropTilesBaseColor,
@@ -54,7 +55,7 @@ export const atriumMaterials = {
         aoMap: ceilingDropTilesAO,
         roughness: 0.3,
         metalness: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
         envMapIntensity: 0.3,
     }),
 };
@@ -65,19 +66,20 @@ export const galleryMaterials = {
         color: "#ffffff",
         roughness: 0.4,
         metalness: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     dividers: new THREE.MeshStandardMaterial({
         color: "#ffffff",
         roughness: 0.7,
         metalness: 0.0,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
         envMapIntensity: 0.3,
     }),
     floor: new THREE.MeshStandardMaterial({
         color: "#e8e8e8",
         roughness: 0.5,
         metalness: 0.1,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     ceiling: new THREE.MeshStandardMaterial({
         color: "#ffffff",
@@ -85,7 +87,7 @@ export const galleryMaterials = {
         metalness: 0.2,
         emissive: "#ffd700",
         emissiveIntensity: 0.05,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
 };
 
@@ -95,12 +97,13 @@ export const projectsMaterials = {
         color: "#1a1a1a",
         roughness: 0.7,
         metalness: 0.3,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     floor: new THREE.MeshStandardMaterial({
         color: "#2a2a2a",
         roughness: 0.6,
         metalness: 0.2,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     ceiling: new THREE.MeshStandardMaterial({
         color: "#0a0a0a",
@@ -108,7 +111,7 @@ export const projectsMaterials = {
         metalness: 0.4,
         emissive: "#00ffff",
         emissiveIntensity: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
 };
 
@@ -118,12 +121,13 @@ export const aboutMaterials = {
         color: "#f0e6d3",
         roughness: 0.6,
         metalness: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     floor: new THREE.MeshStandardMaterial({
         color: "#e6d5c3",
         roughness: 0.5,
         metalness: 0.1,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
     ceiling: new THREE.MeshStandardMaterial({
         color: "#f5e6d3",
@@ -131,7 +135,7 @@ export const aboutMaterials = {
         metalness: 0.05,
         emissive: "#ffa500",
         emissiveIntensity: 0.05,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide, // Only render front faces for better performance
     }),
 };
 

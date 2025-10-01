@@ -72,7 +72,7 @@ export const ProjectDisplay: React.FC<{
                     map={placeholderTexture}
                     emissive="#ffffff"
                     emissiveIntensity={0.2}
-                    side={THREE.DoubleSide}
+                    side={THREE.FrontSide}
                 />
             </mesh>
 

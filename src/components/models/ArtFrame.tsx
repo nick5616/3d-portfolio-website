@@ -199,7 +199,7 @@ const Frame: React.FC<ArtFrameProps> = ({
                 <meshBasicMaterial
                     map={texture}
                     toneMapped={false}
-                    side={THREE.DoubleSide}
+                    side={THREE.FrontSide}
                 />
             </mesh>
 

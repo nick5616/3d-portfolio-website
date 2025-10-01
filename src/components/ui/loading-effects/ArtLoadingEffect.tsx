@@ -177,7 +177,7 @@ export const ArtLoadingEffect = () => {
         return new THREE.ShaderMaterial({
             ...paintShader,
             transparent: true,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide,
             blending: THREE.AdditiveBlending,
         });
     }, [paintShader]);

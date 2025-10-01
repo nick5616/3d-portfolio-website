@@ -48,7 +48,7 @@ const LazyImagePlane: React.FC<{
             <meshBasicMaterial
                 map={texture}
                 toneMapped={false}
-                side={THREE.DoubleSide}
+                side={THREE.FrontSide}
             />
         </mesh>
     );

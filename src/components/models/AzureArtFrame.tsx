@@ -152,7 +152,7 @@ const AzureFrame: React.FC<AzureArtFrameProps> = ({
                 <meshBasicMaterial
                     map={texture}
                     toneMapped={false}
-                    side={THREE.DoubleSide}
+                    side={THREE.FrontSide}
                 />
             </mesh>
 
