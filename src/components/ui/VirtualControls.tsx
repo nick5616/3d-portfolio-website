@@ -28,12 +28,8 @@ interface TouchPosition {
 
 export const VirtualControls: React.FC<VirtualControlsProps> = memo(
     ({ onMovement, onAction, onJump, isVisible = true, mobileOverride }) => {
-        const {
-            setVirtualMovement,
-            setVirtualRotation,
-            performance,
-            controlMode,
-        } = useSceneStore();
+        const { setVirtualMovement, setVirtualRotation, performance } =
+            useSceneStore();
 
         const { isMobile } = useDeviceDetection();
         const isMobileLocal = mobileOverride ?? isMobile;

@@ -10,7 +10,7 @@ interface MouseRotation {
 export const useMouseControls = () => {
     const [rotation, setRotation] = useState<MouseRotation>({ x: 0, y: 0 });
     const [isLocked, setIsLocked] = useState(false);
-    const { controlMode, isInteracting } = useSceneStore();
+    const { isInteracting } = useSceneStore();
     const { isMobile } = useDeviceDetection();
 
     const handleMouseMove = useCallback(
@@ -21,7 +21,7 @@ export const useMouseControls = () => {
                 return;
             }
 
-            if (!isLocked || controlMode !== "firstPerson" || isInteracting) {
+            if (!isLocked || isInteracting) {
                 setRotation({ x: 0, y: 0 });
                 return;
             }
@@ -32,7 +32,7 @@ export const useMouseControls = () => {
                 y: event.movementY * sensitivity,
             });
         },
-        [isLocked, controlMode, isMobile, isInteracting]
+        [isLocked, isMobile, isInteracting]
     );
 
     // Reset rotation when mouse stops moving
@@ -49,14 +49,13 @@ export const useMouseControls = () => {
         // Never request pointer lock on mobile - let virtual controls handle everything
         if (isMobile) return;
 
-        if (controlMode !== "firstPerson") return;
         // Do not request lock while interacting with UI/console
         if (isInteracting) return;
         const canvas = document.querySelector("canvas");
         if (canvas) {
             canvas.requestPointerLock();
         }
-    }, [controlMode, isMobile, isInteracting]);
+    }, [isMobile, isInteracting]);
 
     const handlePointerLockChange = useCallback(() => {
         // On mobile, always consider pointer "unlocked" for normal UI interaction
@@ -81,25 +80,19 @@ export const useMouseControls = () => {
             return;
         }
 
-        if (controlMode === "firstPerson") {
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("click", requestPointerLock);
-            document.addEventListener(
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("click", requestPointerLock);
+        document.addEventListener("pointerlockchange", handlePointerLockChange);
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("click", requestPointerLock);
+            document.removeEventListener(
                 "pointerlockchange",
                 handlePointerLockChange
             );
-
-            return () => {
-                document.removeEventListener("mousemove", handleMouseMove);
-                document.removeEventListener("click", requestPointerLock);
-                document.removeEventListener(
-                    "pointerlockchange",
-                    handlePointerLockChange
-                );
-            };
-        }
+        };
     }, [
-        controlMode,
         handleMouseMove,
         requestPointerLock,
         handlePointerLockChange,

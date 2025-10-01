@@ -62,7 +62,6 @@ interface ConsoleState {
 
 interface SceneState {
     currentRoom: RoomConfig | null;
-    controlMode: "firstPerson" | "pointAndClick";
     cameraTarget: THREE.Vector3;
     cameraRotation?: [number, number, number];
     playerPosition: [number, number, number];
@@ -72,7 +71,6 @@ interface SceneState {
     spotlightsEnabled: boolean;
     galleryWhiteLightMode: boolean; // Gallery light mode: true = white lights, false = custom colors
     flyMode: boolean;
-    isFirstPerson: boolean;
     isInteracting: boolean;
     lastTeleportTime: number; // Add global teleportation debounce
     performance: {
@@ -127,7 +125,6 @@ interface SceneState {
     toggleFlyMode: () => void;
     setRoomEnvironmentReady: (ready: boolean) => void;
     loadRoom: (roomId: string) => void;
-    setControlMode: (mode: "firstPerson" | "pointAndClick") => void;
     setCameraTarget: (target: THREE.Vector3) => void;
     teleportToRoom: (
         roomId: string,
@@ -169,7 +166,6 @@ export const useSceneStore = create<SceneState>((set) => {
 
     return {
         currentRoom: null, // Don't set a default room
-        controlMode: "firstPerson",
         cameraTarget: new THREE.Vector3(0, 0, 0),
         cameraRotation: undefined,
         playerPosition: [0, 0, 0], // Don't set a default position
@@ -178,7 +174,6 @@ export const useSceneStore = create<SceneState>((set) => {
         roomEnvironmentReady: false, // Initialize room environment ready flag
         spotlightsEnabled: false,
         galleryWhiteLightMode: true, // Default to white light mode
-        isFirstPerson: true,
         isInteracting: false,
         lastTeleportTime: 0,
         playerGrounded: false,
@@ -367,11 +362,6 @@ export const useSceneStore = create<SceneState>((set) => {
                 console.error(`Room configuration not found for ID: ${roomId}`);
             }
         },
-        setControlMode: (mode) =>
-            set({
-                controlMode: mode,
-                isFirstPerson: mode === "firstPerson",
-            }),
         setCameraTarget: (target) => set({ cameraTarget: target }),
         teleportToRoom: (roomId, position, rotation) => {
             console.log(

@@ -8,7 +8,6 @@ import * as THREE from "three";
 
 export const CameraController: React.FC = () => {
     const {
-        controlMode,
         cameraTarget,
         cameraRotation,
         virtualMovement,
@@ -78,121 +77,114 @@ export const CameraController: React.FC = () => {
             ? Math.min(delta, 0.033)
             : Math.min(delta, 0.1);
 
-        if (controlMode === "firstPerson") {
-            // Handle rotation - on mobile, only use virtual rotation
-            const combinedRotationX = isMobile
-                ? virtualRotation.x
-                : rotation.x + virtualRotation.x;
-            const combinedRotationY = isMobile
-                ? virtualRotation.y
-                : rotation.y + virtualRotation.y;
+        // Handle rotation - on mobile, only use virtual rotation
+        const combinedRotationX = isMobile
+            ? virtualRotation.x
+            : rotation.x + virtualRotation.x;
+        const combinedRotationY = isMobile
+            ? virtualRotation.y
+            : rotation.y + virtualRotation.y;
 
-            // Skip rotation if very small changes to reduce computation
-            if (
-                Math.abs(combinedRotationX) > 0.001 ||
-                Math.abs(combinedRotationY) > 0.001
-            ) {
-                euler.current.y -= combinedRotationX;
-                euler.current.x = Math.max(
-                    -Math.PI / 2,
-                    Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
-                );
-                camera.quaternion.setFromEuler(euler.current);
-            }
+        // Skip rotation if very small changes to reduce computation
+        if (
+            Math.abs(combinedRotationX) > 0.001 ||
+            Math.abs(combinedRotationY) > 0.001
+        ) {
+            euler.current.y -= combinedRotationX;
+            euler.current.x = Math.max(
+                -Math.PI / 2,
+                Math.min(Math.PI / 2, euler.current.x - combinedRotationY)
+            );
+            camera.quaternion.setFromEuler(euler.current);
+        }
 
-            // Reuse vectors to reduce allocations
-            forward.current.set(0, 0, -1);
-            right.current.set(1, 0, 0);
-            const up = new THREE.Vector3(0, 1, 0);
+        // Reuse vectors to reduce allocations
+        forward.current.set(0, 0, -1);
+        right.current.set(1, 0, 0);
+        const up = new THREE.Vector3(0, 1, 0);
 
-            // Apply camera rotation to get proper directions
-            forward.current.applyQuaternion(camera.quaternion);
-            right.current.applyQuaternion(camera.quaternion);
-            up.applyQuaternion(camera.quaternion);
+        // Apply camera rotation to get proper directions
+        forward.current.applyQuaternion(camera.quaternion);
+        right.current.applyQuaternion(camera.quaternion);
+        up.applyQuaternion(camera.quaternion);
 
-            if (!flyMode) {
-                // Keep movement on horizontal plane for normal mode
-                forward.current.y = 0;
-                right.current.y = 0;
+        if (!flyMode) {
+            // Keep movement on horizontal plane for normal mode
+            forward.current.y = 0;
+            right.current.y = 0;
 
-                // Normalize after removing y component
-                forward.current.normalize();
-                right.current.normalize();
-            } else {
-                // In flight mode, allow full 3D movement
-                forward.current.normalize();
-                right.current.normalize();
-                up.normalize();
-            }
-
-            // Reset direction vector
-            direction.current.set(0, 0, 0);
-
-            // Movement speed - adjusted for mobile
-            const moveSpeed = isMobile ? 0.12 : 0.15; // Slightly slower on mobile for better control
-
-            // On mobile, only use virtual controls. On desktop, prefer virtual if active, otherwise keyboard
-            const useVirtual =
-                isMobile ||
-                virtualMovement.forward ||
-                virtualMovement.backward ||
-                virtualMovement.left ||
-                virtualMovement.right;
-
-            // Choose which control source to use
-            const activeMovement = useVirtual ? virtualMovement : movement;
-
-            // Build direction vector only if there's input
-            let hasMovement = false;
-            if (activeMovement.forward) {
-                direction.current.add(forward.current);
-                hasMovement = true;
-            }
-            if (activeMovement.backward) {
-                direction.current.sub(forward.current);
-                hasMovement = true;
-            }
-            if (activeMovement.left) {
-                direction.current.sub(right.current);
-                hasMovement = true;
-            }
-            if (activeMovement.right) {
-                direction.current.add(right.current);
-                hasMovement = true;
-            }
-
-            // Add vertical movement for flight mode
-            if (flyMode) {
-                if (activeMovement.jumping) {
-                    direction.current.add(up);
-                    hasMovement = true;
-                }
-                // Use backward for downward movement in flight mode
-                if (activeMovement.backward && !activeMovement.forward) {
-                    // Remove the backward movement we added above and add downward movement
-                    direction.current.add(forward.current); // Cancel out the backward
-                    direction.current.sub(up);
-                    hasMovement = true;
-                }
-            }
-
-            // Apply movement if we have any direction
-            if (hasMovement) {
-                // Normalize for consistent speed in diagonals
-                direction.current.normalize();
-
-                // Proper frame-rate independent movement calculation
-                // Use delta time for smooth movement regardless of framerate
-                direction.current.multiplyScalar(moveSpeed * clampedDelta * 60);
-
-                // Apply to camera position
-                camera.position.add(direction.current);
-            }
+            // Normalize after removing y component
+            forward.current.normalize();
+            right.current.normalize();
         } else {
-            // Point and click mode
-            targetPosition.current.copy(cameraTarget);
-            const lerpFactor = 0.05;
-            camera.position.lerp(targetPosition.current, lerpFactor);
+            // In flight mode, allow full 3D movement
+            forward.current.normalize();
+            right.current.normalize();
+            up.normalize();
+        }
+
+        // Reset direction vector
+        direction.current.set(0, 0, 0);
+
+        // Movement speed - adjusted for mobile
+        const moveSpeed = isMobile ? 0.12 : 0.15; // Slightly slower on mobile for better control
+
+        // On mobile, only use virtual controls. On desktop, prefer virtual if active, otherwise keyboard
+        const useVirtual =
+            isMobile ||
+            virtualMovement.forward ||
+            virtualMovement.backward ||
+            virtualMovement.left ||
+            virtualMovement.right;
+
+        // Choose which control source to use
+        const activeMovement = useVirtual ? virtualMovement : movement;
+
+        // Build direction vector only if there's input
+        let hasMovement = false;
+        if (activeMovement.forward) {
+            direction.current.add(forward.current);
+            hasMovement = true;
+        }
+        if (activeMovement.backward) {
+            direction.current.sub(forward.current);
+            hasMovement = true;
+        }
+        if (activeMovement.left) {
+            direction.current.sub(right.current);
+            hasMovement = true;
+        }
+        if (activeMovement.right) {
+            direction.current.add(right.current);
+            hasMovement = true;
+        }
+
+        // Add vertical movement for flight mode
+        if (flyMode) {
+            if (activeMovement.jumping) {
+                direction.current.add(up);
+                hasMovement = true;
+            }
+            // Use backward for downward movement in flight mode
+            if (activeMovement.backward && !activeMovement.forward) {
+                // Remove the backward movement we added above and add downward movement
+                direction.current.add(forward.current); // Cancel out the backward
+                direction.current.sub(up);
+                hasMovement = true;
+            }
+        }
+
+        // Apply movement if we have any direction
+        if (hasMovement) {
+            // Normalize for consistent speed in diagonals
+            direction.current.normalize();
+
+            // Proper frame-rate independent movement calculation
+            // Use delta time for smooth movement regardless of framerate
+            direction.current.multiplyScalar(moveSpeed * clampedDelta * 60);
+
+            // Apply to camera position
+            camera.position.add(direction.current);
         }
     });
 
