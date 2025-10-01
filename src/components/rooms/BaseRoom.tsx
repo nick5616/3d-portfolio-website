@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { InteractiveObject } from "../core/InteractiveObject";
 import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface BaseRoomProps {
     config: RoomConfig;
@@ -29,6 +30,7 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
 }) => {
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
     const { scene } = useThree();
+    const { galleryWhiteLightMode } = useSceneStore();
 
     // Memoize wall configurations - skip shared walls to prevent z-fighting
     const wallConfigs = useMemo(() => {
@@ -68,7 +70,11 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
 
             {/* Lighting */}
             <ambientLight
-                intensity={config.lightPreset.ambient.intensity * 0.5}
+                intensity={
+                    config.id === "gallery" && galleryWhiteLightMode
+                        ? config.lightPreset.ambient.intensity * 2 // Double ambient for white light mode
+                        : config.lightPreset.ambient.intensity * 0.5
+                }
                 color={config.lightPreset.ambient.color}
             />
             <directionalLight
@@ -104,7 +110,11 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                         key={`spot-${index}`}
                         position={spot.position}
                         intensity={spot.intensity}
-                        color={spot.color}
+                        color={
+                            config.id === "gallery" && galleryWhiteLightMode
+                                ? "#ffffff" // White light for gallery white mode
+                                : spot.color
+                        }
                         shadow-mapSize={[512, 512]}
                         shadow-bias={-0.0001}
                         distance={spot.distance}

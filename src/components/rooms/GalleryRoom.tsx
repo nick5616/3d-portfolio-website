@@ -4,6 +4,8 @@ import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 import { AzureArtFrameByIndex } from "../models/AzureArtFrameByIndex";
 import { ArtPieceMapper } from "../../utils/artPieceMapper";
+import { LightSwitch } from "../ui/LightSwitch";
+import { useSceneStore } from "../../stores/sceneStore";
 
 interface GalleryRoomProps {
     config: RoomConfig;
@@ -231,6 +233,7 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
     depth,
 }) => {
     const [availableArtCount, setAvailableArtCount] = useState<number>(0);
+    const { galleryWhiteLightMode, toggleGalleryLightMode } = useSceneStore();
 
     React.useEffect(() => {
         ArtPieceMapper.clearCache();
@@ -316,6 +319,14 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
                     proximityRadius={10}
                 />
             ))}
+
+            {/* Light Switch - positioned on the east wall, farther from door and higher */}
+            <LightSwitch
+                position={[9.74, 1.75, 3] as [number, number, number]}
+                rotation={[0, -Math.PI / 2, 0] as [number, number, number]}
+                onToggle={toggleGalleryLightMode}
+                isWhiteLight={galleryWhiteLightMode}
+            />
         </>
     );
 };

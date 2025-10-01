@@ -70,6 +70,7 @@ interface SceneState {
     shouldTeleportPlayer: boolean;
     roomEnvironmentReady: boolean; // Add this flag
     spotlightsEnabled: boolean;
+    galleryWhiteLightMode: boolean; // Gallery light mode: true = white lights, false = custom colors
     flyMode: boolean;
     isFirstPerson: boolean;
     isInteracting: boolean;
@@ -131,6 +132,7 @@ interface SceneState {
         rotation?: [number, number, number]
     ) => void;
     toggleSpotlights: () => void;
+    toggleGalleryLightMode: () => void;
     setPerformanceQuality: (quality: "low" | "medium" | "high") => void;
     toggleStats: () => void;
     togglePerformanceMonitoring: () => void;
@@ -162,6 +164,7 @@ export const useSceneStore = create<SceneState>((set) => {
         shouldTeleportPlayer: false,
         roomEnvironmentReady: false, // Initialize room environment ready flag
         spotlightsEnabled: false,
+        galleryWhiteLightMode: true, // Default to white light mode
         isFirstPerson: true,
         isInteracting: false,
         lastTeleportTime: 0,
@@ -387,6 +390,10 @@ export const useSceneStore = create<SceneState>((set) => {
         },
         toggleSpotlights: () =>
             set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
+        toggleGalleryLightMode: () =>
+            set((state) => ({
+                galleryWhiteLightMode: !state.galleryWhiteLightMode,
+            })),
         setPerformanceQuality: (quality) =>
             set((state) => {
                 const newPerformance = { ...state.performance, quality };
