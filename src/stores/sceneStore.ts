@@ -96,6 +96,9 @@ interface SceneState {
     virtualRotation: RotationState;
     setVirtualMovement: (movement: MovementState) => void;
     setVirtualRotation: (rotation: RotationState) => void;
+    // Educational modal state
+    isEducationalModalOpen: boolean;
+    setEducationalModalOpen: (open: boolean) => void;
     // Math game actions
     setMathGameActive: (active: boolean) => void;
     updateMathGameMeteors: (
@@ -214,6 +217,10 @@ export const useSceneStore = create<SceneState>((set) => {
             y: 0,
         },
         setVirtualMovement: (movement) => set({ virtualMovement: movement }),
+        // Educational modal state
+        isEducationalModalOpen: true, // Start with modal open
+        setEducationalModalOpen: (open) =>
+            set({ isEducationalModalOpen: open }),
         setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
         // Math game actions
         setMathGameActive: (active) =>

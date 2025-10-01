@@ -284,6 +284,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     onClose,
 }) => {
     const { isMobile } = useDeviceDetection();
+    const { setEducationalModalOpen } = useSceneStore();
     const isLandscape = useDeviceOrientation();
     const [isOpen, setIsOpen] = useState(isVisible);
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -299,12 +300,14 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         if (isMobile) {
             document.body.classList.toggle("modal-hidden", !isOpen);
         }
+        // Update global state
+        setEducationalModalOpen(isOpen);
         return () => {
             if (isMobile) {
                 document.body.classList.add("modal-hidden");
             }
         };
-    }, [isOpen, isMobile]);
+    }, [isOpen, isMobile, setEducationalModalOpen]);
 
     const handleClose = () => {
         console.log("handleClose");

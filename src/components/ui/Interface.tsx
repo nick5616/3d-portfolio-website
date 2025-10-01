@@ -23,7 +23,11 @@ export default function Interface() {
         targetRoomId: string;
     } | null>(null);
 
-    const { console: consoleState, isInteracting } = useSceneStore();
+    const {
+        console: consoleState,
+        isInteracting,
+        isEducationalModalOpen,
+    } = useSceneStore();
 
     // Listen for door hover events
     useEffect(() => {
@@ -144,8 +148,8 @@ export default function Interface() {
                 </div>
             )}
 
-            {/* Virtual controls (always show on mobile) */}
-            {isMobile && <VirtualControls />}
+            {/* Virtual controls (hide when educational modal is open on mobile) */}
+            {isMobile && !isEducationalModalOpen && <VirtualControls />}
 
             {/* Performance quality controls */}
             <PerformanceControls />
