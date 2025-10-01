@@ -27,6 +27,7 @@ export default function Interface() {
         console: consoleState,
         isInteracting,
         isEducationalModalOpen,
+        showStartPrompt,
     } = useSceneStore();
 
     // Listen for door hover events
@@ -103,8 +104,8 @@ export default function Interface() {
             {/* Mouse state indicator for desktop users */}
             <MouseStateIndicator />
 
-            {/* Crosshair - hide when interacting (console or other) */}
-            {!isInteracting && (
+            {/* Crosshair - hide when interacting (console or other) or when start prompt is showing */}
+            {!isInteracting && !showStartPrompt && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
                     <div className="w-2 h-2 bg-white rounded-full opacity-80 shadow-lg"></div>
                 </div>

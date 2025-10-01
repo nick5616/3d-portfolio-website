@@ -97,6 +97,9 @@ interface SceneState {
     // Educational modal state
     isEducationalModalOpen: boolean;
     setEducationalModalOpen: (open: boolean) => void;
+    // Start prompt state
+    showStartPrompt: boolean;
+    setShowStartPrompt: (show: boolean) => void;
     // Math game actions
     setMathGameActive: (active: boolean) => void;
     updateMathGameMeteors: (
@@ -226,6 +229,9 @@ export const useSceneStore = create<SceneState>((set) => {
         isEducationalModalOpen: true, // Start with modal open
         setEducationalModalOpen: (open) =>
             set({ isEducationalModalOpen: open }),
+        // Start prompt state
+        showStartPrompt: false,
+        setShowStartPrompt: (show) => set({ showStartPrompt: show }),
         setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
         // Math game actions
         setMathGameActive: (active) =>

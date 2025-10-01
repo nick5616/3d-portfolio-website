@@ -284,17 +284,22 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     onClose,
 }) => {
     const { isMobile } = useDeviceDetection();
-    const { setEducationalModalOpen } = useSceneStore();
+    const { setEducationalModalOpen, showStartPrompt, setShowStartPrompt } =
+        useSceneStore();
     const isLandscape = useDeviceOrientation();
-    const [isOpen, setIsOpen] = useState(isVisible);
+    const [isOpen, setIsOpen] = useState(() => {
+        // If localStorage says don't show, start closed
+        const shouldShow = localStorage.getItem("dontShowWelcome");
+        return shouldShow !== "true" && isVisible;
+    });
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     useEffect(() => {
         const shouldShow = localStorage.getItem("dontShowWelcome");
-        if (shouldShow === "true") {
-            handleClose();
+        if (shouldShow === "true" && !isMobile) {
+            setShowStartPrompt(true);
         }
-    }, []);
+    }, [setShowStartPrompt]);
 
     useEffect(() => {
         if (isMobile) {
@@ -302,6 +307,9 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         }
         // Update global state
         setEducationalModalOpen(isOpen);
+
+        // Note: Pointer lock will be requested on next user click via mouse controls
+
         return () => {
             if (isMobile) {
                 document.body.classList.add("modal-hidden");
@@ -316,17 +324,40 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         }
         setIsOpen(false);
         onClose?.();
-
-        // Request pointer lock if not on mobile
-        if (!isMobile) {
-            const canvas = document.querySelector("canvas");
-            if (canvas) {
-                canvas.requestPointerLock();
-            }
-        }
+        // Hide start prompt when modal is closed
+        setShowStartPrompt(false);
     };
 
-    if (!isOpen) return null;
+    // Hide start prompt when user clicks
+    useEffect(() => {
+        if (!showStartPrompt) return;
+
+        const handleClick = () => {
+            setShowStartPrompt(false);
+        };
+
+        document.addEventListener("click", handleClick);
+        return () => document.removeEventListener("click", handleClick);
+    }, [showStartPrompt, setShowStartPrompt]);
+
+    if (!isOpen) {
+        // Show start prompt for returning users
+        if (showStartPrompt) {
+            return (
+                <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+                    <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white/20">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-sm font-medium">
+                                Click anywhere to look around
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    }
 
     const modalStyle = isMobile
         ? { pointerEvents: "auto" as const, zIndex: 60 }
@@ -351,7 +382,17 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             >
                 {/* Close button */}
                 <button
-                    onClick={handleClose}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Request pointer lock before closing modal
+                        if (!isMobile) {
+                            const canvas = document.querySelector("canvas");
+                            if (canvas) {
+                                canvas.requestPointerLock();
+                            }
+                        }
+                        handleClose();
+                    }}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
                     style={{ touchAction: "auto" }}
                 >
@@ -575,6 +616,14 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                // Request pointer lock before closing modal
+                                if (!isMobile) {
+                                    const canvas =
+                                        document.querySelector("canvas");
+                                    if (canvas) {
+                                        canvas.requestPointerLock();
+                                    }
+                                }
                                 handleClose();
                             }}
                             className={`px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all`}
