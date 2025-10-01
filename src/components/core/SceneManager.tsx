@@ -138,14 +138,14 @@ export const SceneManager: React.FC = () => {
             />
 
             {/* Room-specific environment */}
-            <Environment
+            {/* <Environment
                 preset={getEnvironmentPreset(currentRoom?.id)}
                 background={false}
                 environmentIntensity={getEnvironmentIntensity(
                     currentRoom?.id,
                     performance.quality
                 )}
-            />
+            /> */}
 
             <CameraController />
 

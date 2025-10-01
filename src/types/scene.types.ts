@@ -28,6 +28,10 @@ export interface LightPreset {
         target: [number, number, number];
         intensity: number;
         color: string;
+        distance?: number;
+        decay?: number;
+        angle?: number;
+        penumbra?: number;
     }[];
 }
 

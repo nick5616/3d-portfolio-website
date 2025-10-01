@@ -6,146 +6,6 @@ const ATRIUM_CEILING_HEIGHT = 7.5;
 const PROJECTS_CEILING_HEIGHT = 6;
 const ABOUT_CEILING_HEIGHT = 8;
 
-const createArtLayout = (): InteractiveElement[] => [
-    // North wall (-x)
-    {
-        id: "art-north-center",
-        type: "model",
-        position: [-9, 2.5, 0] as [number, number, number],
-        rotation: [0, Math.PI / 2, 0] as [number, number, number],
-        scale: [1.5, 1.5, 1] as [number, number, number],
-        content: {
-            type: "art-frame",
-            imageUrl: "marvin-martian.jpg",
-        },
-    },
-
-    // Higher surrounding pieces for North wall
-    ...[-4.8, 5.5].map(
-        (zOffset, i): InteractiveElement => ({
-            id: `art-north-top-${i}`,
-            type: "model",
-            position: [-9, 3.6, zOffset] as [number, number, number],
-            rotation: [0, Math.PI / 2, 0] as [number, number, number],
-            scale: [0.8, 0.8, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: i === 0 ? "monster-under.jpg" : "chaos-bird.jpg",
-            },
-        })
-    ),
-
-    // Lower surrounding pieces for North wall
-    ...[-6.5, 6.5].map(
-        (zOffset, i): InteractiveElement => ({
-            id: `art-north-bottom-${i}`,
-            type: "model",
-            position: [-9, 1.8, zOffset] as [number, number, number],
-            rotation: [0, Math.PI / 2, 0] as [number, number, number],
-            scale: [0.9, 0.9, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: i === 0 ? "teemo.jpg" : "tree-night.jpg",
-            },
-        })
-    ),
-
-    // South wall (left when entering) (indices 6-11)
-    // Center piece
-    {
-        id: "art-south-center",
-        type: "model",
-        position: [0, 2.5, 9] as [number, number, number],
-        rotation: [0, Math.PI, 0] as [number, number, number],
-        scale: [1.5, 1.5, 1] as [number, number, number],
-        content: {
-            type: "art-frame",
-            imageUrl: "wispette.jpg",
-        },
-    },
-
-    // Side pieces for South wall
-    ...[-4, 4].map(
-        (xOffset, i): InteractiveElement => ({
-            id: `art-south-side-${i}`,
-            type: "model",
-            position: [xOffset, 2.5, 9] as [number, number, number],
-            rotation: [0, Math.PI, 0] as [number, number, number],
-            scale: [1.2, 1.2, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: i === 0 ? "link-botw.jpg" : "okay-blue-heron.jpg",
-            },
-        })
-    ),
-
-    // Upper pieces for South wall
-    ...[-6.1, 6.3].map(
-        (xOffset, i): InteractiveElement => ({
-            id: `art-south-upper-${i}`,
-            type: "model",
-            position: [xOffset, 3.5, 9] as [number, number, number],
-            rotation: [0, Math.PI, 0] as [number, number, number],
-            scale: [0.9, 0.9, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: "marvin-martian.jpg",
-            },
-        })
-    ),
-
-    // Back wall (-z) (indices 12-17)
-    ...[-7, -2.5, 2.5, 7].map(
-        (xOffset, i): InteractiveElement => ({
-            id: `art-back-${i}`,
-            type: "model",
-            position: [xOffset, 2 + (i % 2) * 0.8, -9] as [
-                number,
-                number,
-                number
-            ],
-            rotation: [0, 0, 0] as [number, number, number],
-            scale: [1.1, 1.1, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: "monster-under.jpg",
-            },
-        })
-    ),
-
-    // Entrance/Right wall paintings (+x) (indices 18-21)
-    ...(
-        [
-            [-7, 2.5],
-            [-4, 3],
-            [4, 3],
-            [7, 2.5],
-        ] as const
-    ).map(
-        ([zOffset, height], i): InteractiveElement => ({
-            id: `art-entrance-${i}`,
-            type: "model",
-            position: [9, height, zOffset] as [number, number, number],
-            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-            scale: [1, 1, 1] as [number, number, number],
-            content: {
-                type: "art-frame",
-                imageUrl: "chaos-bird.jpg",
-            },
-        })
-    ),
-
-    // Gallery title
-    {
-        id: "gallery-title",
-        type: "text",
-        position: [0, 8, -8.5] as [number, number, number],
-        rotation: [0, 0, 0] as [number, number, number],
-        content: "",
-        scale: [2, 2, 2] as [number, number, number],
-    },
-];
-
 export const roomConfigs: { [key: string]: RoomConfig } = {
     atrium: {
         // DO NOT DELETE. FOR AI TO GET CONTEXT ON. YOU WILL ONLY BE HURTING YOUR PERFORMANCE BY DELETING THIS COMMENT
@@ -237,112 +97,349 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
     },
 
     gallery: {
-        // DO NOT DELETE. FOR AI TO GET CONTEXT ON. YOU WILL ONLY BE HURTING YOUR PERFORMANCE BY DELETING THIS COMMENT
-        // An upscale, well lit space, such that the art can shine through. It's like a gallery in Manhattan or any upscale New York borough.
         id: "gallery",
         name: "Art Gallery",
         position: [-20, 0, 0] as [number, number, number],
         dimensions: [20, ART_GALLERY_CEILING_HEIGHT, 20],
         lightPreset: {
-            ambient: { intensity: 1, color: "#ffffff" }, // Increased from 0.4
+            ambient: { intensity: 0.1, color: "#ffffff" }, // Minimal ambient light
             directional: {
                 position: [5, 5, 0] as [number, number, number],
-                intensity: 2, // Increased from 0.5
+                intensity: 0, // No directional light - spotlights only
                 color: "#ffffff",
             },
             spots: [
-                // North wall (left) spotlights - 6 lights for 6 frames
-                ...Array(6)
-                    .fill(0)
-                    .map((_, i) => ({
-                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        target: [-8, 2, -8] as [number, number, number],
-                        intensity: 1.2, // Reduced from 1.2
-                        color: "#ffffff",
-                    })),
-                // South wall spotlights
-                ...Array(6)
-                    .fill(0)
-                    .map((_, i) => ({
-                        position: [8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        target: [8, 2, -8] as [number, number, number],
-                        intensity: 0.6,
-                        color: "#ffffff",
-                    })),
-                // West wall (back) spotlights
-                ...Array(6)
-                    .fill(0)
-                    .map((_, i) => ({
-                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        target: [-8, 2, -8] as [number, number, number],
-                        intensity: 0.6,
-                        color: "#ffffff",
-                    })),
-                // East wall (entrance) spotlights
-                ...Array(6)
-                    .fill(0)
-                    .map((_, i) => ({
-                        position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
-                            number,
-                            number,
-                            number
-                        ],
-                        target: [-8, 2, 8] as [number, number, number],
-                        intensity: 0.6,
-                        color: "#ffffff",
-                    })),
-                // Corner down lights - 4 point lights in ceiling corners
+                // ═══════════════════════════════════════════════════════════════════════════
+                // INDIVIDUAL SPOTLIGHTS FOR EACH ART PIECE (22 total: 14 outer + 8 inner)
+                // Spotlights positioned away from art pieces to shine ONTO them
+                // Targets are the actual art piece positions
+                // ═══════════════════════════════════════════════════════════════════════════
+
+                // OUTER WALL SPOTLIGHTS (14 art pieces)
+                // North Wall (z = -9.75): 4 pieces at x = [-7.5, -1.5, 1.5, 7.5]
                 {
-                    position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
+                    position: [-7.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
                         number,
                         number,
                         number
                     ],
-                    target: [-8, 0, -8] as [number, number, number],
-                    intensity: 8,
-                    color: "#ffffff",
+                    target: [-7.5, 2.8, -9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#ff0000", // red
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
                 },
                 {
-                    position: [8, ART_GALLERY_CEILING_HEIGHT / 2, -8] as [
+                    position: [-1.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
                         number,
                         number,
                         number
                     ],
-                    target: [8, 0, -8] as [number, number, number],
-                    intensity: 0.8,
-                    color: "#ffffff",
+                    target: [-1.5, 2.8, -9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#ff00ff",
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
                 },
                 {
-                    position: [-8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
+                    position: [1.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
                         number,
                         number,
                         number
                     ],
-                    target: [-8, 0, 8] as [number, number, number],
-                    intensity: 0.8,
-                    color: "#ffffff",
+                    target: [1.5, 2.8, -9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#080808", // black
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
                 },
                 {
-                    position: [8, ART_GALLERY_CEILING_HEIGHT / 2, 8] as [
+                    position: [7.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
                         number,
                         number,
                         number
                     ],
-                    target: [8, 0, 8] as [number, number, number],
-                    intensity: 0.8,
-                    color: "#ffffff",
+                    target: [7.5, 2.8, -9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#8b4513", // brown
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+
+                // South Wall (z = 9.75): 4 pieces at x = [-7.5, -1.5, 1.5, 7.5]
+                {
+                    position: [-7.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-7.5, 2.8, 9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#00ff99", // light green
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // {
+                //     position: [-1.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
+                //         number,
+                //         number,
+                //         number
+                //     ],
+                //     target: [-1.5, 2.8, 9.75] as [number, number, number],
+                //     intensity: 10,
+                //     color: "#ffffff",
+                //     distance: 20,
+                //     decay: 1,
+                //     angle: Math.PI / 4,
+                //     penumbra: 0.3,
+                // },
+                {
+                    position: [1.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [1.5, 2.8, 9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#ffff00", // courageous yellow
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                {
+                    position: [7.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [7.5, 2.8, 9.75] as [number, number, number],
+                    intensity: 10,
+                    color: "#6495ed", // unsaturated blue from the rainbow
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 5,
+                    penumbra: 0.3,
+                },
+
+                // West Wall (x = -9.75): 4 pieces at z = [-7.5, -1.5, 1.5, 7.5]
+                {
+                    position: [-6, ART_GALLERY_CEILING_HEIGHT, -7.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-9.75, 2.8, -7.5] as [number, number, number],
+                    intensity: 5,
+                    color: "#ff00ff",
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                {
+                    position: [-6, ART_GALLERY_CEILING_HEIGHT, -1.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-9.75, 2.8, -1.5] as [number, number, number],
+                    intensity: 10,
+                    color: "#191970", // midnight blue
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                {
+                    position: [-6, ART_GALLERY_CEILING_HEIGHT, 1.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-9.75, 2.8, 1.5] as [number, number, number],
+                    intensity: 10,
+                    color: "#800080", // unsaturated purple
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                {
+                    position: [-6, ART_GALLERY_CEILING_HEIGHT, 7.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-9.75, 2.8, 7.5] as [number, number, number],
+                    intensity: 10,
+                    color: "#008000", // sea moss
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+
+                // East Wall (x = 9.75): 2 pieces at z = [-7.5, 7.5] (filtered for entrance)
+                {
+                    position: [6, ART_GALLERY_CEILING_HEIGHT, -7.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [9.75, 2.8, -7.5] as [number, number, number],
+                    intensity: 10,
+                    color: "#f5f5dc", // sand
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                {
+                    position: [6, ART_GALLERY_CEILING_HEIGHT, 7.5] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [9.75, 2.8, 7.5] as [number, number, number],
+                    intensity: 10,
+                    color: "#808080", // grey
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+
+                // INNER WALL SPOTLIGHTS (8 art pieces - 1 per vertical section, no crossbar)
+                // Section 1: Left Outside Top (x=-5.25, z=-4)
+                {
+                    position: [-9.5, ART_GALLERY_CEILING_HEIGHT, -4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-5.25, 2.8, -4] as [number, number, number],
+                    intensity: 10,
+                    color: "#00ffff", // light blue
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 2: Left Inside Top (x=-4.75, z=-2)
+                {
+                    position: [-2, ART_GALLERY_CEILING_HEIGHT, -2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-4.75, 2.8, -2] as [number, number, number],
+                    intensity: 10,
+                    color: "#ff00ff", // purple
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 4: Right Inside Top (x=4.75, z=-2)
+                {
+                    position: [2, ART_GALLERY_CEILING_HEIGHT, -2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [4.75, 2.8, -2] as [number, number, number],
+                    intensity: 10,
+                    color: "#ffff00", // yellow
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 5: Right Outside Top (x=5.25, z=-4)
+                {
+                    position: [9, ART_GALLERY_CEILING_HEIGHT, -4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [5.25, 2.8, -4] as [number, number, number],
+                    intensity: 10,
+                    color: "#ffa000", // orange
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 6: Left Outside Bottom (x=-5.25, z=4)
+                {
+                    position: [-9, ART_GALLERY_CEILING_HEIGHT, 4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-5.25, 2.8, 4] as [number, number, number],
+                    intensity: 10,
+                    color: "#aaaaaa", // grey
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 7: Left Inside Bottom (x=-4.75, z=2)
+                {
+                    position: [0, ART_GALLERY_CEILING_HEIGHT, 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [-4.75, 2.8, 2] as [number, number, number],
+                    intensity: 10,
+                    color: "#927b7b", // sepia
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 9: Right Inside Bottom (x=4.75, z=2)
+                {
+                    position: [0, ART_GALLERY_CEILING_HEIGHT, 2] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [4.75, 2.8, 2] as [number, number, number],
+                    intensity: 10,
+                    color: "#134113", // nature green
+                    distance: 20,
+                    decay: 0.5,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
+                },
+                // Section 10: Right Outside Bottom (x=5.25, z=4)
+                {
+                    position: [10, ART_GALLERY_CEILING_HEIGHT, 4] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [5.25, 2.8, 4] as [number, number, number],
+                    intensity: 10,
+                    color: "#0000ff", // blue
+                    distance: 20,
+                    decay: 1,
+                    angle: Math.PI / 4,
+                    penumbra: 0.3,
                 },
             ],
         },

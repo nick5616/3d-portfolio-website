@@ -1,6 +1,5 @@
 import React from "react";
 import { RoomConfig } from "../../types/scene.types";
-import { RoomComments } from "./RoomComments";
 import { InteractiveObject } from "../core/InteractiveObject";
 import { displaysConfig } from "../../configs/displayConfig";
 
@@ -34,9 +33,6 @@ export const ProjectsRoom: React.FC<ProjectsRoomProps> = ({ config }) => {
 
     return (
         <>
-            {/* Room annotation comments */}
-            <RoomComments roomId={config.id} />
-
             {/* Project displays - render the interactive web displays */}
             {projectDisplays.map((element) => (
                 <InteractiveObject key={element.id} element={element} />

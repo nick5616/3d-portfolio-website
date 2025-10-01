@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
-import { RoomComments } from "./RoomComments";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { useSceneStore } from "../../stores/sceneStore";

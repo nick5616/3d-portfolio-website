@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
-import { RoomComments } from "./RoomComments";
 import { HolodeckControlPanel } from "./holodeck/HolodeckControlPanel";
 import { HolodeckGrid } from "./holodeck/HolodeckGrid";
 import { CourageExperience } from "./holodeck/CourageExperience";
@@ -43,14 +42,7 @@ const EXPERIENCE_SPAWN_POSITIONS: Record<string, [number, number, number]> = {
     off: [0, 0.9, 0],
 };
 
-export const AboutRoom: React.FC<AboutRoomProps> = ({
-    config,
-    materials,
-    wallThickness,
-    width,
-    height,
-    depth,
-}) => {
+export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
     // Holodeck state management
     const [currentExperience, setCurrentExperience] =
         useState<HolodeckExperience>("off");
@@ -178,8 +170,6 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({
 
     return (
         <>
-            <RoomComments roomId={config.id} />
-
             {/* Centralized collision walls - work for all experiences */}
             {[
                 // Back wall (north) - full width

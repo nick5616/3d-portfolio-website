@@ -8,7 +8,6 @@ import { AtriumRoom } from "../rooms/AtriumRoom";
 import { GalleryRoom } from "../rooms/GalleryRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
 import { AboutRoom } from "../rooms/AboutRoom";
-import { DefaultRoom } from "../rooms/DefaultRoom";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
@@ -94,10 +93,11 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                 );
             default:
                 return (
-                    <DefaultRoom
+                    <BaseRoom
                         config={config}
                         materials={materials}
                         wallThickness={wallThickness}
+                        renderWall={renderWall}
                         width={width}
                         height={height}
                         depth={depth}
