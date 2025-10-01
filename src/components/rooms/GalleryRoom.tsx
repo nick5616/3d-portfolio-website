@@ -260,22 +260,6 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 
     return (
         <>
-            {/* Simple light position indicators for debugging */}
-            {config.lightPreset.spots?.map((spot, index) => (
-                <group key={`light-debug-${index}`}>
-                    {/* Light source */}
-                    <mesh position={spot.position}>
-                        <sphereGeometry args={[0.2]} />
-                        <meshBasicMaterial color="red" />
-                    </mesh>
-                    {/* Target */}
-                    <mesh position={spot.target}>
-                        <sphereGeometry args={[0.1]} />
-                        <meshBasicMaterial color="blue" />
-                    </mesh>
-                </group>
-            ))}
-
             {/* Vertical dividers */}
             <RigidBody type="fixed" colliders="cuboid">
                 <mesh position={new THREE.Vector3(-width / 4, height / 2, 0)}>

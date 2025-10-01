@@ -105,9 +105,9 @@ export const SceneManager: React.FC = () => {
 
         switch (roomId) {
             case "projects":
-                return baseIntensity * 0.4; // Very low for sci-fi room to avoid unwanted reflections
+                return baseIntensity * 0; // Very low for sci-fi room to avoid unwanted reflections
             case "gallery":
-                return baseIntensity * 0.8; // Slightly reduced for gallery
+                return baseIntensity * 0; // Slightly reduced for gallery
             case "atrium":
                 return baseIntensity * 1.2; // Enhanced for natural feel
             case "about":
@@ -138,14 +138,14 @@ export const SceneManager: React.FC = () => {
             />
 
             {/* Room-specific environment */}
-            {/* <Environment
+            <Environment
                 preset={getEnvironmentPreset(currentRoom?.id)}
                 background={false}
                 environmentIntensity={getEnvironmentIntensity(
                     currentRoom?.id,
                     performance.quality
                 )}
-            /> */}
+            />
 
             <CameraController />
 

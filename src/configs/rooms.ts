@@ -442,10 +442,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [0, 0, -20] as [number, number, number],
         dimensions: [20, PROJECTS_CEILING_HEIGHT, 20],
         lightPreset: {
-            ambient: { intensity: 0.4, color: "#ffffff" },
+            ambient: { intensity: 4.5, color: "#ffffff" },
             directional: {
                 position: [0, 8, -5] as [number, number, number],
-                intensity: 0.6,
+                intensity: 0,
                 color: "#ffffff",
             },
             spots: Array(3)
