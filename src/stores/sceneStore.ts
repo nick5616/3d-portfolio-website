@@ -4,6 +4,10 @@ import * as THREE from "three";
 import { RoomConfig } from "../types/scene.types";
 import { roomConfigs } from "../configs/rooms";
 import { Meteor } from "../types/math-game.types";
+import {
+    loadPerformanceSettings,
+    savePerformanceSettings,
+} from "../utils/localStorage";
 
 // Configuration for experience-specific rotation angles (in radians)
 // Each angle represents the optimal orientation for the user to face when the experience loads
@@ -144,6 +148,10 @@ interface SceneState {
 
 export const useSceneStore = create<SceneState>((set) => {
     console.log("🏗️ Initializing scene store");
+
+    // Load persisted performance settings
+    const savedPerformanceSettings = loadPerformanceSettings();
+
     return {
         currentRoom: null, // Don't set a default room
         controlMode: "firstPerson",
@@ -159,11 +167,7 @@ export const useSceneStore = create<SceneState>((set) => {
         lastTeleportTime: 0,
         playerGrounded: false,
 
-        performance: {
-            showStats: false,
-            monitoring: true,
-            quality: "high", // Ensure default is high quality
-        },
+        performance: savedPerformanceSettings,
         minimap: {
             enabled: true,
             visible: true,
@@ -384,23 +388,29 @@ export const useSceneStore = create<SceneState>((set) => {
         toggleSpotlights: () =>
             set((state) => ({ spotlightsEnabled: !state.spotlightsEnabled })),
         setPerformanceQuality: (quality) =>
-            set((state) => ({
-                performance: { ...state.performance, quality },
-            })),
+            set((state) => {
+                const newPerformance = { ...state.performance, quality };
+                savePerformanceSettings(newPerformance);
+                return { performance: newPerformance };
+            }),
         toggleStats: () =>
-            set((state) => ({
-                performance: {
+            set((state) => {
+                const newPerformance = {
                     ...state.performance,
                     showStats: !state.performance.showStats,
-                },
-            })),
+                };
+                savePerformanceSettings(newPerformance);
+                return { performance: newPerformance };
+            }),
         togglePerformanceMonitoring: () =>
-            set((state) => ({
-                performance: {
+            set((state) => {
+                const newPerformance = {
                     ...state.performance,
                     monitoring: !state.performance.monitoring,
-                },
-            })),
+                };
+                savePerformanceSettings(newPerformance);
+                return { performance: newPerformance };
+            }),
         toggleMinimap: () =>
             set((state) => ({
                 minimap: {
