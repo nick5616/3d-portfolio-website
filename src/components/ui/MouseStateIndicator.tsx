@@ -82,12 +82,6 @@ export const MouseStateIndicator: React.FC = () => {
                             Press ESC to unlock mouse cursor
                         </div>
                     )}
-
-                    {!isPointerLocked && (
-                        <div className="text-xs opacity-90 mt-1">
-                            Press ESC first to click UI elements
-                        </div>
-                    )}
                 </div>
             </div>
         </>
