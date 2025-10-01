@@ -350,6 +350,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                 <button
                     onClick={handleClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
+                    style={{ touchAction: "auto" }}
                 >
                     <svg
                         className="w-6 h-6"
@@ -564,6 +565,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                     setDontShowAgain(e.target.checked)
                                 }
                                 className="form-checkbox rounded bg-white/10 border-white/20"
+                                style={{ touchAction: "auto" }}
                             />
                             <span>Don't show this again</span>
                         </label>
@@ -573,6 +575,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                 handleClose();
                             }}
                             className={`px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all`}
+                            style={{ touchAction: "auto" }}
                         >
                             Let's Begin
                         </button>
