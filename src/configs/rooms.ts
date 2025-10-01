@@ -102,7 +102,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [-20, 0, 0] as [number, number, number],
         dimensions: [20, ART_GALLERY_CEILING_HEIGHT, 20],
         lightPreset: {
-            ambient: { intensity: 0.1, color: "#ffffff" }, // Minimal ambient light
+            ambient: { intensity: 1, color: "#ffffff" }, // Minimal ambient light
             directional: {
                 position: [5, 5, 0] as [number, number, number],
                 intensity: 0, // No directional light - spotlights only
@@ -146,20 +146,6 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     penumbra: 0.3,
                 },
                 {
-                    position: [1.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [1.5, 2.8, -9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#080808", // black
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
                     position: [7.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
                         number,
                         number,
@@ -189,20 +175,6 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     angle: Math.PI / 4,
                     penumbra: 0.3,
                 },
-                // {
-                //     position: [-1.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
-                //         number,
-                //         number,
-                //         number
-                //     ],
-                //     target: [-1.5, 2.8, 9.75] as [number, number, number],
-                //     intensity: 10,
-                //     color: "#ffffff",
-                //     distance: 20,
-                //     decay: 1,
-                //     angle: Math.PI / 4,
-                //     penumbra: 0.3,
-                // },
                 {
                     position: [1.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
                         number,
