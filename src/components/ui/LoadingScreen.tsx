@@ -20,7 +20,7 @@ export const LoadingScreen: React.FC = () => {
     if (!active) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-[60]">
             <div className="max-w-sm w-full px-4">
                 <div className="relative">
                     {/* Progress bar background */}

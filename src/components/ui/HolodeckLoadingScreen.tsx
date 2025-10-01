@@ -94,7 +94,7 @@ export const HolodeckLoadingScreen: React.FC = () => {
 
     return (
         <div
-            className={`fixed inset-0 z-50 transition-opacity duration-1000 ${
+            className={`fixed inset-0 z-[60] transition-opacity duration-1000 ${
                 fadeOut ? "opacity-0" : "opacity-100"
             }`}
             style={{ backgroundColor: "#000" }}
