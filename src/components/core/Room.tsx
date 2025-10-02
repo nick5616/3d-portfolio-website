@@ -8,6 +8,7 @@ import { AtriumRoom } from "../rooms/AtriumRoom";
 import { GalleryRoom } from "../rooms/GalleryRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
 import { AboutRoom } from "../rooms/AboutRoom";
+import { RelaxationRoom } from "../rooms/RelaxationRoom";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
@@ -91,6 +92,17 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                         depth={depth}
                     />
                 );
+            case "relaxation":
+                return (
+                    <RelaxationRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
             default:
                 return (
                     <BaseRoom
@@ -124,6 +136,12 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                             />
                         </mesh>
                     </RigidBody>
+                    {renderRoomComponent()}
+                </>
+            ) : config.id === "relaxation" ? (
+                // Relaxation room handles its own cylindrical walls and hemisphere ceiling
+                <>
+                    <RoomEnvironmentReady />
                     {renderRoomComponent()}
                 </>
             ) : (

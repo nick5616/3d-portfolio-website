@@ -5,6 +5,7 @@ const ART_GALLERY_CEILING_HEIGHT = 7.5;
 const ATRIUM_CEILING_HEIGHT = 7.5;
 const PROJECTS_CEILING_HEIGHT = 6;
 const ABOUT_CEILING_HEIGHT = 8;
+const RELAXATION_CEILING_HEIGHT = 6;
 
 export const roomConfigs: { [key: string]: RoomConfig } = {
     atrium: {
@@ -91,6 +92,18 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 entrancePoint: {
                     position: [-2.5, 1.5, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-relaxation",
+                targetRoomId: "relaxation",
+                position: [0, 0, 9.77] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, -2] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
                 },
             },
         ],
@@ -539,6 +552,68 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 entrancePoint: {
                     position: [7, 1.5, 0] as [number, number, number],
                     rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    relaxation: {
+        id: "relaxation",
+        name: "Relaxation Room",
+        position: [0, 0, 20] as [number, number, number],
+        dimensions: [12, RELAXATION_CEILING_HEIGHT, 12], // Circular room with 12 unit diameter
+        lightPreset: {
+            ambient: { intensity: 0.3, color: "#E6F3FF" }, // Soft blue ambient
+            directional: {
+                position: [0, 8, 0] as [number, number, number],
+                intensity: 0.2,
+                color: "#B3D9FF",
+            },
+            spots: [
+                {
+                    position: [0, RELAXATION_CEILING_HEIGHT - 1, 0] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [0, 0, 0] as [number, number, number],
+                    intensity: 1.5,
+                    color: "#E6F3FF",
+                    distance: 15,
+                    angle: Math.PI / 3,
+                    penumbra: 0.5,
+                },
+                {
+                    position: [0, RELAXATION_CEILING_HEIGHT - 2, 0] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [0, 0, 0] as [number, number, number],
+                    intensity: 0.8,
+                    color: "#B3D9FF",
+                    distance: 20,
+                    angle: Math.PI / 2,
+                    penumbra: 0.7,
+                },
+            ],
+        },
+        defaultEntrance: {
+            position: [0, 1.5, 0] as [number, number, number],
+            rotation: [0, Math.PI, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-atrium-from-relaxation",
+                targetRoomId: "atrium",
+                position: [0, 0, -6] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
                 },
             },
         ],

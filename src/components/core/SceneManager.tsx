@@ -92,6 +92,8 @@ export const SceneManager: React.FC = () => {
                 return "forest"; // Natural environment for atrium
             case "about":
                 return "lobby"; // Neutral indoor environment
+            case "relaxation":
+                return "park"; // Peaceful outdoor environment for relaxation
             default:
                 return "city"; // Default fallback
         }
@@ -112,6 +114,8 @@ export const SceneManager: React.FC = () => {
                 return baseIntensity * 1.2; // Enhanced for natural feel
             case "about":
                 return baseIntensity * 0.7; // Reduced for about room
+            case "relaxation":
+                return baseIntensity * 1.5; // Enhanced for peaceful outdoor feel
             default:
                 return baseIntensity;
         }

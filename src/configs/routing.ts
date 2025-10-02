@@ -55,6 +55,12 @@ export const roomRoutes: RoomRoute[] = [
         title: "Interactive Holodeck",
         description: "Interactive experiences and personal information",
     },
+    {
+        path: "/relaxation",
+        roomId: "relaxation",
+        title: "Relaxation Room",
+        description: "A peaceful space for meditation and relaxation",
+    },
 ];
 
 // Create a map for quick lookup
@@ -68,6 +74,7 @@ export const roomIdToPath = new Map<string, string>([
     ["gallery", "/art-gallery"],
     ["projects", "/software"],
     ["about", "/holodeck"],
+    ["relaxation", "/relaxation"],
 ]);
 
 // Helper function to get room ID from path
