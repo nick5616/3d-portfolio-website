@@ -33,9 +33,6 @@ export const RupeeCylinder: React.FC<RupeeCylinderProps> = ({
 }) => {
     const { rupees: collectedRupees } = useRupeeStore();
 
-    // Log when collectedRupees changes
-    console.log(`🏺 CYLINDER: Collected rupees updated:`, collectedRupees);
-
     // Generate rupees for the glass cylinder based on collected rupees
     const rupees = useMemo(() => {
         const rupees: RupeeData[] = [];

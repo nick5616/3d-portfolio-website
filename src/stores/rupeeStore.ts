@@ -60,35 +60,19 @@ export const useRupeeStore = create<RupeeStoreState>()(
             totalValue: 0,
 
             addRupee: (type: string) => {
-                console.log(`🏪 STORE: addRupee called for type: ${type}`);
                 set((state) => {
-                    console.log(`🏪 STORE: Current state before update:`, {
-                        rupees: state.rupees,
-                        totalValue: state.totalValue,
-                    });
-
                     const newRupees = { ...state.rupees };
                     if (!newRupees[type]) {
                         newRupees[type] = { count: 0 };
-                        console.log(`🏪 STORE: Created new entry for ${type}`);
                     }
                     newRupees[type].count += 1;
-                    console.log(
-                        `🏪 STORE: Incremented ${type} count to ${newRupees[type].count}`
-                    );
 
                     const totalValue = calculateTotalValue(newRupees);
-                    console.log(
-                        `🏪 STORE: Calculated new total value: ${totalValue}`
-                    );
 
-                    const newState = {
+                    return {
                         rupees: newRupees,
                         totalValue,
                     };
-
-                    console.log(`🏪 STORE: New state:`, newState);
-                    return newState;
                 });
             },
 

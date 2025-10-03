@@ -101,7 +101,7 @@ export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
             // Random position within safe area - use local coordinates (room center at 0,0,0)
             const x = minX + margin + Math.random() * safeWidth;
             const z = minZ + margin + Math.random() * safeDepth;
-            const y = 0.2; // Slightly above floor (local to room)
+            const y = 0.22; // Slightly above floor (local to room)
 
             // Random initial rotation
             const initialRotation = new THREE.Euler(
@@ -133,19 +133,8 @@ export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
 
     // Don't render if not spawning - after all hooks
     if (!shouldSpawn) {
-        console.log(
-            `🚫 SPAWNER: Not spawning rupees in room ${roomId} (shouldSpawn: ${shouldSpawn})`
-        );
         return null;
     }
-
-    console.log(
-        `✅ SPAWNER: Rendering ${rupees.length} rupees in room ${roomId}`
-    );
-    console.log(
-        `✅ SPAWNER: Rupee types:`,
-        rupees.map((r) => r.type)
-    );
 
     return (
         <group key={`rupee-spawner-${roomId}`}>
