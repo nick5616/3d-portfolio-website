@@ -1,8 +1,6 @@
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useRupeeStore } from "../../stores/rupeeStore";
-import { useSceneStore } from "../../stores/sceneStore";
 
 export interface RupeeData {
     position: THREE.Vector3;
@@ -18,7 +16,7 @@ export interface RupeeData {
     verticalOffset?: number;
 }
 
-interface RupeeProps {
+interface DisplayRupeeProps {
     rupee: RupeeData;
     animationType?: "floating" | "orbital" | "static" | "rotating";
     rotationSpeed?: {
@@ -76,7 +74,7 @@ const RupeeGeometry = () => {
     return geometry;
 };
 
-export const Rupee: React.FC<RupeeProps> = ({
+export const DisplayRupee: React.FC<DisplayRupeeProps> = ({
     rupee,
     animationType = "floating",
     rotationSpeed,
@@ -85,21 +83,6 @@ export const Rupee: React.FC<RupeeProps> = ({
     const currentRotation = useRef(
         new THREE.Euler().copy(rupee.initialRotation)
     );
-    const [isCollected, setIsCollected] = useState(false);
-    const { addRupee } = useRupeeStore();
-    const { playerPosition } = useSceneStore();
-
-    // Log rupee creation and initial state
-    console.log(`🪙 RUPEE: Created ${rupee.type} rupee at position:`, {
-        x: rupee.position.x.toFixed(2),
-        y: rupee.position.y.toFixed(2),
-        z: rupee.position.z.toFixed(2),
-    });
-    console.log(`🪙 RUPEE: Player position from store:`, {
-        x: playerPosition[0].toFixed(2),
-        y: playerPosition[1].toFixed(2),
-        z: playerPosition[2].toFixed(2),
-    });
 
     // Default rotation speeds if not provided
     const defaultRotationSpeed = useMemo(
@@ -114,68 +97,9 @@ export const Rupee: React.FC<RupeeProps> = ({
     const finalRotationSpeed = rotationSpeed || defaultRotationSpeed;
 
     useFrame((state, delta) => {
-        if (!meshRef.current || isCollected) return;
+        if (!meshRef.current) return;
 
         const time = state.clock.getElapsedTime();
-
-        // Log every 60 frames (about once per second) to see if useFrame is running
-        if (Math.floor(time * 60) % 60 === 0) {
-            console.log(
-                `🔄 RUPEE: useFrame running for ${rupee.type}, isCollected: ${isCollected}`
-            );
-        }
-
-        // Check for player collision
-        const distance = meshRef.current.position.distanceTo(
-            new THREE.Vector3(
-                playerPosition[0],
-                playerPosition[1],
-                playerPosition[2]
-            )
-        );
-
-        // Log collision detection details
-        if (distance < 3.0) {
-            // Log when getting close
-            console.log(
-                `🎯 Rupee ${rupee.type} distance: ${distance.toFixed(
-                    2
-                )} (collection radius: 1.5)`
-            );
-        }
-
-        if (distance < 1.5) {
-            // Collection radius
-            console.log(
-                `🔥 COLLECTION TRIGGERED for ${
-                    rupee.type
-                } rupee! Distance: ${distance.toFixed(2)}`
-            );
-            console.log(
-                `📍 Player position: [${playerPosition[0].toFixed(
-                    2
-                )}, ${playerPosition[1].toFixed(
-                    2
-                )}, ${playerPosition[2].toFixed(2)}]`
-            );
-            console.log(
-                `📍 Rupee position: [${meshRef.current.position.x.toFixed(
-                    2
-                )}, ${meshRef.current.position.y.toFixed(
-                    2
-                )}, ${meshRef.current.position.z.toFixed(2)}]`
-            );
-
-            setIsCollected(true);
-            console.log(`✅ Set isCollected = true for ${rupee.type}`);
-
-            addRupee(rupee.type);
-            console.log(`✅ Called addRupee(${rupee.type})`);
-            console.log(
-                `💰 Collected ${rupee.type} rupee! (Value: ${rupee.value})`
-            );
-            return; // Don't animate collected rupees
-        }
 
         switch (animationType) {
             case "floating":
@@ -213,7 +137,7 @@ export const Rupee: React.FC<RupeeProps> = ({
                 break;
 
             case "rotating":
-                // Rotating animation - use base position + upright spinning like Zelda
+                // Rotating animation - use base position + rotation
                 meshRef.current.position.x = rupee.position.x;
                 meshRef.current.position.y = rupee.position.y;
                 meshRef.current.position.z = rupee.position.z;
@@ -254,7 +178,6 @@ export const Rupee: React.FC<RupeeProps> = ({
             scale={rupee.scale}
             rotation={rupee.initialRotation}
             renderOrder={999}
-            visible={!isCollected} // Hide collected rupees instead of unmounting
         >
             <meshPhongMaterial
                 color={rupee.color}

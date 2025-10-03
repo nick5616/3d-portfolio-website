@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { Rupee, RupeeData } from "./Rupee";
+import { DisplayRupee, RupeeData } from "./DisplayRupee";
+import { useRupeeStore } from "../../stores/rupeeStore";
 
 // Rupee types with their colors, values, and spawn rates
 const RUPEE_TYPES = [
@@ -30,53 +31,80 @@ export const RupeeCylinder: React.FC<RupeeCylinderProps> = ({
     position = [0, 0, 0],
     animationType = "floating",
 }) => {
-    // Generate rupees for the glass cylinder
+    const { rupees: collectedRupees } = useRupeeStore();
+
+    // Log when collectedRupees changes
+    console.log(`🏺 CYLINDER: Collected rupees updated:`, collectedRupees);
+
+    // Generate rupees for the glass cylinder based on collected rupees
     const rupees = useMemo(() => {
-        const totalWeight = RUPEE_TYPES.reduce(
-            (sum, type) => sum + type.spawnWeight,
-            0
-        );
         const rupees: RupeeData[] = [];
         const cylinderRadius = radius * 0.8; // Keep rupees inside the cylinder
 
-        for (let i = 0; i < numRupees; i++) {
-            let randomWeight = Math.random() * totalWeight;
-            let selectedType = RUPEE_TYPES[0];
+        // Create rupees based on collected ones
+        Object.entries(collectedRupees).forEach(([type, collection]) => {
+            const rupeeType = RUPEE_TYPES.find((rt) => rt.name === type);
+            if (!rupeeType) return;
 
-            for (const type of RUPEE_TYPES) {
-                randomWeight -= type.spawnWeight;
-                if (randomWeight <= 0) {
-                    selectedType = type;
-                    break;
-                }
+            // Create multiple rupees for each collected type (up to collection.count)
+            const count = Math.min(collection.count, 10); // Limit to 10 per type for performance
+
+            for (let i = 0; i < count; i++) {
+                // Random position within cylinder bounds
+                const angle = Math.random() * Math.PI * 2;
+                const randomRadius = Math.random() * cylinderRadius;
+                const x = Math.cos(angle) * randomRadius;
+                const z = Math.sin(angle) * randomRadius;
+                const y = -height / 2 + 0.5 + Math.random() * (height - 1);
+
+                // Random initial rotation
+                const initialRotation = new THREE.Euler(
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2
+                );
+
+                rupees.push({
+                    position: new THREE.Vector3(x, y, z),
+                    initialRotation,
+                    scale: (rupeeScale + Math.random() * 0.2) / 4, // Scaled down by 4x
+                    color: new THREE.Color(rupeeType.color),
+                    value: rupeeType.value,
+                    type: rupeeType.name,
+                });
             }
+        });
 
-            // Random position within cylinder bounds
-            const angle = Math.random() * Math.PI * 2;
-            const randomRadius = Math.random() * cylinderRadius;
-            const x = Math.cos(angle) * randomRadius;
-            const z = Math.sin(angle) * randomRadius;
-            const y = -height / 2 + 0.5 + Math.random() * (height - 1); // Distribute from bottom to top of cylinder
+        // If no collected rupees, show some default ones
+        if (rupees.length === 0) {
+            for (let i = 0; i < Math.min(numRupees, 5); i++) {
+                const selectedType = RUPEE_TYPES[0]; // Default to green
 
-            // Random initial rotation
-            const initialRotation = new THREE.Euler(
-                Math.random() * Math.PI * 2,
-                Math.random() * Math.PI * 2,
-                Math.random() * Math.PI * 2
-            );
+                const angle = Math.random() * Math.PI * 2;
+                const randomRadius = Math.random() * cylinderRadius;
+                const x = Math.cos(angle) * randomRadius;
+                const z = Math.sin(angle) * randomRadius;
+                const y = -height / 2 + 0.5 + Math.random() * (height - 1);
 
-            rupees.push({
-                position: new THREE.Vector3(x, y, z),
-                initialRotation,
-                scale: (rupeeScale + Math.random() * 0.2) / 4, // Scaled down by 4x
-                color: new THREE.Color(selectedType.color),
-                value: selectedType.value,
-                type: selectedType.name,
-            });
+                const initialRotation = new THREE.Euler(
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2
+                );
+
+                rupees.push({
+                    position: new THREE.Vector3(x, y, z),
+                    initialRotation,
+                    scale: (rupeeScale + Math.random() * 0.2) / 4,
+                    color: new THREE.Color(selectedType.color),
+                    value: selectedType.value,
+                    type: selectedType.name,
+                });
+            }
         }
 
         return rupees;
-    }, [height, radius, numRupees, rupeeScale]);
+    }, [height, radius, rupeeScale, collectedRupees]);
 
     return (
         <group position={position}>
@@ -101,7 +129,7 @@ export const RupeeCylinder: React.FC<RupeeCylinderProps> = ({
 
             {/* Rupees inside the cylinder */}
             {rupees.map((rupee, index) => (
-                <Rupee
+                <DisplayRupee
                     key={index}
                     rupee={rupee}
                     animationType={animationType}

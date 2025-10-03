@@ -2,7 +2,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
-import { Rupee, RupeeData } from "../../models/Rupee";
+import { DisplayRupee, RupeeData } from "../../models/DisplayRupee";
 
 const NUM_RUPEES = 30;
 const GROUP_ROTATION_SPEED = 0.1;
@@ -102,7 +102,7 @@ export const RupeeFormationEffect = () => {
                 />
 
                 {rupees.map((rupee, index) => (
-                    <Rupee
+                    <DisplayRupee
                         key={index}
                         rupee={rupee}
                         animationType="orbital"

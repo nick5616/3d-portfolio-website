@@ -6,6 +6,25 @@ import { useThree } from "@react-three/fiber";
 import { InteractiveObject } from "../core/InteractiveObject";
 import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
 import { useSceneStore } from "../../stores/sceneStore";
+import { RoomRupeeSpawner } from "../models/RoomRupeeSpawner";
+
+// Helper function to determine rupee count based on room
+const getRupeeCountForRoom = (roomId: string): number => {
+    switch (roomId) {
+        case "atrium":
+            return 2;
+        case "gallery":
+            return 4; // Art gallery, good for exploration
+        case "projects":
+            return 2;
+        case "about":
+            return 1;
+        case "relaxation":
+            return 2;
+        default:
+            return 6;
+    }
+};
 
 interface BaseRoomProps {
     config: RoomConfig;
@@ -159,6 +178,17 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
             {config.interactiveElements.map((element) => (
                 <InteractiveObject key={element.id} element={element} />
             ))}
+
+            {/* Rupee spawner - spawn rupees on the floor when entering room */}
+            <RoomRupeeSpawner
+                key={`rupee-spawner-${config.id}`}
+                roomId={config.id}
+                dimensions={[width, height, depth]}
+                position={config.position}
+                numRupees={getRupeeCountForRoom(config.id)}
+                rupeeScale={0.3}
+                spawnDelay={500}
+            />
         </>
     );
 };

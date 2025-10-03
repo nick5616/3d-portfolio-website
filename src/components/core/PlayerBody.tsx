@@ -26,6 +26,7 @@ export const PlayerBody: React.FC = () => {
         clearTeleportFlag,
         updatePlayerVelocity,
         setPlayerGrounded,
+        updatePlayerPosition,
     } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
@@ -60,6 +61,14 @@ export const PlayerBody: React.FC = () => {
             clearTeleportFlag();
             return; // Skip normal movement this frame
         }
+
+        // Update player position in store for collision detection
+        const currentPosition = playerRef.current.translation();
+        updatePlayerPosition([
+            currentPosition.x,
+            currentPosition.y,
+            currentPosition.z,
+        ]);
 
         // Skip normal physics-based movement if in flight mode
         if (flyMode) return;

@@ -4,6 +4,7 @@ import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { PlayerBody } from "./PlayerBody";
+import { RupeeCounter } from "../ui/RupeeCounter";
 import { SceneDataBridge } from "./SceneDataBridge";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
@@ -310,6 +311,9 @@ export const Scene: React.FC = () => {
                     </Physics>
                 </Suspense>
             </Canvas>
+
+            {/* Rupee Counter - positioned above stats */}
+            <RupeeCounter />
         </div>
     );
 };

@@ -144,6 +144,7 @@ interface SceneState {
     getExperienceRotationAngle: (experience: string) => number;
     playerGrounded: boolean;
     setPlayerGrounded: (grounded: boolean) => void;
+    updatePlayerPosition: (position: [number, number, number]) => void;
 
     // Holodeck loading state
     holodeckLoading: boolean;
@@ -465,6 +466,7 @@ export const useSceneStore = create<SceneState>((set) => {
             return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
         },
         setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
+        updatePlayerPosition: (position) => set({ playerPosition: position }),
 
         // Holodeck loading state
         holodeckLoading: false,
