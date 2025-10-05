@@ -101,7 +101,7 @@ export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
             // Random position within safe area - use local coordinates (room center at 0,0,0)
             const x = minX + margin + Math.random() * safeWidth;
             const z = minZ + margin + Math.random() * safeDepth;
-            const y = 0.22; // Slightly above floor (local to room)
+            const y = 0.25; // Slightly above floor (local to room)
 
             // Random initial rotation
             const initialRotation = new THREE.Euler(
