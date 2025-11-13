@@ -1,26 +1,24 @@
 import React from "react";
 import { useRupeeStore } from "../../stores/rupeeStore";
+import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const RupeeCounter: React.FC = () => {
     const { totalValue } = useRupeeStore();
+    const { isMobile } = useDeviceDetection();
 
     return (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-700">
+        <div
+            className={`fixed ${
+                isMobile ? "right-16" : "right-24"
+            } top-2 z-50 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-700`}
+        >
             {/* Rupee Icon */}
             <div className="w-6 h-6 flex items-center justify-center">
-                <svg
-                    viewBox="0 0 24 24"
-                    className="w-5 h-5 text-green-400"
-                    fill="currentColor"
-                >
-                    {/* Rupee shape - simplified hexagon */}
-                    <path d="M12 2L18 8L12 14L6 8L12 2Z" />
-                    <path
-                        d="M12 8L18 14L12 20L6 14L12 8Z"
-                        fill="#00FF00"
-                        opacity="0.7"
-                    />
-                </svg>
+                <img
+                    src="/favicon-32x32.png"
+                    alt="Rupee"
+                    className="w-5 h-5 object-contain"
+                />
             </div>
 
             {/* Rupee Count */}

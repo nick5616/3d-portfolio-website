@@ -71,6 +71,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     crtStyle={content.crtStyle}
                     lightColor={content.lightColor}
                     responsive={content.responsive}
+                    displayType={content.displayType}
                 />
             );
 

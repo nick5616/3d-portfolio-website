@@ -1,3 +1,5 @@
+import { DisplayType } from "../components/models/Web3DDisplay";
+
 export interface DisplayConfig {
     id: string;
     url: string;
@@ -9,6 +11,7 @@ export interface DisplayConfig {
     scale?: [number, number, number];
     crtStyle?: boolean; // Enable 3D CRT monitor styling with thick curved glass and retro box
     lightColor?: string; // Hex color code for the omnidirectional point light emitted by the display
+    displayType?: DisplayType; // Type of display: "web", "youtube", "gif", or "auto" (auto-detect)
     responsive: {
         desktop: {
             width: number;
@@ -141,7 +144,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A comprehensive gaming platform for discovering and tracking video game quests and achievements with detailed analytics.",
         screenshotUrl: "/screenshots/vgq-desktop.png",
-        position: [-5, 2, -9.7],
+        position: [-8, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -152,13 +155,64 @@ export const displaysConfig: DisplayConfig[] = [
         },
     },
     {
+        id: "tierlistify-mobile",
+        url: "https://tierlistify.com",
+        title: "Tierlistify",
+        description:
+            "A mobile tier list builder and manager with a focus on simplicity and efficiency.",
+        screenshotUrl: "/screenshots/vgq-desktop.png",
+        position: [-4, 2, -9.7],
+        rotation: [0, 0, 0],
+        scale: [1.2, 1.2, 1],
+        crtStyle: false, // Enable retro CRT styling
+        lightColor: "#ff00ff",
+        responsive: {
+            desktop: { width: 320, height: 680 },
+            mobile: { width: 375, height: 667 },
+        },
+    },
+    {
+        id: "friendex-mobile",
+        url: "https://friendex.online/demo/about",
+        title: "Friendex",
+        description:
+            "A mobile-only friend rolodex for collecting your friends.",
+        screenshotUrl: "/screenshots/vgq-desktop.png",
+        position: [-1, 2, -9.7],
+        rotation: [0, 0, 0],
+        scale: [1.2, 1.2, 1],
+        crtStyle: false, // Enable retro CRT styling
+        lightColor: "#ff00ff",
+        responsive: {
+            desktop: { width: 320, height: 680 },
+            mobile: { width: 375, height: 667 },
+        },
+    },
+    {
+        id: "webspatial-curie-gif",
+        url: "/webspatial-curie.gif",
+        title: "WebSpatial Curie",
+        description:
+            "An animated demonstration of the WebSpatial Curie platform showcasing interactive 3D experiences and spatial web technologies.",
+        screenshotUrl: "/webspatial-curie.gif",
+        position: [2, 2, -9.7],
+        rotation: [0, 0, 0],
+        scale: [1.2, 1.2, 1],
+        displayType: "gif",
+        lightColor: "#00aaff",
+        responsive: {
+            desktop: { width: 800, height: 600 },
+            mobile: { width: 375, height: 667 },
+        },
+    },
+    {
         id: "curie-world",
         url: "https://main.d1ms1tn7cz2qzf.amplifyapp.com/",
         title: "Curie World",
         description:
             "A 3D shopping shelf and examine experience with interactive product models powered by Google Model Viewer.",
         screenshotUrl: "/screenshots/curie-world.png",
-        position: [5, 2, -9.7],
+        position: [6, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#dddddd",

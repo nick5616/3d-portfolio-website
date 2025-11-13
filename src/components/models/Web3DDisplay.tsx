@@ -5,11 +5,12 @@ import React, {
     useCallback,
     useMemo,
 } from "react";
-import { Html } from "@react-three/drei";
+import { Html, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useDisplayManager } from "../../stores/displayManager";
+
+export type DisplayType = "web" | "youtube" | "gif" | "auto";
 
 export interface Web3DDisplayProps {
     position: [number, number, number];
@@ -27,19 +28,55 @@ export interface Web3DDisplayProps {
         desktop: { width: number; height: number };
         mobile: { width: number; height: number };
     };
+    displayType?: DisplayType; // Type of display: "web", "youtube", "gif", or "auto" (auto-detect)
 }
 
-interface CRTGlassPanelProps {
-    displayWidth: number;
-    displayHeight: number;
-    isMobileDisplay: boolean;
-    position: [number, number, number];
-}
+// Utility functions for URL detection
+const isYouTubeUrl = (url: string): boolean => {
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)/;
+    return youtubeRegex.test(url);
+};
+
+const extractYouTubeVideoId = (url: string): string | null => {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+        /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    ];
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    return null;
+};
+
+const isGifUrl = (url: string): boolean => {
+    return /\.gif(\?|$)/i.test(url) || url.toLowerCase().endsWith(".gif");
+};
+
+const detectDisplayType = (
+    url: string,
+    displayType?: DisplayType
+): DisplayType => {
+    if (displayType && displayType !== "auto") {
+        return displayType;
+    }
+    if (isYouTubeUrl(url)) {
+        return "youtube";
+    }
+    if (isGifUrl(url)) {
+        return "gif";
+    }
+    return "web";
+};
 
 // Custom hook for proximity detection and timer
 const useProximityDetection = (
     displayRef: React.RefObject<THREE.Group>,
-    onProximityComplete: () => void
+    onProximityComplete: () => void,
+    skipTimer: boolean = false
 ) => {
     const { camera } = useThree();
     const [isInProximity, setIsInProximity] = useState(false);
@@ -67,11 +104,16 @@ const useProximityDetection = (
 
         setIsInProximity(nowInProximity);
 
-        // Start timer when entering proximity
+        // Start timer when entering proximity (or immediately if skipTimer is true)
         if (!wasInProximity && nowInProximity) {
-            setProximityStartTime(state.clock.elapsedTime);
-            setShowProximityOverlay(true);
-            setIsProximityLoading(true);
+            if (skipTimer) {
+                // Immediately trigger for YouTube/GIF displays
+                onProximityComplete();
+            } else {
+                setProximityStartTime(state.clock.elapsedTime);
+                setShowProximityOverlay(true);
+                setIsProximityLoading(true);
+            }
         }
 
         // Reset when leaving proximity
@@ -81,8 +123,9 @@ const useProximityDetection = (
             setIsProximityLoading(false);
         }
 
-        // Timer logic
+        // Timer logic (only for non-skipTimer displays)
         if (
+            !skipTimer &&
             isInProximity &&
             isProximityLoading &&
             proximityStartTime !== null
@@ -349,7 +392,7 @@ const DisplayHeader: React.FC<{
             </div>
         )}
 
-        {/* Back to screenshot button when live display is active */}
+        {/* Back to title button when live display is active */}
         {!showScreenshotOverlay && !showProximityOverlay && (
             <button
                 onClick={onReturnToScreenshot}
@@ -364,9 +407,9 @@ const DisplayHeader: React.FC<{
                     cursor: "pointer",
                     fontWeight: "500",
                 }}
-                title="Return to screenshot mode"
+                title="Return to title view"
             >
-                📷
+                📝
             </button>
         )}
     </div>
@@ -484,17 +527,24 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     title = "Web Display",
     width = 900,
     height = 700,
-    screenshotUrl,
     description,
     crtStyle = false,
     lightColor = "#ffffff",
     responsive,
+    displayType = "auto",
 }) => {
+    // Detect display type
+    const detectedType = useMemo(
+        () => detectDisplayType(url, displayType),
+        [url, displayType]
+    );
+    const isYouTube = detectedType === "youtube";
+    const isGif = detectedType === "gif";
+    const isAutoPlayDisplay = isYouTube || isGif;
     const displayRef = useRef<THREE.Group>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const hologramFrameRef = useRef<THREE.Group>(null);
     const scanLineRef = useRef<THREE.Mesh>(null);
-    const { isMobile } = useDeviceDetection();
 
     // Generate unique ID for this display based on position and title
     const displayId = `display-${position.join("-")}-${title
@@ -517,13 +567,6 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         })
     );
 
-    // Screenshot overlay state
-    const [showScreenshotOverlay, setShowScreenshotOverlay] = useState(
-        !!screenshotUrl
-    );
-    const [screenshotLoaded, setScreenshotLoaded] = useState(false);
-    const [isLightScreenshot, setIsLightScreenshot] = useState(false);
-
     // Update time every minute for mobile displays
     useEffect(() => {
         if (!isMobileDisplay) return;
@@ -545,25 +588,48 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     // Custom hooks
     const iframeManager = useIframeManager(url, title);
 
+    // Extract YouTube video ID if needed
+    const youtubeVideoId = useMemo(() => {
+        if (isYouTube) {
+            return extractYouTubeVideoId(url);
+        }
+        return null;
+    }, [url, isYouTube]);
+
+    // State for YouTube/GIF autoplay
+    const [shouldShowMedia, setShouldShowMedia] = useState(false);
+
     // Create a ref to store the proximity detection reset function
     const proximityResetRef = useRef<(() => void) | null>(null);
 
     const handleProximityComplete = useCallback(() => {
-        const { registerDisplay } = useDisplayManager.getState();
-        registerDisplay(displayId, title, handleEviction);
-        iframeManager.startLoading();
-        setShowScreenshotOverlay(false);
-        // Call the reset function if it exists
-        if (proximityResetRef.current) {
-            proximityResetRef.current();
+        if (isAutoPlayDisplay) {
+            // For YouTube/GIF, just show the media immediately
+            setShouldShowMedia(true);
+            console.log(`🎬 Autoplaying ${detectedType} for ${title}`);
+        } else {
+            // For web displays, use the existing iframe loading logic
+            const { registerDisplay } = useDisplayManager.getState();
+            registerDisplay(displayId, title, handleEviction);
+            iframeManager.startLoading();
+            // Call the reset function if it exists
+            if (proximityResetRef.current) {
+                proximityResetRef.current();
+            }
+            console.log(`📺 Proximity loading ${title} in display`);
         }
-        console.log(`📺 Proximity loading ${title} in display`);
-    }, [displayId, title, iframeManager]);
+    }, [displayId, title, iframeManager, isAutoPlayDisplay, detectedType]);
 
     const proximityDetection = useProximityDetection(
         displayRef,
-        handleProximityComplete
+        handleProximityComplete,
+        isAutoPlayDisplay // Skip timer for YouTube/GIF
     );
+
+    // Track if we should show the HTML/iframe/media (only when close)
+    const shouldShowHtml =
+        proximityDetection.isInProximity &&
+        (!isAutoPlayDisplay || shouldShowMedia);
 
     // Store the reset function in the ref
     useEffect(() => {
@@ -572,32 +638,43 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
     // Eviction callback
     const handleEviction = useCallback(() => {
-        setShowScreenshotOverlay(true);
-        iframeManager.unloadIframe();
-        proximityDetection.resetProximity();
-        console.log(`🔄 Display evicted and iframe unloaded: ${title}`);
-    }, [title, iframeManager, proximityDetection]);
-
-    // Manual view in display handler
-    const handleViewInDisplay = useCallback(() => {
-        const { registerDisplay } = useDisplayManager.getState();
-        registerDisplay(displayId, title, handleEviction);
-
-        if (!iframeManager.iframeUrl) {
-            iframeManager.startLoading();
+        if (isAutoPlayDisplay) {
+            setShouldShowMedia(false);
+        } else {
+            iframeManager.unloadIframe();
         }
-        setShowScreenshotOverlay(false);
-        console.log(`📺 Viewing ${title} in display`);
-    }, [displayId, title, handleEviction, iframeManager]);
+        proximityDetection.resetProximity();
+        console.log(`🔄 Display evicted: ${title}`);
+    }, [title, iframeManager, proximityDetection, isAutoPlayDisplay]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
     };
 
-    const handleReturnToScreenshot = useCallback(() => {
-        setShowScreenshotOverlay(true);
-        iframeManager.unloadIframe();
-    }, [iframeManager]);
+    const handleReturnToTitle = useCallback(() => {
+        if (isAutoPlayDisplay) {
+            setShouldShowMedia(false);
+        } else {
+            iframeManager.unloadIframe();
+        }
+    }, [iframeManager, isAutoPlayDisplay]);
+
+    // Reset media when leaving proximity
+    useEffect(() => {
+        if (!proximityDetection.isInProximity && isAutoPlayDisplay) {
+            setShouldShowMedia(false);
+        }
+    }, [proximityDetection.isInProximity, isAutoPlayDisplay]);
+
+    // Calculate text size based on display dimensions
+    const textSize = useMemo(() => {
+        // Convert pixel dimensions to 3D space (divide by 400)
+        const displayWidth3D = displayWidth / 400;
+        const displayHeight3D = displayHeight / 400;
+        // Use smaller dimension to ensure text fits
+        const minDimension = Math.min(displayWidth3D, displayHeight3D);
+        return minDimension * 0.15;
+    }, [displayWidth, displayHeight]);
 
     // Holographic animation loop for Nicolas display
     useFrame((state) => {
@@ -648,300 +725,95 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                 </mesh>
             )}
 
-            {/* Web content using Html component */}
-            <Html
-                transform
-                position={[0, 0, 0.015]}
-                distanceFactor={1}
-                style={{
-                    width: `${displayWidth}px`,
-                    height: `${displayHeight}px`,
-                    borderRadius: isMobileDisplay ? "12px" : "4px",
-                    overflow: "hidden",
-                    backgroundColor: "#ffffff",
-                    border: "none",
-                    boxShadow: isMobileDisplay
-                        ? "0 8px 24px rgba(0,0,0,0.4)"
-                        : "0 4px 12px rgba(0,0,0,0.2)",
-                    ...(crtStyle && {
-                        filter: "brightness(0.95) contrast(1.1) blur(0.3px)",
-                        transform: "perspective(1000px) rotateX(0.5deg)",
-                        background: `
+            {/* Display screen surface */}
+            <mesh position={[0, 0, 0.02]}>
+                <planeGeometry
+                    args={[displayWidth / 400, displayHeight / 400]}
+                />
+                <meshStandardMaterial
+                    color="#ffffff"
+                    emissive="#ffffff"
+                    emissiveIntensity={0.1}
+                />
+            </mesh>
+
+            {/* 3D Title Text - only show when HTML is not visible */}
+            {!shouldShowHtml && (
+                <Text
+                    position={[0, 0, 0.021]}
+                    fontSize={textSize}
+                    color="#1a1a1a"
+                    anchorX="center"
+                    anchorY="middle"
+                    maxWidth={(displayWidth / 400) * 0.9}
+                    textAlign="center"
+                    fontWeight="bold"
+                >
+                    {title}
+                </Text>
+            )}
+
+            {/* Web content using Html component - only show when close or loaded */}
+            {shouldShowHtml && (
+                <Html
+                    transform
+                    position={[0, 0, 0.015]}
+                    distanceFactor={1}
+                    style={{
+                        width: `${displayWidth}px`,
+                        height: `${displayHeight}px`,
+                        borderRadius: isMobileDisplay ? "12px" : "4px",
+                        overflow: "hidden",
+                        backgroundColor: "#ffffff",
+                        border: "none",
+                        boxShadow: isMobileDisplay
+                            ? "0 8px 24px rgba(0,0,0,0.4)"
+                            : "0 4px 12px rgba(0,0,0,0.2)",
+                        ...(crtStyle && {
+                            filter: "brightness(0.95) contrast(1.1) blur(0.3px)",
+                            transform: "perspective(1000px) rotateX(0.5deg)",
+                            background: `
                             radial-gradient(ellipse at center, 
                                 transparent 0%, 
                                 transparent 85%, 
                                 rgba(0,0,0,0.1) 100%
                             )
                         `,
-                        backgroundBlendMode: "multiply",
-                    }),
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        position: "relative",
-                        backgroundColor: "#ffffff",
+                            backgroundBlendMode: "multiply",
+                        }),
                     }}
                 >
-                    <DisplayHeader
-                        isMobileDisplay={isMobileDisplay}
-                        displayWidth={displayWidth}
-                        url={url}
-                        currentTime={currentTime}
-                        showScreenshotOverlay={showScreenshotOverlay}
-                        showProximityOverlay={
-                            proximityDetection.showProximityOverlay
-                        }
-                        onReturnToScreenshot={handleReturnToScreenshot}
-                    />
+                    <div
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            position: "relative",
+                            backgroundColor: "#ffffff",
+                        }}
+                    >
+                        <DisplayHeader
+                            isMobileDisplay={isMobileDisplay}
+                            displayWidth={displayWidth}
+                            url={url}
+                            currentTime={currentTime}
+                            showScreenshotOverlay={false}
+                            showProximityOverlay={
+                                proximityDetection.showProximityOverlay
+                            }
+                            onReturnToScreenshot={handleReturnToTitle}
+                        />
 
-                    {/* Loading overlay */}
-                    {iframeManager.isLoading && !iframeManager.showFallback && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: isMobileDisplay ? "44px" : "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: "#f9f9f9",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: displayWidth > 400 ? "16px" : "14px",
-                                color: "#666",
-                                fontFamily: "system-ui, sans-serif",
-                            }}
-                        >
-                            Loading {title}...
-                        </div>
-                    )}
-
-                    {/* Fallback content */}
-                    {iframeManager.showFallback && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: isMobileDisplay ? "44px" : "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: "#ffffff",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: displayWidth > 400 ? "16px" : "14px",
-                                color: "#333",
-                                fontFamily: "system-ui, sans-serif",
-                                flexDirection: "column",
-                                gap: "16px",
-                                padding: "20px",
-                                textAlign: "center",
-                            }}
-                        >
-                            {screenshotUrl && (
-                                <img
-                                    src={screenshotUrl}
-                                    alt={title}
-                                    style={{
-                                        maxWidth: "100%",
-                                        maxHeight: "60%",
-                                        objectFit: "contain",
-                                        borderRadius: "8px",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                                    }}
-                                />
-                            )}
-                            <div>
-                                <h3
-                                    style={{
-                                        margin: "0 0 8px 0",
-                                        fontSize:
-                                            displayWidth > 400
-                                                ? "18px"
-                                                : "16px",
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {title}
-                                </h3>
-                                {description && (
-                                    <p
-                                        style={{
-                                            margin: "0 0 16px 0",
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "14px"
-                                                    : "12px",
-                                            color: "#666",
-                                            lineHeight: "1.4",
-                                        }}
-                                    >
-                                        {description}
-                                    </p>
-                                )}
+                        {/* Loading overlay */}
+                        {iframeManager.isLoading &&
+                            !iframeManager.showFallback && (
                                 <div
                                     style={{
-                                        display: "flex",
-                                        gap: "8px",
-                                        flexWrap: "wrap",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <button
-                                        onClick={iframeManager.retryLoading}
-                                        style={{
-                                            backgroundColor: "#28a745",
-                                            color: "white",
-                                            border: "none",
-                                            padding:
-                                                displayWidth > 400
-                                                    ? "10px 18px"
-                                                    : "8px 14px",
-                                            borderRadius: "6px",
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "14px"
-                                                    : "12px",
-                                            cursor: "pointer",
-                                            fontWeight: "500",
-                                            transition: "background-color 0.2s",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "#218838";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "#28a745";
-                                        }}
-                                    >
-                                        🔄 Retry
-                                    </button>
-                                    <button
-                                        onClick={handleOpenInNewTab}
-                                        style={{
-                                            backgroundColor: "#007bff",
-                                            color: "white",
-                                            border: "none",
-                                            padding:
-                                                displayWidth > 400
-                                                    ? "10px 18px"
-                                                    : "8px 14px",
-                                            borderRadius: "6px",
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "14px"
-                                                    : "12px",
-                                            cursor: "pointer",
-                                            fontWeight: "500",
-                                            transition: "background-color 0.2s",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "#0056b3";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "#007bff";
-                                        }}
-                                    >
-                                        Visit {title} →
-                                    </button>
-                                </div>
-                            </div>
-                            {iframeManager.error && (
-                                <div
-                                    style={{
-                                        fontSize:
-                                            displayWidth > 400
-                                                ? "12px"
-                                                : "10px",
-                                        color: "#666",
-                                        marginTop: "8px",
-                                    }}
-                                >
-                                    {iframeManager.error}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Screenshot overlay */}
-                    {showScreenshotOverlay && screenshotUrl && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: isMobileDisplay ? "44px" : "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: "#ffffff",
-                                display: "flex",
-                                flexDirection: "column",
-                                zIndex: 10,
-                            }}
-                        >
-                            <img
-                                src={screenshotUrl}
-                                alt={title}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    display: screenshotLoaded
-                                        ? "block"
-                                        : "none",
-                                }}
-                                onLoad={(e) => {
-                                    setScreenshotLoaded(true);
-                                    const img = e.target as HTMLImageElement;
-                                    const canvas =
-                                        document.createElement("canvas");
-                                    const ctx = canvas.getContext("2d");
-                                    if (ctx) {
-                                        canvas.width = img.naturalWidth;
-                                        canvas.height = img.naturalHeight;
-                                        ctx.drawImage(img, 0, 0);
-
-                                        const imageData = ctx.getImageData(
-                                            0,
-                                            0,
-                                            canvas.width,
-                                            canvas.height
-                                        );
-                                        const data = imageData.data;
-                                        let brightness = 0;
-
-                                        for (
-                                            let i = 0;
-                                            i < data.length;
-                                            i += 4
-                                        ) {
-                                            const r = data[i];
-                                            const g = data[i + 1];
-                                            const b = data[i + 2];
-                                            brightness += (r + g + b) / 3;
-                                        }
-
-                                        const avgBrightness =
-                                            brightness / (data.length / 4);
-                                        setIsLightScreenshot(
-                                            avgBrightness > 180
-                                        );
-                                    }
-                                }}
-                                onError={() => setScreenshotLoaded(true)}
-                            />
-
-                            {!screenshotLoaded && (
-                                <div
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        backgroundColor: "#f0f0f0",
+                                        position: "absolute",
+                                        top: isMobileDisplay ? "44px" : "40px",
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: "#f9f9f9",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
@@ -953,220 +825,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         fontFamily: "system-ui, sans-serif",
                                     }}
                                 >
-                                    Loading preview...
+                                    Loading {title}...
                                 </div>
                             )}
 
-                            {/* Control overlay with buttons */}
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    bottom: "10px",
-                                    left: "10px",
-                                    right: "10px",
-                                    backgroundColor: isLightScreenshot
-                                        ? "rgba(0, 0, 0, 0.4)"
-                                        : "rgba(255, 255, 255, 0.15)",
-                                    color: "white",
-                                    padding:
-                                        displayWidth > 400 ? "16px" : "12px",
-                                    borderRadius: "12px",
-                                    textAlign: "center",
-                                    fontFamily: "system-ui, sans-serif",
-                                    backdropFilter: "blur(20px)",
-                                    border: isLightScreenshot
-                                        ? "1px solid rgba(0, 0, 0, 0.3)"
-                                        : "1px solid rgba(255, 255, 255, 0.2)",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontWeight: "600",
-                                        marginBottom: "8px",
-                                        fontSize:
-                                            displayWidth > 400
-                                                ? "16px"
-                                                : "14px",
-                                    }}
-                                >
-                                    {title}
-                                </div>
-                                {description && (
-                                    <div
-                                        style={{
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "13px"
-                                                    : "11px",
-                                            opacity: 0.8,
-                                            marginBottom: "12px",
-                                            lineHeight: "1.3",
-                                        }}
-                                    >
-                                        {description}
-                                    </div>
-                                )}
-
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        gap: "8px",
-                                        justifyContent: "center",
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <button
-                                        onClick={handleViewInDisplay}
-                                        style={{
-                                            backgroundColor:
-                                                "rgba(40, 167, 69, 0.15)",
-                                            color: "white",
-                                            border: "2px solid rgba(40, 167, 69, 0.6)",
-                                            padding:
-                                                displayWidth > 400
-                                                    ? "10px 16px"
-                                                    : "8px 12px",
-                                            borderRadius: "8px",
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "13px"
-                                                    : "11px",
-                                            cursor: "pointer",
-                                            fontWeight: "600",
-                                            transition: "all 0.3s ease",
-                                            minWidth:
-                                                displayWidth > 400
-                                                    ? "120px"
-                                                    : "100px",
-                                            backdropFilter: "blur(10px)",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "rgba(40, 167, 69, 0.3)";
-                                            e.currentTarget.style.borderColor =
-                                                "rgba(40, 167, 69, 0.9)";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "rgba(40, 167, 69, 0.15)";
-                                            e.currentTarget.style.borderColor =
-                                                "rgba(40, 167, 69, 0.6)";
-                                        }}
-                                    >
-                                        📺{" "}
-                                        {iframeManager.iframeUrl
-                                            ? "Reload Display"
-                                            : "View in Display"}
-                                    </button>
-
-                                    {iframeManager.iframeUrl &&
-                                        showScreenshotOverlay && (
-                                            <button
-                                                onClick={
-                                                    handleReturnToScreenshot
-                                                }
-                                                style={{
-                                                    backgroundColor:
-                                                        "rgba(255, 193, 7, 0.15)",
-                                                    color: "white",
-                                                    border: "2px solid rgba(255, 193, 7, 0.6)",
-                                                    padding:
-                                                        displayWidth > 400
-                                                            ? "10px 16px"
-                                                            : "8px 12px",
-                                                    borderRadius: "8px",
-                                                    fontSize:
-                                                        displayWidth > 400
-                                                            ? "13px"
-                                                            : "11px",
-                                                    cursor: "pointer",
-                                                    fontWeight: "600",
-                                                    transition: "all 0.3s ease",
-                                                    minWidth:
-                                                        displayWidth > 400
-                                                            ? "120px"
-                                                            : "100px",
-                                                    backdropFilter:
-                                                        "blur(10px)",
-                                                }}
-                                                onMouseOver={(e) => {
-                                                    e.currentTarget.style.backgroundColor =
-                                                        "rgba(255, 193, 7, 0.3)";
-                                                    e.currentTarget.style.borderColor =
-                                                        "rgba(255, 193, 7, 0.9)";
-                                                }}
-                                                onMouseOut={(e) => {
-                                                    e.currentTarget.style.backgroundColor =
-                                                        "rgba(255, 193, 7, 0.15)";
-                                                    e.currentTarget.style.borderColor =
-                                                        "rgba(255, 193, 7, 0.6)";
-                                                }}
-                                            >
-                                                🗑️ Unload Content
-                                            </button>
-                                        )}
-
-                                    <button
-                                        onClick={handleOpenInNewTab}
-                                        style={{
-                                            backgroundColor:
-                                                "rgba(0, 123, 255, 0.15)",
-                                            color: "white",
-                                            border: "2px solid rgba(0, 123, 255, 0.6)",
-                                            padding:
-                                                displayWidth > 400
-                                                    ? "10px 16px"
-                                                    : "8px 12px",
-                                            borderRadius: "8px",
-                                            fontSize:
-                                                displayWidth > 400
-                                                    ? "13px"
-                                                    : "11px",
-                                            cursor: "pointer",
-                                            fontWeight: "600",
-                                            transition: "all 0.3s ease",
-                                            minWidth:
-                                                displayWidth > 400
-                                                    ? "120px"
-                                                    : "100px",
-                                            backdropFilter: "blur(10px)",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "rgba(0, 123, 255, 0.3)";
-                                            e.currentTarget.style.borderColor =
-                                                "rgba(0, 123, 255, 0.9)";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.backgroundColor =
-                                                "rgba(0, 123, 255, 0.15)";
-                                            e.currentTarget.style.borderColor =
-                                                "rgba(0, 123, 255, 0.6)";
-                                        }}
-                                    >
-                                        🔗 Open in Tab
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Proximity loading overlay */}
-                    {proximityDetection.showProximityOverlay && (
-                        <ProximityLoadingOverlay
-                            isMobileDisplay={isMobileDisplay}
-                            displayWidth={displayWidth}
-                            title={title}
-                            timerProgress={proximityDetection.timerProgress}
-                            onCancel={proximityDetection.cancelProximity}
-                        />
-                    )}
-
-                    {/* Placeholder when no iframe content has been loaded */}
-                    {!iframeManager.showFallback &&
-                        !iframeManager.iframeUrl &&
-                        !showScreenshotOverlay &&
-                        !proximityDetection.showProximityOverlay && (
+                        {/* Fallback content */}
+                        {iframeManager.showFallback && (
                             <div
                                 style={{
                                     position: "absolute",
@@ -1174,38 +838,238 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    backgroundColor: "#f8f9fa",
+                                    backgroundColor: "#ffffff",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontSize:
                                         displayWidth > 400 ? "16px" : "14px",
-                                    color: "#666",
+                                    color: "#333",
                                     fontFamily: "system-ui, sans-serif",
                                     flexDirection: "column",
-                                    gap: "12px",
+                                    gap: "16px",
+                                    padding: "20px",
+                                    textAlign: "center",
                                 }}
                             >
-                                <div style={{ fontSize: "32px", opacity: 0.6 }}>
-                                    📺
-                                </div>
                                 <div>
-                                    Click "View in Display" to load content
+                                    <h3
+                                        style={{
+                                            margin: "0 0 8px 0",
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "18px"
+                                                    : "16px",
+                                            fontWeight: "600",
+                                        }}
+                                    >
+                                        {title}
+                                    </h3>
+                                    {description && (
+                                        <p
+                                            style={{
+                                                margin: "0 0 16px 0",
+                                                fontSize:
+                                                    displayWidth > 400
+                                                        ? "14px"
+                                                        : "12px",
+                                                color: "#666",
+                                                lineHeight: "1.4",
+                                            }}
+                                        >
+                                            {description}
+                                        </p>
+                                    )}
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: "8px",
+                                            flexWrap: "wrap",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <button
+                                            onClick={iframeManager.retryLoading}
+                                            style={{
+                                                backgroundColor: "#28a745",
+                                                color: "white",
+                                                border: "none",
+                                                padding:
+                                                    displayWidth > 400
+                                                        ? "10px 18px"
+                                                        : "8px 14px",
+                                                borderRadius: "6px",
+                                                fontSize:
+                                                    displayWidth > 400
+                                                        ? "14px"
+                                                        : "12px",
+                                                cursor: "pointer",
+                                                fontWeight: "500",
+                                                transition:
+                                                    "background-color 0.2s",
+                                            }}
+                                            onMouseOver={(e) => {
+                                                e.currentTarget.style.backgroundColor =
+                                                    "#218838";
+                                            }}
+                                            onMouseOut={(e) => {
+                                                e.currentTarget.style.backgroundColor =
+                                                    "#28a745";
+                                            }}
+                                        >
+                                            🔄 Retry
+                                        </button>
+                                        <button
+                                            onClick={handleOpenInNewTab}
+                                            style={{
+                                                backgroundColor: "#007bff",
+                                                color: "white",
+                                                border: "none",
+                                                padding:
+                                                    displayWidth > 400
+                                                        ? "10px 18px"
+                                                        : "8px 14px",
+                                                borderRadius: "6px",
+                                                fontSize:
+                                                    displayWidth > 400
+                                                        ? "14px"
+                                                        : "12px",
+                                                cursor: "pointer",
+                                                fontWeight: "500",
+                                                transition:
+                                                    "background-color 0.2s",
+                                            }}
+                                            onMouseOver={(e) => {
+                                                e.currentTarget.style.backgroundColor =
+                                                    "#0056b3";
+                                            }}
+                                            onMouseOut={(e) => {
+                                                e.currentTarget.style.backgroundColor =
+                                                    "#007bff";
+                                            }}
+                                        >
+                                            Visit {title} →
+                                        </button>
+                                    </div>
                                 </div>
+                                {iframeManager.error && (
+                                    <div
+                                        style={{
+                                            fontSize:
+                                                displayWidth > 400
+                                                    ? "12px"
+                                                    : "10px",
+                                            color: "#666",
+                                            marginTop: "8px",
+                                        }}
+                                    >
+                                        {iframeManager.error}
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                    {/* CRT Barrel Distortion Overlay */}
-                    {crtStyle && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: isMobileDisplay ? "44px" : "40px",
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                pointerEvents: "none",
-                                background: `
+                        {/* Proximity loading overlay */}
+                        {proximityDetection.showProximityOverlay && (
+                            <ProximityLoadingOverlay
+                                isMobileDisplay={isMobileDisplay}
+                                displayWidth={displayWidth}
+                                title={title}
+                                timerProgress={proximityDetection.timerProgress}
+                                onCancel={proximityDetection.cancelProximity}
+                            />
+                        )}
+
+                        {/* YouTube video embed */}
+                        {isYouTube && shouldShowMedia && youtubeVideoId && (
+                            <iframe
+                                style={{
+                                    position: "absolute",
+                                    top: isMobileDisplay ? "44px" : "40px",
+                                    left: 0,
+                                    width: "100%",
+                                    height: isMobileDisplay
+                                        ? "calc(100% - 44px)"
+                                        : "calc(100% - 40px)",
+                                    border: "none",
+                                }}
+                                src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=0&controls=1&rel=0`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title={title}
+                            />
+                        )}
+
+                        {/* GIF image */}
+                        {isGif && shouldShowMedia && (
+                            <img
+                                src={url}
+                                alt={title}
+                                style={{
+                                    position: "absolute",
+                                    top: isMobileDisplay ? "44px" : "40px",
+                                    left: 0,
+                                    width: "100%",
+                                    height: isMobileDisplay
+                                        ? "calc(100% - 44px)"
+                                        : "calc(100% - 40px)",
+                                    objectFit: "contain",
+                                    backgroundColor: "#000000",
+                                }}
+                            />
+                        )}
+
+                        {/* Placeholder when no iframe content has been loaded */}
+                        {!isAutoPlayDisplay &&
+                            !iframeManager.showFallback &&
+                            !iframeManager.iframeUrl &&
+                            !proximityDetection.showProximityOverlay && (
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: isMobileDisplay ? "44px" : "40px",
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: "#f8f9fa",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize:
+                                            displayWidth > 400
+                                                ? "16px"
+                                                : "14px",
+                                        color: "#666",
+                                        fontFamily: "system-ui, sans-serif",
+                                        flexDirection: "column",
+                                        gap: "12px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: "32px",
+                                            opacity: 0.6,
+                                        }}
+                                    >
+                                        📺
+                                    </div>
+                                    <div>
+                                        Click "View in Display" to load content
+                                    </div>
+                                </div>
+                            )}
+
+                        {/* CRT Barrel Distortion Overlay */}
+                        {crtStyle && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: isMobileDisplay ? "44px" : "40px",
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    pointerEvents: "none",
+                                    background: `
                                     radial-gradient(ellipse 100% 100% at center,
                                         transparent 0%,
                                         transparent 70%,
@@ -1216,21 +1080,21 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                         rgba(0,0,0,0.2) 100%
                                     )
                                 `,
-                                mixBlendMode: "multiply",
-                                borderRadius: isMobileDisplay
-                                    ? "0 0 12px 12px"
-                                    : "0 0 4px 4px",
-                                zIndex: 1000,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    background: `
+                                    mixBlendMode: "multiply",
+                                    borderRadius: isMobileDisplay
+                                        ? "0 0 12px 12px"
+                                        : "0 0 4px 4px",
+                                    zIndex: 1000,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        background: `
                                         repeating-linear-gradient(
                                             0deg,
                                             transparent,
@@ -1239,68 +1103,74 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                                             rgba(0,0,0,0.03) 2px
                                         )
                                     `,
-                                    mixBlendMode: "multiply",
-                                }}
-                            />
+                                        mixBlendMode: "multiply",
+                                    }}
+                                />
 
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: "10%",
-                                    left: "10%",
-                                    width: "15%",
-                                    height: "15%",
-                                    background:
-                                        "radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%)",
-                                    borderRadius: "50%",
-                                    transform: "rotate(-30deg)",
-                                }}
-                            />
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "10%",
+                                        left: "10%",
+                                        width: "15%",
+                                        height: "15%",
+                                        background:
+                                            "radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%)",
+                                        borderRadius: "50%",
+                                        transform: "rotate(-30deg)",
+                                    }}
+                                />
 
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: "20%",
-                                    right: "15%",
-                                    width: "8%",
-                                    height: "12%",
-                                    background:
-                                        "radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%)",
-                                    borderRadius: "50%",
-                                    transform: "rotate(45deg)",
-                                }}
-                            />
-                        </div>
-                    )}
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "20%",
+                                        right: "15%",
+                                        width: "8%",
+                                        height: "12%",
+                                        background:
+                                            "radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%)",
+                                        borderRadius: "50%",
+                                        transform: "rotate(45deg)",
+                                    }}
+                                />
+                            </div>
+                        )}
 
-                    {/* Iframe for web content */}
-                    {!iframeManager.showFallback && iframeManager.iframeUrl && (
-                        <iframe
-                            ref={iframeRef}
-                            src={iframeManager.iframeUrl}
-                            style={{
-                                width: "100%",
-                                height: isMobileDisplay
-                                    ? "calc(100% - 44px)"
-                                    : "calc(100% - 40px)",
-                                border: "none",
-                                backgroundColor: "#ffffff",
-                                display:
-                                    iframeManager.error &&
-                                    !iframeManager.showFallback
-                                        ? "none"
-                                        : "block",
-                            }}
-                            onLoad={iframeManager.handleIframeLoad}
-                            onError={iframeManager.handleIframeError}
-                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                            referrerPolicy="strict-origin-when-cross-origin"
-                            allowFullScreen
-                            title={title}
-                        />
-                    )}
-                </div>
-            </Html>
+                        {/* Iframe for web content */}
+                        {!isAutoPlayDisplay &&
+                            !iframeManager.showFallback &&
+                            iframeManager.iframeUrl && (
+                                <iframe
+                                    ref={iframeRef}
+                                    src={iframeManager.iframeUrl}
+                                    style={{
+                                        position: "absolute",
+                                        top: isMobileDisplay ? "44px" : "40px",
+                                        left: 0,
+                                        width: "100%",
+                                        height: isMobileDisplay
+                                            ? "calc(100% - 44px)"
+                                            : "calc(100% - 40px)",
+                                        border: "none",
+                                        backgroundColor: "#ffffff",
+                                        display:
+                                            iframeManager.error &&
+                                            !iframeManager.showFallback
+                                                ? "none"
+                                                : "block",
+                                    }}
+                                    onLoad={iframeManager.handleIframeLoad}
+                                    onError={iframeManager.handleIframeError}
+                                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    allowFullScreen
+                                    title={title}
+                                />
+                            )}
+                    </div>
+                </Html>
+            )}
 
             {/* Display point light */}
             <pointLight

@@ -28,6 +28,7 @@ export const ProjectsRoom: React.FC<ProjectsRoomProps> = ({ config }) => {
             crtStyle: display.crtStyle,
             lightColor: display.lightColor,
             responsive: display.responsive,
+            displayType: display.displayType,
         },
     }));
 
