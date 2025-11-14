@@ -30,6 +30,18 @@ const displaysConfig = [
         responsive: { desktop: { width: 1200, height: 800 } },
     },
     {
+        id: "saucedog-3d-landscape",
+        url: "https://3d.saucedog.art",
+        title: "3D Saucedog Art - Landscape",
+        responsive: { desktop: { width: 1200, height: 800 } },
+    },
+    {
+        id: "saucedog-3d-mobile",
+        url: "https://3d.saucedog.art",
+        title: "3D Saucedog Art - Mobile",
+        responsive: { desktop: { width: 852, height: 393 } },
+    },
+    {
         id: "saucedog-art",
         url: "https://saucedog.art",
         title: "Saucedog Art",

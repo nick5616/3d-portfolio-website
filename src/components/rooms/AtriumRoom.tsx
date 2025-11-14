@@ -1,10 +1,5 @@
 import React from "react";
 import { RoomConfig } from "../../types/scene.types";
-import { RupeeCylinder } from "../models/RupeeCylinder";
-
-// Rupee types are now handled by the RupeeCylinder component
-
-// Rupee geometry and components are now handled by the RupeeCylinder component
 
 interface AtriumRoomProps {
     config: RoomConfig;
@@ -88,16 +83,6 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({ width, height }) => {
                     );
                 })}
             </group>
-
-            {/* Glass cylinder filled with rupees */}
-            <RupeeCylinder
-                height={height}
-                radius={1.5}
-                numRupees={50}
-                rupeeScale={0.3}
-                position={[0, height / 2, 0]}
-                animationType="rotating" // Try: "floating", "rotating", "static"
-            />
         </>
     );
 };

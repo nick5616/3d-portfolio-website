@@ -29,6 +29,7 @@ export interface Web3DDisplayProps {
         mobile: { width: number; height: number };
     };
     displayType?: DisplayType; // Type of display: "web", "youtube", "gif", or "auto" (auto-detect)
+    textSizeFactor?: number; // Factor to scale the text size (0.01 = 1%, 1 = 100%)
 }
 
 // Utility functions for URL detection
@@ -76,7 +77,8 @@ const detectDisplayType = (
 const useProximityDetection = (
     displayRef: React.RefObject<THREE.Group>,
     onProximityComplete: () => void,
-    skipTimer: boolean = false
+    skipTimer: boolean = false,
+    isLoaded: boolean = false
 ) => {
     const { camera } = useThree();
     const [isInProximity, setIsInProximity] = useState(false);
@@ -86,8 +88,10 @@ const useProximityDetection = (
     const [isProximityLoading, setIsProximityLoading] = useState(false);
     const [showProximityOverlay, setShowProximityOverlay] = useState(false);
     const [timerProgress, setTimerProgress] = useState(0);
+    const wasInInitialProximityRef = useRef(false);
 
-    const PROXIMITY_THRESHOLD = 3.0;
+    const PROXIMITY_THRESHOLD = 3.0; // Initial threshold to trigger loading
+    const LOADED_WALK_AWAY_THRESHOLD = 12.0; // Much larger threshold after loading
     const PROXIMITY_TIMER_DURATION = 4.0;
 
     useFrame((state) => {
@@ -99,13 +103,24 @@ const useProximityDetection = (
         const cameraPosition = camera.position;
         const distance = displayPosition.distanceTo(cameraPosition);
 
+        // Use larger threshold if display is already loaded
+        const currentThreshold = isLoaded
+            ? LOADED_WALK_AWAY_THRESHOLD
+            : PROXIMITY_THRESHOLD;
+
         const wasInProximity = isInProximity;
-        const nowInProximity = distance <= PROXIMITY_THRESHOLD;
+        const nowInProximity = distance <= currentThreshold;
+
+        // Track whether we're in the initial proximity zone (for triggering loading)
+        const nowInInitialProximity = distance <= PROXIMITY_THRESHOLD;
+        const wasInInitialProximity = wasInInitialProximityRef.current;
 
         setIsInProximity(nowInProximity);
+        wasInInitialProximityRef.current = nowInInitialProximity;
 
-        // Start timer when entering proximity (or immediately if skipTimer is true)
-        if (!wasInProximity && nowInProximity) {
+        // Start timer when entering initial proximity (or immediately if skipTimer is true)
+        // Only trigger if not already loaded (to avoid re-triggering after threshold expands)
+        if (!wasInInitialProximity && nowInInitialProximity && !isLoaded) {
             if (skipTimer) {
                 // Immediately trigger for YouTube/GIF displays
                 onProximityComplete();
@@ -116,7 +131,7 @@ const useProximityDetection = (
             }
         }
 
-        // Reset when leaving proximity
+        // Reset when leaving proximity (using current threshold)
         if (wasInProximity && !nowInProximity) {
             setProximityStartTime(null);
             setShowProximityOverlay(false);
@@ -532,6 +547,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     lightColor = "#ffffff",
     responsive,
     displayType = "auto",
+    textSizeFactor = 1,
 }) => {
     // Detect display type
     const detectedType = useMemo(
@@ -599,8 +615,30 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     // State for YouTube/GIF autoplay
     const [shouldShowMedia, setShouldShowMedia] = useState(false);
 
+    // Track if display has loaded (iframe loaded for web, media shown for YouTube/GIF)
+    // This needs to be computed before proximityDetection hook
+    const isDisplayLoaded = useMemo(() => {
+        if (isAutoPlayDisplay) {
+            return shouldShowMedia;
+        } else {
+            return !!(
+                iframeManager.iframeUrl &&
+                !iframeManager.isLoading &&
+                !iframeManager.showFallback
+            );
+        }
+    }, [
+        isAutoPlayDisplay,
+        shouldShowMedia,
+        iframeManager.iframeUrl,
+        iframeManager.isLoading,
+        iframeManager.showFallback,
+    ]);
+
     // Create a ref to store the proximity detection reset function
     const proximityResetRef = useRef<(() => void) | null>(null);
+    // Create a ref to store the eviction callback
+    const evictionCallbackRef = useRef<(() => void) | null>(null);
 
     const handleProximityComplete = useCallback(() => {
         if (isAutoPlayDisplay) {
@@ -610,7 +648,12 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         } else {
             // For web displays, use the existing iframe loading logic
             const { registerDisplay } = useDisplayManager.getState();
-            registerDisplay(displayId, title, handleEviction);
+            registerDisplay(displayId, title, () => {
+                // Use the ref to call the eviction callback
+                if (evictionCallbackRef.current) {
+                    evictionCallbackRef.current();
+                }
+            });
             iframeManager.startLoading();
             // Call the reset function if it exists
             if (proximityResetRef.current) {
@@ -623,7 +666,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
     const proximityDetection = useProximityDetection(
         displayRef,
         handleProximityComplete,
-        isAutoPlayDisplay // Skip timer for YouTube/GIF
+        isAutoPlayDisplay, // Skip timer for YouTube/GIF
+        isDisplayLoaded // Pass loaded state to use larger threshold
     );
 
     // Track if we should show the HTML/iframe/media (only when close)
@@ -646,6 +690,11 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         proximityDetection.resetProximity();
         console.log(`🔄 Display evicted: ${title}`);
     }, [title, iframeManager, proximityDetection, isAutoPlayDisplay]);
+
+    // Store eviction callback in ref
+    useEffect(() => {
+        evictionCallbackRef.current = handleEviction;
+    }, [handleEviction]);
 
     const handleOpenInNewTab = () => {
         window.open(url, "_blank", "noopener,noreferrer");
@@ -673,8 +722,8 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         const displayHeight3D = displayHeight / 400;
         // Use smaller dimension to ensure text fits
         const minDimension = Math.min(displayWidth3D, displayHeight3D);
-        return minDimension * 0.15;
-    }, [displayWidth, displayHeight]);
+        return minDimension * 0.15 * textSizeFactor;
+    }, [displayWidth, displayHeight, textSizeFactor]);
 
     // Holographic animation loop for Nicolas display
     useFrame((state) => {

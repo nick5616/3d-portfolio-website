@@ -3,6 +3,7 @@ import { RoomConfig } from "../../types/scene.types";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody } from "@react-three/rapier";
+import { RupeeCylinder } from "../models/RupeeCylinder";
 
 interface RelaxationRoomProps {
     config: RoomConfig;
@@ -204,6 +205,16 @@ export const RelaxationRoom: React.FC<RelaxationRoomProps> = ({
                     </RigidBody>
                 );
             })}
+
+            {/* Glass cylinder filled with rupees */}
+            <RupeeCylinder
+                height={height}
+                radius={1.5}
+                numRupees={50}
+                rupeeScale={0.3}
+                position={[0, height / 2, 0]}
+                animationType="rotating" // Try: "floating", "rotating", "static"
+            />
         </>
     );
 };

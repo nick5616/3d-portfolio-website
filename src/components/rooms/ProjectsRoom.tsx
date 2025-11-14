@@ -29,6 +29,7 @@ export const ProjectsRoom: React.FC<ProjectsRoomProps> = ({ config }) => {
             lightColor: display.lightColor,
             responsive: display.responsive,
             displayType: display.displayType,
+            textSizeFactor: display.textSizeFactor,
         },
     }));
 

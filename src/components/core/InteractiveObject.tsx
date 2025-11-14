@@ -72,6 +72,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     lightColor={content.lightColor}
                     responsive={content.responsive}
                     displayType={content.displayType}
+                    textSizeFactor={content.textSizeFactor}
                 />
             );
 
