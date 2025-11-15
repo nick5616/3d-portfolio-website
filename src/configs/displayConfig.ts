@@ -214,7 +214,7 @@ export const displaysConfig: DisplayConfig[] = [
     {
         id: "webspatial-curie-gif",
         url: "/webspatial-curie.gif",
-        title: "Working with Curie Apple Vision Pro App",
+        title: "Working with Curie: Apple Vision Pro App",
         description:
             "An animated demonstration of the WebSpatial Curie platform showcasing interactive 3D experiences and spatial web technologies.",
         screenshotUrl: "/webspatial-curie.gif",
