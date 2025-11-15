@@ -90,6 +90,23 @@ export const displaysConfig: DisplayConfig[] = [
     // Right wall displays
 
     {
+        id: "saucedog-piano",
+        url: "https://saucedog.art/piano",
+        title: "Smart Piano: Piano with the some of the math of music theory built in.",
+        description:
+            "An interactive smart piano that incorporates mathematical concepts in music theory, providing visual and contextual guidance on which notes to play based on the musical context.",
+        screenshotUrl: "/screenshots/saucedog-art.png",
+        textSizeFactor: 0.7, // 70% of the original text size
+        position: [9.7, 2, -5],
+        rotation: [0, -Math.PI / 2, 0],
+        scale: [1.2, 1.2, 1],
+        lightColor: "#ffffff",
+        responsive: {
+            desktop: desktopDimensions.imaginaryDesktop,
+            mobile: mobileDimensions.pixel7,
+        },
+    },
+    {
         id: "saucedog-art",
         url: "https://saucedog.art",
         title: "Saucedog Art: My Digital Art Portfolio 2D website with art before and up to 2023",
