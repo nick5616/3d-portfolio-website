@@ -6,13 +6,15 @@ import { ArtPieceMapper } from "../utils/artPieceMapper";
  * Hook for loading art pieces from Azure Storage by index
  * @param artPieceIndex - The index of the art piece to load
  * @param useAzureStorage - Whether to use Azure Storage (default: true)
- * @param enabled - Whether network loading should be performed (default: true). When false, only metadata is fetched.
+ * @param enabled - Whether image loading should be performed (default: true). When false, only metadata is fetched.
+ * @param priority - Priority for loading (higher = more important, default: 0). Used for distance-based prioritization.
  * @returns Object containing the image URL, loading state, error state, and metadata
  */
 export const useAzureArtByIndex = (
     artPieceIndex: number,
     useAzureStorage: boolean = true,
-    enabled: boolean = true
+    enabled: boolean = true,
+    priority: number = 0
 ) => {
     const [imageUrl, setImageUrl] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -21,16 +23,12 @@ export const useAzureArtByIndex = (
     const [artPieceMetadata, setArtPieceMetadata] = useState<any>(null);
     const [artPieceExists, setArtPieceExists] = useState<boolean>(false);
 
+    // Load metadata immediately (always) so frames can be displayed
     useEffect(() => {
-        const loadArtPiece = async () => {
-            // Always start with metadata so we can compute local fallbacks and labels
+        const loadMetadata = async () => {
             try {
-                setIsLoading(true);
-                setError(null);
-
                 if (artPieceIndex < 0) {
-                    setError("Invalid art piece index");
-                    setIsLoading(false);
+                    setArtPieceExists(false);
                     return;
                 }
 
@@ -39,31 +37,55 @@ export const useAzureArtByIndex = (
                 );
 
                 if (!pieceMetadata) {
-                    // Keep a graceful state for empty frames
                     setArtPieceMetadata(null);
                     setArtPieceName("");
-                    setImageUrl("");
                     setArtPieceExists(false);
-                    setIsLoading(false);
                     return;
                 }
 
+                // Set metadata immediately so frame can render
                 setArtPieceMetadata(pieceMetadata);
                 setArtPieceName(pieceMetadata.fileName);
                 setArtPieceExists(true);
+            } catch (err) {
+                setArtPieceExists(false);
+            }
+        };
 
-                // If not enabled for network loading or Azure usage disabled, stop here
-                if (!enabled || !useAzureStorage) {
+        loadMetadata();
+    }, [artPieceIndex]);
+
+    // Load image only when enabled
+    useEffect(() => {
+        if (!enabled || !artPieceExists) {
+            setImageUrl("");
+            setIsLoading(false);
+            return;
+        }
+
+        const loadImage = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+
+                // If Azure usage disabled, stop here
+                if (!useAzureStorage) {
                     setImageUrl("");
                     setIsLoading(false);
                     return;
                 }
 
-                // Fetch Azure URL using the loading manager queue
+                if (!artPieceMetadata) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Fetch Azure URL using the loading manager queue with priority
+                // This is already async and queued, so it won't block
                 const url = await azureStorageService.getArtPieceUrlQueued(
-                    pieceMetadata.fileName,
-                    pieceMetadata.fileName,
-                    0 // Default priority
+                    artPieceMetadata.fileName,
+                    artPieceMetadata.fileName,
+                    priority
                 );
                 setImageUrl(url);
             } catch (err) {
@@ -78,8 +100,9 @@ export const useAzureArtByIndex = (
             }
         };
 
-        loadArtPiece();
-    }, [artPieceIndex, useAzureStorage, enabled]);
+        // Defer to next tick to avoid blocking initial render
+        setTimeout(loadImage, 0);
+    }, [enabled, artPieceExists, useAzureStorage, priority, artPieceMetadata]);
 
     return {
         imageUrl,

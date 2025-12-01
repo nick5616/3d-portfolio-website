@@ -1,9 +1,11 @@
-import { useLoader, useThree, useFrame } from "@react-three/fiber";
+import { useThree, useFrame, useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
 import { useAzureArtByIndex } from "../../hooks/useAzureArtByIndex";
 import { ArtPlaque } from "./ArtPlaque";
+import { nearestArtManager } from "../../utils/nearestArtManager";
 
 interface AzureArtFrameByIndexProps {
     position: [number, number, number];
@@ -67,45 +69,92 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
 
     // Track proximity to camera
     const [isNear, setIsNear] = useState(false);
+    const [isNearest, setIsNearest] = useState(false);
+    const [hasLoaded, setHasLoaded] = useState(false); // Track if this piece has ever loaded
+    const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null); // Persist loaded URL
     const groupRef = useRef<THREE.Group>(null);
+    const distanceRef = useRef<number>(Infinity);
+    const frameId = useRef(`frame-${artPieceIndex}-${position.join("-")}`);
 
     useFrame(() => {
         if (!groupRef.current) return;
         const groupWorldPos = new THREE.Vector3();
         groupRef.current.getWorldPosition(groupWorldPos);
-        const distance = camera.position.distanceTo(groupWorldPos);
+        const currentDistance = camera.position.distanceTo(groupWorldPos);
+        distanceRef.current = currentDistance;
+        
         // Small hysteresis to prevent rapid toggling
-        setIsNear((prev) =>
-            prev ? distance < proximityRadius + 2 : distance < proximityRadius
-        );
+        const wasNear = isNear;
+        const nowNear = wasNear
+            ? currentDistance < proximityRadius + 2
+            : currentDistance < proximityRadius;
+        
+        if (nowNear !== wasNear) {
+            setIsNear(nowNear);
+        }
+
+        // Register with nearest art manager
+        nearestArtManager.register(frameId.current, currentDistance, nowNear);
     });
 
-    // Call the hook, enabling Azure only when near
+    // Subscribe to nearest art changes
+    useEffect(() => {
+        const unsubscribe = nearestArtManager.subscribe((nearestId) => {
+            setIsNearest(nearestId === frameId.current);
+        });
+
+        return () => {
+            unsubscribe();
+            nearestArtManager.unregister(frameId.current);
+        };
+    }, []);
+
+    // Only allow NEW loading if this is the nearest AND near
+    // But if it's already loaded, keep showing it
+    const shouldLoad = (isNear && isNearest) || hasLoaded;
+
+    // Calculate priority based on distance (closer = higher priority)
+    // Priority range: 0-1000, where 1000 is closest
+    const priority = useMemo(() => {
+        if (!shouldLoad || distanceRef.current === Infinity) return 0;
+        // Invert distance so closer = higher priority
+        const normalizedDistance = Math.min(
+            distanceRef.current / proximityRadius,
+            1
+        );
+        return Math.round((1 - normalizedDistance) * 1000);
+    }, [shouldLoad, proximityRadius]);
+
+    // Hook always loads metadata (so frames show), but only loads images when enabled
+    // We pass shouldLoad as enabled to control image loading
     const {
         imageUrl: azureImageUrl,
         isLoading,
         error,
         artPieceName,
         artPieceExists,
-    } = useAzureArtByIndex(artPieceIndex, useAzureStorage, isNear);
+    } = useAzureArtByIndex(artPieceIndex, useAzureStorage, shouldLoad, priority);
 
     const finalArtPieceName = artPieceName;
 
-    // Determine which image URL to use with Azure-first behavior when near
-    let finalImageUrl: string | null = null;
-    if (isNear) {
-        if (useAzureStorage) {
-            if (azureImageUrl && !error) {
-                finalImageUrl = azureImageUrl;
-            } else if (error && finalArtPieceName) {
-                // Only fallback to local if Azure failed
-                finalImageUrl = `/images/art/${finalArtPieceName}`;
-            }
-        } else if (finalArtPieceName) {
-            // Azure disabled: use local when near
-            finalImageUrl = `/images/art/${finalArtPieceName}`;
+    // Persist the loaded image URL so it stays even when moving away
+    useEffect(() => {
+        if (azureImageUrl && !isLoading && !error) {
+            setLoadedImageUrl(azureImageUrl);
+            setHasLoaded(true);
+        } else if (error && finalArtPieceName && !loadedImageUrl) {
+            // Fallback to local if Azure failed and we don't have a loaded URL
+            setLoadedImageUrl(`/images/art/${finalArtPieceName}`);
+            setHasLoaded(true);
+        } else if (!useAzureStorage && finalArtPieceName && !loadedImageUrl && shouldLoad) {
+            // Azure disabled: use local (only when should load)
+            setLoadedImageUrl(`/images/art/${finalArtPieceName}`);
+            setHasLoaded(true);
         }
-    }
+    }, [azureImageUrl, isLoading, error, finalArtPieceName, useAzureStorage, loadedImageUrl, shouldLoad]);
+
+    // Use persisted loaded URL if available, otherwise use current URL if near
+    const finalImageUrl = loadedImageUrl || (isNear && azureImageUrl && !error ? azureImageUrl : null);
 
     const [dimensions, setDimensions] = useState<ImageDimensions>({
         width: 2,
@@ -142,42 +191,11 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
 
     const mountPosition = getMountPosition();
 
-    // Loading placeholder when near but waiting on Azure decision
-    const showLoading =
-        isNear && useAzureStorage && isLoading && !finalImageUrl;
+    // Show loading state when this is the nearest and loading (and hasn't loaded yet)
+    const showLoading = isNear && isNearest && useAzureStorage && isLoading && !hasLoaded;
 
-    if (showLoading) {
-        return (
-            <group
-                ref={groupRef}
-                position={mountPosition}
-                rotation={rotation}
-                scale={scale}
-            >
-                <mesh castShadow>
-                    <boxGeometry args={[2, 1.5, FRAME_DEPTH]} />
-                    <meshStandardMaterial color="#8b7355" roughness={0.8} />
-                </mesh>
-                <mesh position={[0, 0, FRAME_DEPTH / 2 - 0.02]}>
-                    <boxGeometry args={[1.84, 1.34, 0.02]} />
-                    <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
-                </mesh>
-                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
-                    <planeGeometry args={[1.84, 1.34]} />
-                    <meshBasicMaterial color="#666666" />
-                </mesh>
-            </group>
-        );
-    }
-
-    // If not near, or no valid image, show empty frame (aesthetic placeholder)
-    const hasImage = Boolean(finalImageUrl);
-
-    // Don't render anything if the art piece doesn't exist
-    if (!artPieceExists && !isLoading) {
-        return null;
-    }
-
+    // Always render the frame, even if art piece doesn't exist yet or is loading
+    // This ensures all frames are visible from the start
     return (
         <group
             ref={groupRef}
@@ -205,10 +223,10 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
                 <meshStandardMaterial color="#2c2c2c" roughness={0.5} />
             </mesh>
 
-            {/* Art canvas/image - only mount when near to avoid eager texture load */}
-            {isNear && hasImage ? (
+            {/* Art canvas/image - show if we have a final image URL */}
+            {finalImageUrl ? (
                 <LazyImagePlane
-                    url={finalImageUrl!}
+                    url={finalImageUrl}
                     width={dimensions.width - FRAME_THICKNESS * 2}
                     height={dimensions.height - FRAME_THICKNESS * 2}
                     onTextureLoaded={updateDimensionsFromAspect}
@@ -221,10 +239,66 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
                             dimensions.height - FRAME_THICKNESS * 2,
                         ]}
                     />
-                    <meshBasicMaterial
-                        color={hasImage ? "#3a3a3a" : "#555555"}
-                    />
+                    <meshBasicMaterial color="#555555" />
                 </mesh>
+            )}
+
+            {/* Loading spinner overlay */}
+            {showLoading && (
+                <Html
+                    transform
+                    position={[0, 0, FRAME_DEPTH / 2 + 0.02]}
+                    distanceFactor={1}
+                    style={{
+                        pointerEvents: "none",
+                        width: `${(dimensions.width - FRAME_THICKNESS * 2) * 400}px`,
+                        height: `${(dimensions.height - FRAME_THICKNESS * 2) * 400}px`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "12px",
+                            color: "#ffffff",
+                            fontFamily: "system-ui, sans-serif",
+                        }}
+                    >
+                        {/* Spinner */}
+                        <div
+                            style={{
+                                width: "40px",
+                                height: "40px",
+                                border: "4px solid rgba(255, 255, 255, 0.2)",
+                                borderTop: "4px solid #ffffff",
+                                borderRadius: "50%",
+                                animation: "spin 1s linear infinite",
+                            }}
+                        />
+                        {/* Loading text */}
+                        <div
+                            style={{
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
+                            }}
+                        >
+                            Loading...
+                        </div>
+                        <style>
+                            {`
+                                @keyframes spin {
+                                    0% { transform: rotate(0deg); }
+                                    100% { transform: rotate(360deg); }
+                                }
+                            `}
+                        </style>
+                    </div>
+                </Html>
             )}
 
             {/* Corner decorations */}
