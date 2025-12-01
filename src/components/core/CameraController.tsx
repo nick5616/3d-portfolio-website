@@ -12,6 +12,7 @@ export const CameraController: React.FC = () => {
         cameraRotation,
         virtualMovement,
         virtualRotation,
+        movementJoystickIntensity,
         performance,
         flyMode,
     } = useSceneStore();
@@ -127,7 +128,12 @@ export const CameraController: React.FC = () => {
         direction.current.set(0, 0, 0);
 
         // Movement speed - adjusted for mobile
-        const moveSpeed = isMobile ? 0.12 : 0.15; // Slightly slower on mobile for better control
+        // Scale speed based on joystick intensity (0 to 1) when using virtual controls
+        const baseMoveSpeed = isMobile ? 0.12 : 0.15;
+        const intensityMultiplier = isMobile && movementJoystickIntensity > 0
+            ? 0.75 + movementJoystickIntensity * 0.75 // 0.75x to 1.5x speed (half the scaling range)
+            : 1.0;
+        const moveSpeed = baseMoveSpeed * intensityMultiplier;
 
         // On mobile, only use virtual controls. On desktop, prefer virtual if active, otherwise keyboard
         const useVirtual =

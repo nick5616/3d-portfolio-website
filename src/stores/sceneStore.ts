@@ -92,8 +92,12 @@ interface SceneState {
     // Virtual controls for mobile
     virtualMovement: MovementState;
     virtualRotation: RotationState;
+    movementJoystickIntensity: number; // 0 to 1, how far joystick is pushed
+    cameraJoystickIntensity: number; // 0 to 1, how far joystick is pushed
     setVirtualMovement: (movement: MovementState) => void;
     setVirtualRotation: (rotation: RotationState) => void;
+    setMovementJoystickIntensity: (intensity: number) => void;
+    setCameraJoystickIntensity: (intensity: number) => void;
     // Educational modal state
     isEducationalModalOpen: boolean;
     setEducationalModalOpen: (open: boolean) => void;
@@ -225,7 +229,14 @@ export const useSceneStore = create<SceneState>((set) => {
             x: 0,
             y: 0,
         },
+        movementJoystickIntensity: 0,
+        cameraJoystickIntensity: 0,
         setVirtualMovement: (movement) => set({ virtualMovement: movement }),
+        setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
+        setMovementJoystickIntensity: (intensity) =>
+            set({ movementJoystickIntensity: intensity }),
+        setCameraJoystickIntensity: (intensity) =>
+            set({ cameraJoystickIntensity: intensity }),
         // Educational modal state
         isEducationalModalOpen: true, // Start with modal open
         setEducationalModalOpen: (open) =>
@@ -233,7 +244,6 @@ export const useSceneStore = create<SceneState>((set) => {
         // Start prompt state
         showStartPrompt: false,
         setShowStartPrompt: (show) => set({ showStartPrompt: show }),
-        setVirtualRotation: (rotation) => set({ virtualRotation: rotation }),
         // Math game actions
         setMathGameActive: (active) =>
             set((state) => ({
