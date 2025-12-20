@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useSceneStore } from "../../stores/sceneStore";
 
@@ -425,32 +426,30 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         };
     }, [isOpen]);
 
-    if (!isOpen) {
+    const modalStyle = isMobile
+        ? { pointerEvents: "auto" as const, zIndex: 10000 }
+        : { pointerEvents: "auto" as const, zIndex: 10000 };
+
+    const modalContent = !isOpen ? (
         // Show start prompt for returning users
-        if (showStartPrompt) {
-            return (
-                <div className="fixed inset-0 flex items-center justify-center z-[70] pointer-events-none">
-                    <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white/20">
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                            <span className="text-sm font-medium">
-                                Click anywhere to look around
-                            </span>
-                        </div>
+        showStartPrompt ? (
+            <div
+                className="fixed inset-0 flex items-center justify-center pointer-events-none"
+                style={{ zIndex: 10000 }}
+            >
+                <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white/20">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium">
+                            Click anywhere to look around
+                        </span>
                     </div>
                 </div>
-            );
-        }
-        return null;
-    }
-
-    const modalStyle = isMobile
-        ? { pointerEvents: "auto" as const, zIndex: 60 }
-        : { pointerEvents: "auto" as const };
-
-    return (
+            </div>
+        ) : null
+    ) : (
         <div
-            className="fixed inset-0 flex items-center justify-center z-[70]"
+            className="fixed inset-0 flex items-center justify-center"
             style={modalStyle}
         >
             <div
@@ -746,4 +745,6 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             </div>
         </div>
     );
+
+    return modalContent ? createPortal(modalContent, document.body) : null;
 };
