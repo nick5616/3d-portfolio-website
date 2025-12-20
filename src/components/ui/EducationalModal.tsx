@@ -366,8 +366,11 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
             if (isScrollable && !hasScrolledDownRef.current) {
                 // Wait 2 seconds before showing
                 showPromptTimeout = setTimeout(() => {
-                    // Double-check conditions before showing
+                    // Double-check conditions before showing - verify it's still scrollable
+                    const stillScrollable =
+                        modalElement.scrollHeight > modalElement.clientHeight;
                     if (
+                        stillScrollable &&
                         !hasScrolledDownRef.current &&
                         modalElement.scrollTop === 0
                     ) {
@@ -717,28 +720,31 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                 </div>
 
                 {/* Scroll Prompt */}
-                {showScrollPrompt && (
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none z-10">
-                        <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2 animate-bounce">
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                                />
-                            </svg>
-                            <span className="text-sm font-medium">
-                                Scroll for more
-                            </span>
+                {showScrollPrompt &&
+                    modalContentRef.current &&
+                    modalContentRef.current.scrollHeight >
+                        modalContentRef.current.clientHeight && (
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none z-10">
+                            <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2 animate-bounce">
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                    />
+                                </svg>
+                                <span className="text-sm font-medium">
+                                    Scroll for more
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
             </div>
         </div>
     );
