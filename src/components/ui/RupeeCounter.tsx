@@ -10,7 +10,7 @@ export const RupeeCounter: React.FC = () => {
         <div
             className={`fixed ${
                 isMobile ? "right-16" : "right-24"
-            } top-2 z-50 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-700`}
+            } top-2 z-30 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-700`}
         >
             {/* Rupee Icon */}
             <div className="w-6 h-6 flex items-center justify-center">

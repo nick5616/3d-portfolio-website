@@ -62,6 +62,9 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Track joystick positions (where they spawn)
         const [movementJoystickPosition, setMovementJoystickPosition] = useState<{ x: number; y: number } | null>(null);
         const [cameraJoystickPosition, setCameraJoystickPosition] = useState<{ x: number; y: number } | null>(null);
+        
+        // Track door hover state to deprioritize controls when door is being looked at
+        const [isHoveringDoor, setIsHoveringDoor] = useState(false);
 
         // Configure joystick based on performance
         const maxJoystickDistance = performance.quality === "low" ? 30 : 40;
@@ -422,6 +425,47 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             smoothFactor,
         ]);
 
+        // Check if touch is on door prompt button
+        const isTouchOnDoorPrompt = useCallback((touch: Touch): boolean => {
+            const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!elementAtPoint) return false;
+
+            // Check if the element or any parent is the door prompt button
+            let current: HTMLElement | null = elementAtPoint as HTMLElement;
+            while (current) {
+                const computedStyle = window.getComputedStyle(current);
+                const zIndex = parseInt(computedStyle.zIndex || "0", 10);
+                const pointerEvents = computedStyle.pointerEvents;
+                
+                // Door prompt button is at z-50 and has pointer-events-auto
+                // Check z-index first as it's the most reliable indicator
+                if (zIndex >= 50 && pointerEvents === "auto") {
+                    // Check if it has door-related text or is in the door prompt area
+                    const text = (current.textContent || "").toLowerCase();
+                    const hasDoorText = text.includes("tap") || 
+                                       text.includes("click") || 
+                                       text.includes("move forward") ||
+                                       text.includes("enter");
+                    
+                    if (hasDoorText) {
+                        return true;
+                    }
+                    
+                    // Also check by position - door prompt is centered horizontally, below center vertically
+                    const rect = current.getBoundingClientRect();
+                    const isCentered = Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2) < 150;
+                    const isBelowCenter = rect.top > window.innerHeight / 2 - 100;
+                    
+                    if (isCentered && isBelowCenter) {
+                        return true;
+                    }
+                }
+                
+                current = current.parentElement;
+            }
+            return false;
+        }, []);
+
         // Handle movement joystick touch start
         const handleMovementTouchStart = useCallback(
             (e: TouchEvent) => {
@@ -432,6 +476,11 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
 
                 const touch = e.changedTouches[0];
                 if (!touch) {
+                    return;
+                }
+
+                // Check if touch is on door prompt button - if so, don't handle it
+                if (isTouchOnDoorPrompt(touch)) {
                     return;
                 }
 
@@ -488,7 +537,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 // Start the continuous movement tracking
                 startContinuousMovement();
             },
-            [isTouchInElement, startContinuousMovement]
+            [isTouchInElement, isTouchOnDoorPrompt, startContinuousMovement]
         );
 
         // Handle camera joystick touch start
@@ -501,6 +550,11 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
 
                 const touch = e.changedTouches[0];
                 if (!touch) return;
+
+                // Check if touch is on door prompt button - if so, don't handle it
+                if (isTouchOnDoorPrompt(touch)) {
+                    return;
+                }
 
                 if (!isTouchInElement(touch, cameraTouchAreaRef.current)) {
                     return;
@@ -544,12 +598,67 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 // Clear any previous rotation
                 lastRotation.current = { x: 0, y: 0 };
             },
-            [isTouchInElement]
+            [isTouchInElement, isTouchOnDoorPrompt]
         );
 
         // Handle global touch starts - route to appropriate handler
         const handleGlobalTouchStart = useCallback(
             (e: TouchEvent) => {
+                // If door is being hovered, check if touch is in the door prompt area first
+                if (isHoveringDoor) {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const touch = e.changedTouches[i];
+                        
+                        // Check if touch is on door prompt button - if so, don't handle it at all
+                        if (isTouchOnDoorPrompt(touch)) {
+                            // Don't prevent default or stop propagation - let the door button handle it
+                            return;
+                        }
+                        
+                        // Check if touch is in the center area where door prompt appears
+                        // Door prompt is centered horizontally, below center vertically
+                        const centerX = window.innerWidth / 2;
+                        const centerY = window.innerHeight / 2;
+                        const touchX = touch.clientX;
+                        const touchY = touch.clientY;
+                        
+                        // Check if touch is in the door prompt area (centered, below center)
+                        const isInDoorArea = 
+                            Math.abs(touchX - centerX) < 200 && // Within 200px of center horizontally
+                            touchY > centerY - 100 && // Below center (with some margin)
+                            touchY < window.innerHeight; // Within screen bounds
+                        
+                        if (isInDoorArea) {
+                            // Don't handle touches in door prompt area when door is hovered
+                            return;
+                        }
+                    }
+                }
+                
+                // First, check if any touch is on a higher priority element (like door prompt or modals)
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    
+                    // Check if touch is on door prompt button - if so, don't handle it at all
+                    if (isTouchOnDoorPrompt(touch)) {
+                        // Don't prevent default or stop propagation - let the door button handle it
+                        return;
+                    }
+                    
+                    // Check if touch is on a higher priority element (like modal buttons)
+                    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (elementAtPoint) {
+                        const computedStyle = window.getComputedStyle(elementAtPoint);
+                        const zIndex = parseInt(computedStyle.zIndex || "0", 10);
+                        const pointerEvents = computedStyle.pointerEvents;
+                        // If z-index is 50 or higher (modals are 60, door prompt is 50) and has pointer-events: auto, don't handle this touch
+                        if (zIndex >= 50 && pointerEvents === "auto") {
+                            // Don't prevent default or stop propagation - let higher priority elements handle it
+                            return;
+                        }
+                    }
+                }
+
                 // Only process touches if they're actually in our control areas
                 let handledTouch = false;
 
@@ -575,7 +684,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                     return;
                 }
             },
-            [handleMovementTouchStart, handleCameraTouchStart, isTouchInElement]
+            [handleMovementTouchStart, handleCameraTouchStart, isTouchInElement, isTouchOnDoorPrompt, isHoveringDoor]
         );
 
         // Handle touch move - with improved multi-touch handling and performance optimization
@@ -796,6 +905,8 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             };
 
             // Use passive: false so we can preventDefault when needed
+            // Use capture: false so React handlers (like door button) can handle events first
+            // We'll check for higher priority elements and return early if found
             document.addEventListener("touchstart", globalTouchStartWrapper, {
                 passive: false,
                 capture: false,
@@ -877,6 +988,21 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             };
         }, [simulateKeyEvent, setVirtualMovement, setVirtualRotation]); // Include essential dependencies only
 
+        // Listen for door hover events to know when to deprioritize controls
+        useEffect(() => {
+            const handleDoorHover = (event: CustomEvent) => {
+                setIsHoveringDoor(event.detail.hovering || false);
+            };
+
+            window.addEventListener("doorHover", handleDoorHover as EventListener);
+            return () => {
+                window.removeEventListener(
+                    "doorHover",
+                    handleDoorHover as EventListener
+                );
+            };
+        }, []);
+
         // Reset state on initial mount to avoid stale state from previous renders
         useEffect(() => {
             // Reset touch state
@@ -948,7 +1074,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         bottom: 0,
                         width: "50%",
                         height: "65%",
-                        zIndex: 30, // Lower than modals (60) but above canvas
+                        zIndex: 30, // Lower than modals (60) and door prompt (50) but above canvas
                         pointerEvents: "auto",
                         touchAction: "none",
                     }}
@@ -963,7 +1089,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         bottom: 0,
                         width: "50%",
                         height: "65%",
-                        zIndex: 30, // Lower than modals (60) but above canvas
+                        zIndex: 30, // Lower than modals (60) and door prompt (50) but above canvas
                         pointerEvents: "auto",
                         touchAction: "none",
                     }}

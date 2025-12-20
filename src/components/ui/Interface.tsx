@@ -111,24 +111,6 @@ export default function Interface() {
                 </div>
             )}
 
-            {/* Door interaction prompt */}
-            {isHoveringDoor && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 translate-y-8 z-50">
-                    <div
-                        className={`bg-black bg-opacity-70 text-white rounded font-medium pointer-events-auto cursor-pointer hover:bg-opacity-90 active:bg-opacity-100 active:scale-95 transition-all duration-150 select-none ${
-                            isMobile
-                                ? "px-4 py-2 text-base min-h-[44px] flex items-center justify-center"
-                                : "px-3 py-1 text-sm"
-                        }`}
-                        onClick={handleDoorClick}
-                        onTouchStart={handleDoorTouchStart}
-                        style={{ touchAction: "manipulation" }}
-                    >
-                        {`Move Forward or ${isMobile ? "Tap" : "Click"}`}
-                    </div>
-                </div>
-            )}
-
             {/* Console badge */}
             {consoleState.isActive && (
                 <div className="fixed top-4 left-4 z-50 pointer-events-none">

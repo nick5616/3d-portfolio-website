@@ -304,8 +304,34 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     ],
                 }}
                 callbacks={{
-                    onRayEnter: () => setIsHoveringFromCenter(true),
-                    onRayExit: () => setIsHoveringFromCenter(false),
+                    onRayEnter: () => {
+                        setIsHoveringFromCenter(true);
+                        // Dispatch doorHover event for UI components
+                        window.dispatchEvent(
+                            new CustomEvent("doorHover", {
+                                detail: {
+                                    hovering: true,
+                                    doorData: {
+                                        archway: archway,
+                                        doorId: archway.id,
+                                        targetRoomId: archway.targetRoomId,
+                                    },
+                                },
+                            })
+                        );
+                    },
+                    onRayExit: () => {
+                        setIsHoveringFromCenter(false);
+                        // Dispatch doorHover event for UI components
+                        window.dispatchEvent(
+                            new CustomEvent("doorHover", {
+                                detail: {
+                                    hovering: false,
+                                    doorData: null,
+                                },
+                            })
+                        );
+                    },
                     onTrigger: (action) => {
                         if (
                             action.type === "click" ||

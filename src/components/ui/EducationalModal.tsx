@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useSceneStore } from "../../stores/sceneStore";
 
@@ -293,6 +293,9 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         return shouldShow !== "true" && isVisible;
     });
     const [dontShowAgain, setDontShowAgain] = useState(false);
+    const [showScrollPrompt, setShowScrollPrompt] = useState(false);
+    const hasScrolledDownRef = useRef(false);
+    const modalContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const shouldShow = localStorage.getItem("dontShowWelcome");
@@ -307,6 +310,12 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         }
         // Update global state
         setEducationalModalOpen(isOpen);
+
+        // Reset scroll prompt when modal closes
+        if (!isOpen) {
+            setShowScrollPrompt(false);
+            hasScrolledDownRef.current = false;
+        }
 
         // Note: Pointer lock will be requested on next user click via mouse controls
 
@@ -340,11 +349,87 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
         return () => document.removeEventListener("click", handleClick);
     }, [showStartPrompt, setShowStartPrompt]);
 
+    // Handle scroll detection for scroll prompt
+    useEffect(() => {
+        if (!isOpen || !modalContentRef.current) return;
+
+        const modalElement = modalContentRef.current;
+        let initialScrollTop = modalElement.scrollTop;
+        let showPromptTimeout: NodeJS.Timeout | null = null;
+
+        // Check if content is scrollable and show prompt after 2 seconds
+        const checkIfScrollable = () => {
+            const isScrollable =
+                modalElement.scrollHeight > modalElement.clientHeight;
+            // Only show prompt if content is scrollable and user hasn't scrolled down
+            if (isScrollable && !hasScrolledDownRef.current) {
+                // Wait 2 seconds before showing
+                showPromptTimeout = setTimeout(() => {
+                    // Double-check conditions before showing
+                    if (
+                        !hasScrolledDownRef.current &&
+                        modalElement.scrollTop === 0
+                    ) {
+                        setShowScrollPrompt(true);
+                    }
+                }, 2000);
+            }
+        };
+
+        // Handle scroll events - detect if scrolling down
+        const handleScroll = () => {
+            const currentScrollTop = modalElement.scrollTop;
+            // If scrolled down from initial position, mark as scrolled and hide prompt
+            if (currentScrollTop > initialScrollTop) {
+                hasScrolledDownRef.current = true;
+                setShowScrollPrompt(false);
+            }
+            initialScrollTop = currentScrollTop;
+        };
+
+        const handleWheel = (e: WheelEvent) => {
+            // If scrolling down, mark as scrolled and hide prompt
+            if (e.deltaY > 0) {
+                hasScrolledDownRef.current = true;
+                setShowScrollPrompt(false);
+            }
+        };
+
+        // Also detect mouse movement down (for touch devices)
+        let lastMouseY = 0;
+        const handleMouseMove = (e: MouseEvent) => {
+            if (lastMouseY > 0 && e.clientY > lastMouseY + 10) {
+                // Mouse moved down significantly
+                hasScrolledDownRef.current = true;
+                setShowScrollPrompt(false);
+            }
+            lastMouseY = e.clientY;
+        };
+
+        modalElement.addEventListener("scroll", handleScroll);
+        modalElement.addEventListener("wheel", handleWheel);
+        modalElement.addEventListener("mousemove", handleMouseMove);
+
+        // Initial check after content renders
+        requestAnimationFrame(() => {
+            checkIfScrollable();
+        });
+
+        return () => {
+            if (showPromptTimeout) {
+                clearTimeout(showPromptTimeout);
+            }
+            modalElement.removeEventListener("scroll", handleScroll);
+            modalElement.removeEventListener("wheel", handleWheel);
+            modalElement.removeEventListener("mousemove", handleMouseMove);
+        };
+    }, [isOpen]);
+
     if (!isOpen) {
         // Show start prompt for returning users
         if (showStartPrompt) {
             return (
-                <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+                <div className="fixed inset-0 flex items-center justify-center z-[70] pointer-events-none">
                     <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white/20">
                         <div className="flex items-center gap-3">
                             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
@@ -365,7 +450,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center z-50 "
+            className="fixed inset-0 flex items-center justify-center z-[70]"
             style={modalStyle}
         >
             <div
@@ -373,6 +458,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                 onClick={handleClose}
             />
             <div
+                ref={modalContentRef}
                 className={`relative bg-gray-900 rounded-xl shadow-2xl border border-white/10 overflow-y-auto h-[90%] ${
                     isMobile
                         ? "w-full h-full m-0 rounded-none flex flex-col justify-between"
@@ -633,6 +719,30 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                         </button>
                     </div>
                 </div>
+
+                {/* Scroll Prompt */}
+                {showScrollPrompt && (
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none z-10">
+                        <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-white/20 flex items-center gap-2 animate-bounce">
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                />
+                            </svg>
+                            <span className="text-sm font-medium">
+                                Scroll for more
+                            </span>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
