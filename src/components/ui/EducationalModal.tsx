@@ -427,16 +427,13 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     }, [isOpen]);
 
     const modalStyle = isMobile
-        ? { pointerEvents: "auto" as const, zIndex: 10000 }
-        : { pointerEvents: "auto" as const, zIndex: 10000 };
+        ? { pointerEvents: "auto" as const, zIndex: 50 }
+        : { pointerEvents: "auto" as const, zIndex: 50 };
 
     const modalContent = !isOpen ? (
         // Show start prompt for returning users
         showStartPrompt ? (
-            <div
-                className="fixed inset-0 flex items-center justify-center pointer-events-none"
-                style={{ zIndex: 10000 }}
-            >
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
                 <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm border border-white/20">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
