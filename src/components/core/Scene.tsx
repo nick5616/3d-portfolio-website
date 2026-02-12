@@ -304,7 +304,7 @@ export const Scene: React.FC = () => {
                         maxCcdSubsteps={performance.quality === "low" ? 1 : 3} // Reduce physics substeps on low quality
                     >
                         <SceneManager />
-                        {currentRoom && <PlayerBody />}
+                        {currentRoom && <PlayerBody key={currentRoom.id} />}
                         {!isMobile && <AdaptiveDpr pixelated />}
                         {!isMobile && <AdaptiveEvents />}
                         <Preload all />

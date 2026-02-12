@@ -12,7 +12,7 @@ import { roomConfigs } from "../configs/rooms";
 export const useRoomRouter = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentRoom, teleportToRoom, loadRoom } = useSceneStore();
+    const { currentRoom, teleportToRoom } = useSceneStore();
     const isHandlingUrlChange = useRef(false);
 
     // Navigate to a room by updating both URL and scene
@@ -71,6 +71,10 @@ export const useRoomRouter = () => {
         [navigate, location.pathname, teleportToRoom]
     );
 
+    // Track previous pathname so we only respond to actual URL changes,
+    // not to currentRoom changes from door teleportation.
+    const prevPathname = useRef(location.pathname);
+
     // Handle URL changes (browser navigation, direct links)
     useEffect(() => {
         // Prevent handling URL changes that we initiated ourselves
@@ -78,8 +82,17 @@ export const useRoomRouter = () => {
             console.log(
                 `🔄 Router: Skipping URL change handling (self-initiated)`
             );
+            prevPathname.current = location.pathname;
             return;
         }
+
+        // Only act when the URL actually changed (browser back/forward, direct link).
+        // Skip when this effect fires due to currentRoom changing from a door
+        // teleport — RouterIntegration handles URL sync for that case.
+        if (prevPathname.current === location.pathname) {
+            return;
+        }
+        prevPathname.current = location.pathname;
 
         const roomId = getRoomIdFromPath(location.pathname);
 
@@ -88,11 +101,12 @@ export const useRoomRouter = () => {
         );
 
         if (roomId) {
+            const { currentRoom: storeRoom } = useSceneStore.getState();
             // Check if we need to change rooms
-            if (!currentRoom || currentRoom.id !== roomId) {
+            if (!storeRoom || storeRoom.id !== roomId) {
                 console.log(
                     `🏠 Router: Room change needed from ${
-                        currentRoom?.id || "none"
+                        storeRoom?.id || "none"
                     } to ${roomId}`
                 );
 
@@ -104,20 +118,13 @@ export const useRoomRouter = () => {
                     const position = config.defaultEntrance.position;
                     const rotation = config.defaultEntrance.rotation;
 
-                    // Ensure spawn position is safely above the floor
-                    const safePosition: [number, number, number] = [
-                        position[0],
-                        Math.max(position[1], 1.5), // Ensure at least 1.5 units above ground
-                        position[2],
-                    ];
-
                     console.log(
                         `📍 Router: Spawning at entrance position`,
-                        safePosition,
+                        position,
                         `rotation`,
                         rotation
                     );
-                    teleportToRoom(roomId, safePosition, rotation);
+                    teleportToRoom(roomId, position, rotation);
                 } else {
                     console.error(
                         `❌ Router: Room config not found for ${roomId}`
@@ -136,49 +143,39 @@ export const useRoomRouter = () => {
             );
             navigate("/atrium", { replace: true });
         }
-    }, [location.pathname, currentRoom, teleportToRoom, navigate]);
+    }, [location.pathname, teleportToRoom, navigate]);
 
     // Initialize the scene on first load
     useEffect(() => {
         if (!currentRoom) {
             const roomId = getRoomIdFromPath(location.pathname) || "atrium";
             console.log(
-                `🎬 Router: Initial load, loading room ${roomId} FIRST from path ${location.pathname}`
+                `🎬 Router: Initial load, loading room ${roomId} from path ${location.pathname}`
             );
 
-            // CRITICAL: Load the room FIRST, then teleport player
-            // This ensures collision bodies exist before player spawns
             const config = roomConfigs[roomId];
             if (config) {
+                const position = config.defaultEntrance.position;
+                const rotation = config.defaultEntrance.rotation;
+
                 console.log(
-                    `📋 Router: Setting currentRoom to load collision bodies`
+                    `📍 Router: Teleporting player to entrance`,
+                    position
                 );
-                // Load room immediately (this renders the floor)
-                loadRoom(roomId);
 
-                // Wait for room to render, then teleport player
-                setTimeout(() => {
-                    const position = config.defaultEntrance.position;
-                    const rotation = config.defaultEntrance.rotation;
-
-                    // Use exact position from room config
-                    const safePosition: [number, number, number] = position;
-
-                    console.log(
-                        `📍 Router: Room loaded, now spawning player at`,
-                        safePosition
-                    );
-
-                    // Set player position and teleport flag
-                    teleportToRoom(roomId, safePosition, rotation);
-                }, 100); // Short delay for room to render
+                // teleportToRoom sets currentRoom (renders the room + floor)
+                // AND sets playerPosition + shouldTeleportPlayer so the player
+                // is placed at the entrance on the very first useFrame.
+                // The gravity gate in PlayerBody prevents falling before floor
+                // colliders are ready.
+                teleportToRoom(roomId, position, rotation);
             } else {
                 console.error(
                     `❌ Router: Room config not found for initial load: ${roomId}`
                 );
             }
         }
-    }, [currentRoom, location.pathname, loadRoom, teleportToRoom]);
+    }, [currentRoom, location.pathname, teleportToRoom]);
 
     return {
         navigateToRoom,

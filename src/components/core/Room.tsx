@@ -127,7 +127,11 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     <RoomEnvironmentReady />
 
                     {/* Floor collision for about room - covers entire 8x8 room */}
-                    <RigidBody type="fixed" colliders="cuboid">
+                    <RigidBody
+                        type="fixed"
+                        colliders="cuboid"
+                        collisionGroups={interactionGroups(0, [0])}
+                    >
                         <mesh position={[0, -0.25, 0]}>
                             <boxGeometry args={[8, 0.5, 8]} />
                             <primitive

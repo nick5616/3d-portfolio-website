@@ -46,7 +46,8 @@ export const PlayerBody: React.FC = () => {
     useFrame(() => {
         if (!playerRef.current) return;
 
-        // Handle teleportation
+        // Handle teleportation (process even before room is ready so player
+        // is positioned correctly while waiting for floor colliders)
         if (shouldTeleportPlayer) {
             playerRef.current.setTranslation(
                 {
@@ -59,8 +60,11 @@ export const PlayerBody: React.FC = () => {
             playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
             playerRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
             clearTeleportFlag();
-            return; // Skip normal movement this frame
         }
+
+        // Always keep camera following the player
+        const pos = playerRef.current.translation();
+        camera.position.set(pos.x, pos.y + 1.8, pos.z);
 
         // Update player position in store for collision detection
         const currentPosition = playerRef.current.translation();
@@ -147,9 +151,6 @@ export const PlayerBody: React.FC = () => {
             updatePlayerVelocity([currentVel.x, currentVel.y, currentVel.z]);
         }
 
-        // Update camera position to follow player
-        const pos = playerRef.current.translation();
-        camera.position.set(pos.x, pos.y + 1.8, pos.z);
     });
 
     return (
@@ -157,13 +158,13 @@ export const PlayerBody: React.FC = () => {
             ref={playerRef}
             mass={1}
             type="dynamic"
+            gravityScale={1}
             enabledRotations={[false, false, false]}
             lockRotations
-            position={[0, 1.5, 6]} // Spawn at center of room
+            position={playerPosition}
             friction={20}
             restitution={0}
-            // Add collision groups
-            collisionGroups={interactionGroups(0, [0, 1])} // Group 0 collides with groups 0 and 1
+            collisionGroups={interactionGroups(0, [0, 1])}
         >
             <CapsuleCollider
                 args={[0.5, 0.3]}
