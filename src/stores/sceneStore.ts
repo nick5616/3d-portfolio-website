@@ -155,6 +155,10 @@ interface SceneState {
     holodeckLoadingExperience: string | null;
     setHolodeckLoading: (loading: boolean, experience?: string | null) => void;
 
+    // Pending holodeck experience (set by router for deep-link spawning)
+    pendingHolodeckExperience: string | null;
+    setPendingHolodeckExperience: (experience: string | null) => void;
+
     // Room transition loading state
     roomTransitionLoading: boolean;
     roomTransitionFrom: string | null;
@@ -492,6 +496,11 @@ export const useSceneStore = create<SceneState>((set) => {
 
             set(updates);
         },
+
+        // Pending holodeck experience (set by router for deep-link spawning)
+        pendingHolodeckExperience: null,
+        setPendingHolodeckExperience: (experience) =>
+            set({ pendingHolodeckExperience: experience }),
 
         // Room transition loading state
         roomTransitionLoading: false,

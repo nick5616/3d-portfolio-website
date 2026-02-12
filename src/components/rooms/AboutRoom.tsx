@@ -11,6 +11,7 @@ import { MathExperience } from "./holodeck/MathExperience";
 import { ForestExperience } from "./holodeck/ForestExperience";
 import { RoomConfig } from "../../types/scene.types";
 import { useSceneStore } from "../../stores/sceneStore";
+import { getPathFromExperience } from "../../configs/routing";
 import * as THREE from "three";
 
 interface AboutRoomProps {
@@ -32,7 +33,7 @@ type HolodeckExperience =
     | "off";
 
 // Configuration for experience-specific spawn positions
-const EXPERIENCE_SPAWN_POSITIONS: Record<string, [number, number, number]> = {
+export const EXPERIENCE_SPAWN_POSITIONS: Record<string, [number, number, number]> = {
     // Current experiences
     computer: [0, 0.9, 0],
     fitness: [0, 0.9, 0],
@@ -55,7 +56,23 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
         getExperienceRotationAngle,
         teleportToRoom,
         setHolodeckLoading,
+        pendingHolodeckExperience,
+        setPendingHolodeckExperience,
     } = useSceneStore();
+
+    // Auto-launch experience from deep-link URL.
+    // This is reactive (not mount-only) because the router's effect that sets
+    // pendingHolodeckExperience fires AFTER this component's mount effects.
+    useEffect(() => {
+        if (pendingHolodeckExperience) {
+            console.log(
+                `🎮 AboutRoom: Launching pending experience: ${pendingHolodeckExperience}`
+            );
+            const exp = pendingHolodeckExperience as HolodeckExperience;
+            setPendingHolodeckExperience(null);
+            switchExperience(exp);
+        }
+    }, [pendingHolodeckExperience]);
 
     // Animation loop
     useFrame((state) => {
@@ -140,6 +157,15 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
                         0,
                     ]);
                 }, 100); // Small delay to ensure environment is loaded
+            }
+
+            // Update URL to match the experience
+            const experiencePath =
+                experience === "off"
+                    ? "/holodeck"
+                    : getPathFromExperience(experience) || "/holodeck";
+            if (window.location.pathname !== experiencePath) {
+                window.history.replaceState(null, "", experiencePath);
             }
 
             // End loading screen after a short delay to ensure everything is rendered

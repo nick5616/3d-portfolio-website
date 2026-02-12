@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSceneStore } from "../../stores/sceneStore";
-import { getPathFromRoomId } from "../../configs/routing";
+import { getPathFromRoomId, getExperienceFromPath } from "../../configs/routing";
 
 /**
  * RouterIntegration component handles the integration between URL routing and the 3D scene.
@@ -24,8 +24,16 @@ export const RouterIntegration: React.FC = () => {
             );
 
             // Only update URL if this room change came from a door (not from URL navigation)
+            // Don't override experience deep-link URLs (e.g. /courage → /holodeck)
             const expectedPath = getPathFromRoomId(currentRoom.id);
-            if (expectedPath && location.pathname !== expectedPath) {
+            const isExperienceUrl =
+                currentRoom.id === "about" &&
+                getExperienceFromPath(location.pathname) !== null;
+            if (
+                expectedPath &&
+                location.pathname !== expectedPath &&
+                !isExperienceUrl
+            ) {
                 console.log(
                     `🔗 RouterIntegration: Updating URL from ${location.pathname} to ${expectedPath}`
                 );

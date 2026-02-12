@@ -6,8 +6,25 @@ import {
     getRoomIdFromPath,
     getPathFromRoomId,
     getRouteByPath,
+    getExperienceFromPath,
 } from "../configs/routing";
 import { roomConfigs } from "../configs/rooms";
+import { EXPERIENCE_SPAWN_POSITIONS } from "../components/rooms/AboutRoom";
+
+// Helper to get spawn position and rotation for an experience
+const getExperienceSpawn = (
+    experienceId: string,
+    getRotationAngle: (exp: string) => number
+) => {
+    const position: [number, number, number] =
+        EXPERIENCE_SPAWN_POSITIONS[experienceId] || [0, 0.9, 0];
+    const rotation: [number, number, number] = [
+        0,
+        getRotationAngle(experienceId),
+        0,
+    ];
+    return { position, rotation };
+};
 
 export const useRoomRouter = () => {
     const navigate = useNavigate();
@@ -102,6 +119,31 @@ export const useRoomRouter = () => {
 
         if (roomId) {
             const { currentRoom: storeRoom } = useSceneStore.getState();
+
+            // Check for experience deep-link
+            const experienceId = getExperienceFromPath(location.pathname);
+            if (experienceId) {
+                const { getExperienceRotationAngle, setPendingHolodeckExperience } =
+                    useSceneStore.getState();
+                const { position, rotation } = getExperienceSpawn(
+                    experienceId,
+                    getExperienceRotationAngle
+                );
+                console.log(
+                    `🎮 Router: Experience deep-link detected: ${experienceId}`
+                );
+                setPendingHolodeckExperience(experienceId);
+
+                if (!storeRoom || storeRoom.id !== roomId) {
+                    isHandlingUrlChange.current = true;
+                    teleportToRoom(roomId, position, rotation);
+                    setTimeout(() => {
+                        isHandlingUrlChange.current = false;
+                    }, 200);
+                }
+                return;
+            }
+
             // Check if we need to change rooms
             if (!storeRoom || storeRoom.id !== roomId) {
                 console.log(
@@ -153,6 +195,23 @@ export const useRoomRouter = () => {
                 `🎬 Router: Initial load, loading room ${roomId} from path ${location.pathname}`
             );
 
+            // Check for experience deep-link on initial load
+            const experienceId = getExperienceFromPath(location.pathname);
+            if (experienceId) {
+                const { getExperienceRotationAngle, setPendingHolodeckExperience } =
+                    useSceneStore.getState();
+                const { position, rotation } = getExperienceSpawn(
+                    experienceId,
+                    getExperienceRotationAngle
+                );
+                console.log(
+                    `🎮 Router: Initial load with experience: ${experienceId}`
+                );
+                setPendingHolodeckExperience(experienceId);
+                teleportToRoom(roomId, position, rotation);
+                return;
+            }
+
             const config = roomConfigs[roomId];
             if (config) {
                 const position = config.defaultEntrance.position;
@@ -163,11 +222,6 @@ export const useRoomRouter = () => {
                     position
                 );
 
-                // teleportToRoom sets currentRoom (renders the room + floor)
-                // AND sets playerPosition + shouldTeleportPlayer so the player
-                // is placed at the entrance on the very first useFrame.
-                // The gravity gate in PlayerBody prevents falling before floor
-                // colliders are ready.
                 teleportToRoom(roomId, position, rotation);
             } else {
                 console.error(

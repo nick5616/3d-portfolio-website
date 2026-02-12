@@ -6,6 +6,12 @@ export interface RoomRoute {
     description?: string;
 }
 
+export interface ExperienceRoute {
+    path: string;
+    experienceId: string;
+    title: string;
+}
+
 export const roomRoutes: RoomRoute[] = [
     {
         path: "/",
@@ -63,6 +69,36 @@ export const roomRoutes: RoomRoute[] = [
     },
 ];
 
+// Holodeck experience routes — each experience has a canonical path and short aliases
+export const experienceRoutes: ExperienceRoute[] = [
+    { path: "/holodeck/courage-the-cowardly-dog", experienceId: "computer", title: "Courage the Cowardly Dog" },
+    { path: "/holodeck/courage", experienceId: "computer", title: "Courage the Cowardly Dog" },
+    { path: "/courage", experienceId: "computer", title: "Courage the Cowardly Dog" },
+    { path: "/holodeck/gym", experienceId: "fitness", title: "Gym" },
+    { path: "/gym", experienceId: "fitness", title: "Gym" },
+    { path: "/fitness", experienceId: "fitness", title: "Gym" },
+    { path: "/holodeck/art", experienceId: "art", title: "Art Studio" },
+    { path: "/art", experienceId: "art", title: "Art Studio" },
+    { path: "/holodeck/math", experienceId: "math", title: "Math" },
+    { path: "/math", experienceId: "math", title: "Math" },
+    { path: "/holodeck/forest", experienceId: "forest", title: "Forest" },
+    { path: "/forest", experienceId: "forest", title: "Forest" },
+];
+
+// Canonical path per experience (first /holodeck/* entry)
+const experienceIdToPath = new Map<string, string>([
+    ["computer", "/holodeck/courage-the-cowardly-dog"],
+    ["fitness", "/holodeck/gym"],
+    ["art", "/holodeck/art"],
+    ["math", "/holodeck/math"],
+    ["forest", "/holodeck/forest"],
+]);
+
+// Quick lookup maps
+const pathToExperienceId = new Map<string, string>(
+    experienceRoutes.map((route) => [route.path, route.experienceId])
+);
+
 // Create a map for quick lookup
 export const pathToRoomId = new Map<string, string>(
     roomRoutes.map((route) => [route.path, route.roomId])
@@ -77,9 +113,9 @@ export const roomIdToPath = new Map<string, string>([
     ["relaxation", "/relaxation"],
 ]);
 
-// Helper function to get room ID from path
+// Helper function to get room ID from path (also matches experience routes → "about")
 export const getRoomIdFromPath = (path: string): string | null => {
-    return pathToRoomId.get(path) || null;
+    return pathToRoomId.get(path) || (pathToExperienceId.has(path) ? "about" : null);
 };
 
 // Helper function to get path from room ID
@@ -92,13 +128,23 @@ export const getRouteByPath = (path: string): RoomRoute | null => {
     return roomRoutes.find((route) => route.path === path) || null;
 };
 
-// Helper function to extract holodeck experience from URL
+// Get the experience ID from a URL path (returns null if not an experience route)
+export const getExperienceFromPath = (path: string): string | null => {
+    return pathToExperienceId.get(path) || null;
+};
+
+// Get the canonical URL path for an experience ID
+export const getPathFromExperience = (experienceId: string): string | null => {
+    return experienceIdToPath.get(experienceId) || null;
+};
+
+// Helper function to extract holodeck experience from URL (legacy query param support)
 export const getHolodeckExperienceFromURL = (): string | null => {
     const params = new URLSearchParams(window.location.search);
     return params.get("experience");
 };
 
-// Helper function to build holodeck URL with experience
+// Helper function to build holodeck URL with experience (legacy)
 export const buildHolodeckURL = (experience?: string): string => {
     const basePath = "/holodeck";
     if (experience && experience !== "off") {
