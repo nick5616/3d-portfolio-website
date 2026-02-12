@@ -113,18 +113,14 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                // so that meshes already referencing it get updated
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -194,26 +190,20 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    emissiveMap: textures.materialDetail,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.1,
-                    displacementBias: -0.05,
-                    emissiveIntensity: 0.1,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.4,
-                    metalness: 0.1,
-                    envMapIntensity: 0.3,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                // so that meshes already referencing it get updated
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.1;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.emissiveIntensity = 0.1;
+                fallbackMaterial.envMapIntensity = 0.3;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -314,21 +304,14 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.3,
-                    metalness: 0.1,
-                    envMapIntensity: 0.3,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.envMapIntensity = 0.3;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -418,26 +401,19 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    emissiveMap: textures.materialDetail,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.15,
-                    displacementBias: -0.08,
-                    emissiveIntensity: 0.1,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.5,
-                    metalness: 0.1,
-                    envMapIntensity: 0.3,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.15;
+                fallbackMaterial.displacementBias = -0.08;
+                fallbackMaterial.emissiveIntensity = 0.1;
+                fallbackMaterial.envMapIntensity = 0.3;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -547,26 +523,21 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    emissiveMap: textures.materialDetail,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.1,
-                    displacementBias: -0.05,
-                    emissiveIntensity: 0.05,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.6,
-                    metalness: 0.0,
-                    envMapIntensity: 0.3,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.1;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.emissiveIntensity = 0.05;
+                fallbackMaterial.roughness = 0.6;
+                fallbackMaterial.metalness = 0.0;
+                fallbackMaterial.envMapIntensity = 0.3;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -673,27 +644,22 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    metalnessMap: textures.metallic,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    emissiveMap: textures.materialDetail,
-                    normalScale: new THREE.Vector2(1.5, 1.5),
-                    displacementScale: 0.05,
-                    displacementBias: -0.025,
-                    emissiveIntensity: 0.02,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.8,
-                    metalness: 0.0,
-                    envMapIntensity: 0.2,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.metalnessMap = textures.metallic;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.5, 1.5);
+                fallbackMaterial.displacementScale = 0.05;
+                fallbackMaterial.displacementBias = -0.025;
+                fallbackMaterial.emissiveIntensity = 0.02;
+                fallbackMaterial.roughness = 0.8;
+                fallbackMaterial.metalness = 0.0;
+                fallbackMaterial.envMapIntensity = 0.2;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -823,25 +789,20 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    metalnessMap: textures.metallic,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.1,
-                    displacementBias: -0.05,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.3,
-                    metalness: 0.8,
-                    envMapIntensity: 0.5,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.metalnessMap = textures.metallic;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.1;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.roughness = 0.3;
+                fallbackMaterial.metalness = 0.8;
+                fallbackMaterial.envMapIntensity = 0.5;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -951,24 +912,19 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.1,
-                    displacementBias: -0.05,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.6,
-                    metalness: 0.0,
-                    envMapIntensity: 0.3,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.1;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.roughness = 0.6;
+                fallbackMaterial.metalness = 0.0;
+                fallbackMaterial.envMapIntensity = 0.3;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -1068,25 +1024,20 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material
-                const material = new THREE.MeshStandardMaterial({
-                    map: textures.baseColor,
-                    normalMap: textures.normal,
-                    roughnessMap: textures.roughness,
-                    aoMap: textures.ao,
-                    displacementMap: textures.height,
-                    metalnessMap: textures.metallic,
-                    normalScale: new THREE.Vector2(1.0, 1.0),
-                    displacementScale: 0.1,
-                    displacementBias: -0.05,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    roughness: 0.2,
-                    metalness: 0.9,
-                    envMapIntensity: 0.5,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.metalnessMap = textures.metallic;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.0, 1.0);
+                fallbackMaterial.displacementScale = 0.1;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.roughness = 0.2;
+                fallbackMaterial.metalness = 0.9;
+                fallbackMaterial.envMapIntensity = 0.5;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -1197,35 +1148,23 @@ export class EnhancedMaterialSystem {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
                 // All textures loaded, create the final material with optimized PBR properties
-                const material = new THREE.MeshStandardMaterial({
-                    // Base color map - ensure proper color reproduction
-                    map: textures.baseColor,
-                    // Enhanced normal mapping for detailed surface relief
-                    normalMap: textures.normal,
-                    normalScale: new THREE.Vector2(2.0, 2.0), // Increased for more pronounced coffer details
-                    // Roughness map for realistic surface variation
-                    roughnessMap: textures.roughness,
-                    roughness: 0.4, // Base roughness for wood
-                    // Metallic map for gold accent variation
-                    metalnessMap: textures.metallic,
-                    metalness: 0.3, // Higher metalness to enhance gold accents
-                    // Ambient occlusion for realistic shadows and depth
-                    aoMap: textures.ao,
-                    aoMapIntensity: 1.5, // Enhanced AO for better depth
-                    // Displacement mapping for 3D coffer details
-                    displacementMap: textures.height,
-                    displacementScale: 0.3, // Increased for more pronounced coffers
-                    displacementBias: -0.15, // Better offset for depth
-                    // Material detail as emissive for gold accent enhancement
-                    emissiveMap: textures.materialDetail,
-                    emissiveIntensity: 0.2, // Enhanced emissive for gold accents
-                    // Environment mapping for realistic reflections
-                    envMapIntensity: 0.8,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.normalScale = new THREE.Vector2(2.0, 2.0);
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.roughness = 0.4;
+                fallbackMaterial.metalnessMap = textures.metallic;
+                fallbackMaterial.metalness = 0.3;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.aoMapIntensity = 1.5;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.displacementScale = 0.3;
+                fallbackMaterial.displacementBias = -0.15;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.emissiveIntensity = 0.2;
+                fallbackMaterial.envMapIntensity = 0.8;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -1327,33 +1266,21 @@ export class EnhancedMaterialSystem {
         const onTextureLoad = () => {
             loadedTextures++;
             if (loadedTextures === totalTextures) {
-                // All textures loaded, create the final material with enhanced PBR properties
-                const material = new THREE.MeshStandardMaterial({
-                    // Base color map
-                    map: textures.baseColor,
-                    // Enhanced normal mapping for detailed surface relief
-                    normalMap: textures.normal,
-                    normalScale: new THREE.Vector2(1.5, 1.5), // Good detail for stone
-                    // Roughness map for realistic surface variation
-                    roughnessMap: textures.roughness,
-                    roughness: 0.6, // Base roughness for stone
-                    // Ambient occlusion for realistic shadows and depth
-                    aoMap: textures.ao,
-                    aoMapIntensity: 1.3, // Enhanced AO for stone depth
-                    // Displacement mapping for 3D stone details
-                    displacementMap: textures.height,
-                    displacementScale: 0.15, // Subtle displacement for stone texture
-                    displacementBias: -0.05, // Slight offset for depth
-                    // Material detail for additional surface variation
-                    emissiveMap: textures.materialDetail,
-                    emissiveIntensity: 0.05, // Very subtle emissive detail
-                    // Environment mapping for realistic reflections
-                    envMapIntensity: 0.6,
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, material);
+                // Apply textures to the existing fallback material in-place
+                fallbackMaterial.map = textures.baseColor;
+                fallbackMaterial.normalMap = textures.normal;
+                fallbackMaterial.normalScale = new THREE.Vector2(1.5, 1.5);
+                fallbackMaterial.roughnessMap = textures.roughness;
+                fallbackMaterial.roughness = 0.6;
+                fallbackMaterial.aoMap = textures.ao;
+                fallbackMaterial.aoMapIntensity = 1.3;
+                fallbackMaterial.displacementMap = textures.height;
+                fallbackMaterial.displacementScale = 0.15;
+                fallbackMaterial.displacementBias = -0.05;
+                fallbackMaterial.emissiveMap = textures.materialDetail;
+                fallbackMaterial.emissiveIntensity = 0.05;
+                fallbackMaterial.envMapIntensity = 0.6;
+                fallbackMaterial.needsUpdate = true;
             }
         };
 
@@ -1460,27 +1387,17 @@ export class EnhancedMaterialSystem {
                 texture.minFilter = THREE.LinearMipmapLinearFilter;
                 texture.magFilter = THREE.LinearFilter;
 
-                // Update the existing fallback material with the loaded texture
+                // Apply texture to the existing fallback material in-place
                 fallbackMaterial.map = texture;
+                fallbackMaterial.roughness = 0.1;
+                fallbackMaterial.metalness = 0.3;
+                fallbackMaterial.transparent = false;
+                fallbackMaterial.alphaTest = 0;
+                fallbackMaterial.polygonOffset = true;
+                fallbackMaterial.polygonOffsetFactor = 5.0;
+                fallbackMaterial.polygonOffsetUnits = 5.0;
+                fallbackMaterial.envMapIntensity = 1.2;
                 fallbackMaterial.needsUpdate = true;
-
-                // Also create a new enhanced material and cache it
-                const enhancedMaterial = new THREE.MeshStandardMaterial({
-                    map: texture,
-                    roughness: 0.1, // Very smooth for marble shine
-                    metalness: 0.3, // Enhanced metallic properties
-                    side: THREE.FrontSide, // Only render front faces for better performance
-                    transparent: false,
-                    alphaTest: 0,
-                    polygonOffset: true,
-                    polygonOffsetFactor: 5.0,
-                    polygonOffsetUnits: 5.0,
-                    envMapIntensity: 1.2, // Enhanced reflections
-                    name: `marble-wall-enhanced`,
-                });
-
-                // Update the cached material
-                this.materialCache.set(cacheKey, enhancedMaterial);
             },
             undefined,
             (error) => console.warn("Failed to load marble texture:", error)
