@@ -70,8 +70,8 @@ export const Minimap: React.FC = () => {
             about: "#F5A623",
         };
 
-        // Draw rooms at their actual positions
-        Object.values(roomConfigs).forEach((room) => {
+        // Draw rooms at their actual positions (skip relaxation – not yet available)
+        Object.values(roomConfigs).filter((room) => room.id !== "relaxation").forEach((room) => {
             const [roomWidth, , roomDepth] = room.dimensions;
             const [roomX, , roomZ] = room.position;
 

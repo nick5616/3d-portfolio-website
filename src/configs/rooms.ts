@@ -94,18 +94,18 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
-            {
-                id: "to-relaxation",
-                targetRoomId: "relaxation",
-                position: [0, 0, 9.77] as [number, number, number],
-                rotation: [0, 0, 0] as [number, number, number],
-                width: 3,
-                height: 4,
-                entrancePoint: {
-                    position: [0, 1.5, -2] as [number, number, number],
-                    rotation: [0, Math.PI, 0] as [number, number, number],
-                },
-            },
+            // {
+            //     id: "to-relaxation",
+            //     targetRoomId: "relaxation",
+            //     position: [0, 0, 9.77] as [number, number, number],
+            //     rotation: [0, 0, 0] as [number, number, number],
+            //     width: 3,
+            //     height: 4,
+            //     entrancePoint: {
+            //         position: [0, 1.5, -2] as [number, number, number],
+            //         rotation: [0, Math.PI, 0] as [number, number, number],
+            //     },
+            // },
         ],
     },
 
