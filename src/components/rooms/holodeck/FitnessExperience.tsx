@@ -61,7 +61,7 @@ PULL: Drive elbows down and back. Think about straightening your spine, not just
 
 SCAPULA: Keep shoulder blades tight and engaged throughout the entire movement.
 
-DESCENT: Control the negative. Feel your body's momentum. Master your own weight.`}
+DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, despite your own weight. Cancel your momentum and go alllll the way down.`}
                 </Text>
 
                 {/* Quote */}
@@ -75,8 +75,7 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
                     maxWidth={2.6}
                     fontStyle="italic"
                 >
-                    "Pull-ups are the ultimate test of functional strength -
-                    your body against gravity."
+                    "Pull-ups are my favorite!"
                 </Text>
             </group>
 
@@ -195,23 +194,10 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
             </Text>
             
 
-            {/* Gym lighting — bright overhead fluorescents */}
-            <ambientLight intensity={0.6} color="#f5f5ff" />
-            {[
-                [0, 4.5, -2],
-                [0, 4.5, 2],
-                [-2, 4.5, 0],
-                [2, 4.5, 0],
-            ].map((pos, i) => (
-                <pointLight
-                    key={i}
-                    position={pos as [number, number, number]}
-                    intensity={4}
-                    distance={12}
-                    decay={1.5}
-                    color="#f0f0ff"
-                />
-            ))}
+            {/* Gym lighting — overhead spots with targets in scene graph */}
+            <spotLight position={[0, 4, 0]} angle={0.6} penumbra={0.3} intensity={20} color="#FFFFFF" castShadow={false}>
+                <object3D attach="target" position={[0, -4.5, 0]} />
+            </spotLight>
         </group>
     );
 };
