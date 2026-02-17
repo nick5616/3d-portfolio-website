@@ -44,7 +44,7 @@ export const FitnessExperience: React.FC = () => {
 
                 {/* Instructions */}
                 <Text
-                    position={[0, 0.2, 0.02]}
+                    position={[0, 0, 0.02]}
                     rotation={[0, 0, 0]}
                     fontSize={0.06}
                     color="#000000"
