@@ -110,7 +110,7 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
             </group>
 
             {/* Barbell station - center of room */}
-            <group position={[0, 0, 0]}>
+            <group position={[0, -0.25, -2.75]}>
                 {/* Barbell */}
                 <mesh position={[0, 1.2, 0]} rotation={[0, 0, Math.PI / 2]}>
                     <cylinderGeometry args={[0.025, 0.025, 1.8]} />
@@ -143,7 +143,7 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
             </group>
 
             {/* Bench - center-right */}
-            <group position={[1.5, 0, -0.5]}>
+            <group position={[0, 0, -2.5]} rotation={[0, Math.PI / 2, 0]}>
                 <mesh position={[0, 0.5, 0]}>
                     <boxGeometry args={[1.2, 0.15, 0.35]} />
                     <meshStandardMaterial color="#8B0000" roughness={0.7} />
@@ -173,17 +173,45 @@ DESCENT: Control the negative. Feel your body's momentum. Master your own weight
             >
                 NO PAIN, NO GAIN
             </Text>
+            <Text
+                position={[3.9, 4.5, 0]}
+                rotation={[0, -Math.PI / 2, 0]}
+                fontSize={0.4}
+                color="#FF0000"
+                anchorX="center"
+                anchorY="middle"
+            >
+                Except for pain in the joints and ligaments. 
+            </Text>
+            <Text
+                position={[3.9, 4.1, 0]}
+                rotation={[0, -Math.PI / 2, 0]}
+                fontSize={0.4}
+                color="#FF0000"
+                anchorX="center"
+                anchorY="middle"
+            >
+                That's pain without gain.
+            </Text>
+            
 
-            {/* Gym lighting */}
-            <spotLight
-                position={[0, 4.5, 0]}
-                target-position={[0, 0, 0]}
-                angle={0.6}
-                penumbra={0.3}
-                intensity={1.5}
-                color="#FFFFFF"
-                castShadow={false}
-            />
+            {/* Gym lighting — bright overhead fluorescents */}
+            <ambientLight intensity={0.6} color="#f5f5ff" />
+            {[
+                [0, 4.5, -2],
+                [0, 4.5, 2],
+                [-2, 4.5, 0],
+                [2, 4.5, 0],
+            ].map((pos, i) => (
+                <pointLight
+                    key={i}
+                    position={pos as [number, number, number]}
+                    intensity={4}
+                    distance={12}
+                    decay={1.5}
+                    color="#f0f0ff"
+                />
+            ))}
         </group>
     );
 };
