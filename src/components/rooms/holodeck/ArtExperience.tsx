@@ -67,8 +67,8 @@ export const ArtExperience: React.FC = () => {
     const fetchFavorites = useCallback(() => {
         fetch(`${API_BASE}/api/v1/art/favorites`)
             .then((res) => res.json())
-            .then((data: { pieces: FavoritePiece[] }) => {
-                setFavorites(data.pieces);
+            .then((data: { pieces: FavoritePiece[] | null }) => {
+                setFavorites(data?.pieces ?? []);
             })
             .catch((err) => {
                 console.warn("Could not fetch favorites:", err);
@@ -179,7 +179,7 @@ export const ArtExperience: React.FC = () => {
             {/* Cork board for artwork display - on back wall */}
             <group position={[0, 2.5, 3.9]} rotation={[0, Math.PI, 0]}>
                 <mesh>
-                    <planeGeometry args={[6, 2.5]} />
+                    <planeGeometry args={[6, 3]} />
                     <meshStandardMaterial color="#DEB887" roughness={0.9} />
                 </mesh>
 
@@ -203,7 +203,7 @@ export const ArtExperience: React.FC = () => {
                           const col = i % 3;
                           const row = Math.floor(i / 3);
                           const x = (col - 1) * 1.8;
-                          const y = (1 - row) * 0.7;
+                          const y = (0.5 - row) * 1.4;
                           return (
                               <WallPiece
                                   key={img.url}
@@ -217,7 +217,7 @@ export const ArtExperience: React.FC = () => {
 
             {/* Encouraging text - above cork board */}
             <Text
-                position={[0, 4, 3.9]}
+                position={[0, 4.3, 3.9]}
                 fontSize={0.3}
                 color="#FF69B4"
                 anchorX="center"
