@@ -15,12 +15,14 @@ interface InteractiveEaselProps {
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
+    onSubmit?: (dataUrl: string) => void;
 }
 
 export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     position = [0, 0, 0],
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
+    onSubmit,
 }) => {
     const easelRef = useRef<THREE.Group>(null);
     const pulsingLightRef = useRef<THREE.PointLight>(null);
@@ -202,6 +204,21 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
 
         texture.needsUpdate = true;
     }, [ctx, canvas.width, canvas.height, texture]);
+
+    // Submit canvas as JPEG
+    const submitCanvas = useCallback(() => {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+        // Trigger download for now (swap with API POST later)
+        const link = document.createElement("a");
+        link.download = `artwork-${Date.now()}.jpg`;
+        link.href = dataUrl;
+        link.click();
+
+        if (onSubmit) {
+            onSubmit(dataUrl);
+        }
+    }, [canvas, onSubmit]);
 
     // Handle exiting drawing mode
     const exitDrawingMode = useCallback(() => {
@@ -401,8 +418,8 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 ))}
             </group>
 
-            {/* Clear button with label */}
-            <group position={[2.2, 3.5, 0.2]}>
+            {/* Clear button */}
+            <group position={[1.4, 0.5, 0.1]}>
                 <mesh
                     onClick={(e) => {
                         e.stopPropagation();
@@ -420,6 +437,28 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     anchorY="middle"
                 >
                     CLEAR
+                </Text>
+            </group>
+
+            {/* Submit button */}
+            <group position={[0.75, 0.5, 0.1]}>
+                <mesh
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        submitCanvas();
+                    }}
+                >
+                    <boxGeometry args={[0.6, 0.4, 0.1]} />
+                    <meshStandardMaterial color="#2E7D32" />
+                </mesh>
+                <Text
+                    position={[0, 0, 0.06]}
+                    fontSize={0.08}
+                    color="#FFFFFF"
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    SUBMIT
                 </Text>
             </group>
 

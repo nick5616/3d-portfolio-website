@@ -1,8 +1,24 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
+import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
 
 export const ArtExperience: React.FC = () => {
+    const [submissions, setSubmissions] = useState<string[]>([]);
+
+    const handleSubmit = (dataUrl: string) => {
+        setSubmissions((prev) => [...prev, dataUrl]);
+    };
+
+    // Create textures from submitted data URLs
+    const submissionTextures = useMemo(() => {
+        return submissions.map((dataUrl) => {
+            const tex = new THREE.TextureLoader().load(dataUrl);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        });
+    }, [submissions]);
+
     return (
         <group>
             {/* Classroom tile floor */}
@@ -64,30 +80,50 @@ export const ArtExperience: React.FC = () => {
             ))}
 
             {/* Interactive easel - in center facing forward */}
-            <InteractiveEasel position={[0, 0, -3]} rotation={[0, 0, 0]} />
+            <InteractiveEasel
+                position={[0, 0, -3]}
+                rotation={[0, 0, 0]}
+                onSubmit={handleSubmit}
+            />
 
-            {/* Cork board for artwork display - on left wall */}
+            {/* Cork board for artwork display - on back wall */}
             <group position={[0, 2.5, 3.9]} rotation={[0, Math.PI, 0]}>
                 <mesh>
                     <planeGeometry args={[6, 2.5]} />
                     <meshStandardMaterial color="#DEB887" roughness={0.9} />
                 </mesh>
 
-                {/* Sample "student" artwork */}
-                {Array.from({ length: 9 }).map((_, i) => {
-                    const x = ((i % 3) - 1) * 1.8;
-                    const y = (Math.floor(i / 3) - 1) * 0.7;
-                    return (
-                        <mesh key={i} position={[x, y, 0.02]}>
-                            <planeGeometry args={[0.5, 0.5]} />
-                            <meshBasicMaterial
-                                color={`hsl(${i * 40}, 70%, 80%)`}
-                                transparent
-                                opacity={0.9}
-                            />
-                        </mesh>
-                    );
-                })}
+                {/* Display submitted artwork, or placeholder squares if none */}
+                {submissions.length === 0
+                    ? Array.from({ length: 9 }).map((_, i) => {
+                          const x = ((i % 3) - 1) * 1.8;
+                          const y = (Math.floor(i / 3) - 1) * 0.7;
+                          return (
+                              <mesh key={i} position={[x, y, 0.02]}>
+                                  <planeGeometry args={[0.5, 0.5]} />
+                                  <meshBasicMaterial
+                                      color={`hsl(${i * 40}, 70%, 80%)`}
+                                      transparent
+                                      opacity={0.9}
+                                  />
+                              </mesh>
+                          );
+                      })
+                    : submissions.map((_, i) => {
+                          const col = i % 3;
+                          const row = Math.floor(i / 3);
+                          const x = (col - 1) * 1.8;
+                          const y = (1 - row) * 0.7;
+                          return (
+                              <mesh key={i} position={[x, y, 0.02]}>
+                                  <planeGeometry args={[1.4, 1.0]} />
+                                  <meshBasicMaterial
+                                      map={submissionTextures[i]}
+                                      toneMapped={false}
+                                  />
+                              </mesh>
+                          );
+                      })}
             </group>
 
             {/* Encouraging text - above cork board */}
