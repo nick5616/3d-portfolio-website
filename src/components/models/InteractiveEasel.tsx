@@ -40,8 +40,8 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     // Create drawing texture and canvas
     const { texture, canvas, ctx } = useMemo(() => {
         const canvas = document.createElement("canvas");
-        canvas.width = 512;
-        canvas.height = 512;
+        canvas.width = 700;
+        canvas.height = 500;
         const ctx = canvas.getContext("2d")!;
 
         // Initialize with white background
