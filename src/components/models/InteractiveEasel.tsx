@@ -15,7 +15,7 @@ interface InteractiveEaselProps {
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
-    onSubmit?: (dataUrl: string) => void;
+    onSubmit?: (blob: Blob) => void;
 }
 
 export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
@@ -35,6 +35,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const [isCanvasFocused, setIsCanvasFocused] = useState(false);
     const [currentColor, setCurrentColor] = useState("#000000");
     const [brushSize, setBrushSize] = useState(3);
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     // Prevent pointer lock during drawing
     const preventPointerLockRef = useRef(false);
@@ -207,17 +208,18 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
 
     // Submit canvas as JPEG
     const submitCanvas = useCallback(() => {
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-
-        // Trigger download for now (swap with API POST later)
-        const link = document.createElement("a");
-        link.download = `artwork-${Date.now()}.jpg`;
-        link.href = dataUrl;
-        link.click();
-
-        if (onSubmit) {
-            onSubmit(dataUrl);
-        }
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) return;
+                if (onSubmit) {
+                    onSubmit(blob);
+                }
+                setShowConfirmation(true);
+                setTimeout(() => setShowConfirmation(false), 3000);
+            },
+            "image/jpeg",
+            0.9
+        );
     }, [canvas, onSubmit]);
 
     // Handle exiting drawing mode
@@ -385,14 +387,14 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
             </mesh>
 
             {/* Color palette as floating 3D buttons */}
-            <group position={[-2.2, 3.5, 0.2]}>
+            <group position={[-1.65, 0.6, 0.1]}>
                 {[
                     { color: "#000000", pos: [0, 0, 0] },
-                    { color: "#FF0000", pos: [0.3, 0, 0] },
-                    { color: "#00FF00", pos: [0.6, 0, 0] },
-                    { color: "#0000FF", pos: [0, -0.3, 0] },
-                    { color: "#FFFF00", pos: [0.3, -0.3, 0] },
-                    { color: "#FF00FF", pos: [0.6, -0.3, 0] },
+                    { color: "#FF0000", pos: [0.25, 0, 0] },
+                    { color: "#00FF00", pos: [0.5, 0, 0] },
+                    { color: "#0000FF", pos: [0.75, 0, 0] },
+                    { color: "#FFFF00", pos: [1, 0, 0] },
+                    { color: "#FF00FF", pos: [1.25, 0, 0] },
                 ].map((colorData, index) => (
                     <mesh
                         key={colorData.color}
@@ -402,7 +404,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                             setCurrentColor(colorData.color);
                         }}
                     >
-                        <boxGeometry args={[0.2, 0.2, 0.1]} />
+                        <boxGeometry args={[0.2, 0.2, 0.05]} />
                         <meshStandardMaterial
                             color={colorData.color}
                             emissive={
@@ -480,17 +482,33 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 <meshStandardMaterial color="#32CD32" />
             </mesh>
 
-            {/* Drawing mode indicator */}
-            {isCanvasFocused && (
+            {/* Drawing mode indicator / submission confirmation */}
+            {showConfirmation ? (
                 <Text
-                    position={[0, 4, 0]}
-                    fontSize={0.2}
-                    color={currentColor}
+                    position={[0, 3.3, 0.2]}
+                    fontSize={0.15}
+                    color="#2E7D32"
                     anchorX="center"
                     anchorY="middle"
                 >
-                    🎨 Drawing Mode - Click outside the canvas to exit
+                    Artwork submitted!
                 </Text>
+            ) : (
+                isCanvasFocused && (
+                    <Text
+                        position={[0, 3.3, 0.2]}
+                        fontSize={0.15}
+                        color={
+                            currentColor === "#000000"
+                                ? "#FFFFFF"
+                                : currentColor
+                        }
+                        anchorX="center"
+                        anchorY="middle"
+                    >
+                        Drawing Mode - Click outside the canvas to exit
+                    </Text>
+                )
             )}
 
             {/* Pulsing creative light */}

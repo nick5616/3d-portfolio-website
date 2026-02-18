@@ -1,23 +1,113 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
 
+const API_BASE = "http://localhost:8080";
+
+interface FavoritePiece {
+    id: string;
+    url: string;
+    title: string;
+    tags: string[];
+    uploadedAt: string;
+}
+
+// Separate component so texture loading triggers its own re-render
+const WallPiece: React.FC<{
+    url: string;
+    title: string;
+    position: [number, number, number];
+}> = ({ url, title, position }) => {
+    const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+    useEffect(() => {
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin("anonymous");
+        loader.load(
+            url,
+            (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                setTexture(tex);
+            },
+            undefined,
+            (err) => console.warn("Failed to load texture:", err)
+        );
+        return () => {
+            texture?.dispose();
+        };
+    }, [url]);
+
+    return (
+        <group position={position}>
+            <mesh>
+                <planeGeometry args={[1.4, 1.0]} />
+                {texture ? (
+                    <meshBasicMaterial map={texture} toneMapped={false} />
+                ) : (
+                    <meshBasicMaterial color="#CCCCCC" />
+                )}
+            </mesh>
+            <Text
+                position={[0, -0.6, 0]}
+                fontSize={0.08}
+                color="#333333"
+                anchorX="center"
+                anchorY="middle"
+            >
+                {title}
+            </Text>
+        </group>
+    );
+};
+
 export const ArtExperience: React.FC = () => {
-    const [submissions, setSubmissions] = useState<string[]>([]);
+    const [favorites, setFavorites] = useState<FavoritePiece[]>([]);
 
-    const handleSubmit = (dataUrl: string) => {
-        setSubmissions((prev) => [...prev, dataUrl]);
-    };
+    const fetchFavorites = useCallback(() => {
+        fetch(`${API_BASE}/api/v1/art/favorites`)
+            .then((res) => res.json())
+            .then((data: { pieces: FavoritePiece[] }) => {
+                setFavorites(data.pieces);
+            })
+            .catch((err) => {
+                console.warn("Could not fetch favorites:", err);
+            });
+    }, []);
 
-    // Create textures from submitted data URLs
-    const submissionTextures = useMemo(() => {
-        return submissions.map((dataUrl) => {
-            const tex = new THREE.TextureLoader().load(dataUrl);
-            tex.colorSpace = THREE.SRGBColorSpace;
-            return tex;
-        });
-    }, [submissions]);
+    // Fetch favorites from API on mount
+    useEffect(() => {
+        fetchFavorites();
+    }, [fetchFavorites]);
+
+    const handleSubmit = useCallback(
+        (blob: Blob) => {
+            const formData = new FormData();
+            formData.append("image", blob, `artwork-${Date.now()}.jpg`);
+
+            fetch(`${API_BASE}/api/v1/art`, {
+                method: "POST",
+                body: formData,
+            })
+                .then((res) => {
+                    if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+                    return res.json();
+                })
+                .then(() => {
+                    console.log("Artwork submitted successfully");
+                    fetchFavorites();
+                })
+                .catch((err) => {
+                    console.error("Failed to submit artwork:", err);
+                });
+        },
+        [fetchFavorites]
+    );
+
+    // Wall display data
+    const wallImages = useMemo(() => {
+        return favorites.map((f) => ({ url: f.url, title: f.title }));
+    }, [favorites]);
 
     return (
         <group>
@@ -93,8 +183,8 @@ export const ArtExperience: React.FC = () => {
                     <meshStandardMaterial color="#DEB887" roughness={0.9} />
                 </mesh>
 
-                {/* Display submitted artwork, or placeholder squares if none */}
-                {submissions.length === 0
+                {/* Display favorites, or placeholder squares if none */}
+                {wallImages.length === 0
                     ? Array.from({ length: 9 }).map((_, i) => {
                           const x = ((i % 3) - 1) * 1.8;
                           const y = (Math.floor(i / 3) - 1) * 0.7;
@@ -109,19 +199,18 @@ export const ArtExperience: React.FC = () => {
                               </mesh>
                           );
                       })
-                    : submissions.map((_, i) => {
+                    : wallImages.map((img, i) => {
                           const col = i % 3;
                           const row = Math.floor(i / 3);
                           const x = (col - 1) * 1.8;
                           const y = (1 - row) * 0.7;
                           return (
-                              <mesh key={i} position={[x, y, 0.02]}>
-                                  <planeGeometry args={[1.4, 1.0]} />
-                                  <meshBasicMaterial
-                                      map={submissionTextures[i]}
-                                      toneMapped={false}
-                                  />
-                              </mesh>
+                              <WallPiece
+                                  key={img.url}
+                                  url={img.url}
+                                  title={img.title}
+                                  position={[x, y, 0.02]}
+                              />
                           );
                       })}
             </group>
