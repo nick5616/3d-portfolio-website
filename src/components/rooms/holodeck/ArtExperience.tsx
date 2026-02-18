@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "https://holodeck-art-api-24500868376.us-central1.run.app";
 
 interface FavoritePiece {
     id: string;
