@@ -25,7 +25,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     onSubmit,
 }) => {
     const easelRef = useRef<THREE.Group>(null);
-    const pulsingLightRef = useRef<THREE.PointLight>(null);
     const canvasMeshRef = useRef<THREE.Mesh>(null);
     const { camera, raycaster, scene } = useThree();
     const { setIsInteracting } = useSceneStore();
@@ -34,7 +33,8 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const [isDrawing, setIsDrawing] = useState(false);
     const [isCanvasFocused, setIsCanvasFocused] = useState(false);
     const [currentColor, setCurrentColor] = useState("#000000");
-    const [brushSize, setBrushSize] = useState(3);
+    // TODO: Add a control on the easel to change the brush size
+    const [brushSize, setBrushSize] = useState(4);
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     // Prevent pointer lock during drawing
@@ -73,52 +73,19 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         return { texture, canvas, ctx };
     }, []);
 
-    // Mouse/touch position tracking
-    const getIntersectionPoint = useCallback(
-        (event: any) => {
-            if (!canvasMeshRef.current) return null;
-
-            // Get the canvas element to calculate mouse position
-            const canvas = event.target.closest("canvas");
-            if (!canvas) return null;
-
-            const rect = canvas.getBoundingClientRect();
-            const mouse = new THREE.Vector2();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(canvasMeshRef.current);
-
-            if (intersects.length > 0) {
-                const uv = intersects[0].uv;
-                if (uv) {
-                    return {
-                        x: uv.x * canvas.width,
-                        y: (1 - uv.y) * canvas.height, // Flip Y coordinate
-                    };
-                }
-            }
-            return null;
-        },
-        [camera, raycaster, canvas]
-    );
-
-    // Drawing functions - simplified approach
     const startDrawing = useCallback(
         (event: any) => {
             event.stopPropagation();
             setIsDrawing(true);
             setIsCanvasFocused(true);
-            setIsInteracting(true); // Disable camera controls
-            preventPointerLockRef.current = true; // Prevent pointer lock requests
+            setIsInteracting(true);
+            preventPointerLockRef.current = true;
 
             // Exit pointer lock to switch to mouse mode
             if (document.pointerLockElement) {
                 document.exitPointerLock();
             }
 
-            // Get intersection point on the mesh
             if (!canvasMeshRef.current) return;
 
             const mouse = new THREE.Vector2();
@@ -179,7 +146,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
 
     const stopDrawing = useCallback(() => {
         setIsDrawing(false);
-        // Keep canvas focused and camera disabled until user clicks elsewhere
     }, []);
 
     // Clear canvas function
@@ -261,6 +227,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
+                // TODO: Include the greater easel with the controls in the intersection check, so selecting a color does not sometimes exit drawing mode
                 const intersects = raycaster.intersectObject(
                     easelRef.current,
                     true
@@ -274,7 +241,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         };
 
         if (isCanvasFocused) {
-            // Use capture phase to catch clicks before they're handled by other elements
             document.addEventListener("click", handleGlobalClick, true);
             return () => {
                 document.removeEventListener("click", handleGlobalClick, true);
@@ -329,15 +295,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
         };
     }, [setIsInteracting]);
 
-    // Animation for pulsing light
-    useFrame((state) => {
-        const elapsed = state.clock.elapsedTime;
-        if (pulsingLightRef.current) {
-            pulsingLightRef.current.intensity =
-                0.3 + Math.sin(elapsed * 1.5) * 0.2;
-        }
-    });
-
     return (
         <group
             ref={easelRef}
@@ -351,8 +308,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     <boxGeometry args={[4, 3, 0.2]} />
                     <meshStandardMaterial color="#8B4513" roughness={0.8} />
                 </mesh>
-
-                {/* Easel legs - positioned to connect to the base properly */}
                 {/* Left front leg */}
                 <mesh position={[-0.8, 0.75, 0.05]} rotation={[0, 0, -0.15]}>
                     <boxGeometry args={[0.08, 1.5, 0.08]} />
@@ -395,7 +350,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     { color: "#0000FF", pos: [0.75, 0, 0] },
                     { color: "#FFFF00", pos: [1, 0, 0] },
                     { color: "#FF00FF", pos: [1.25, 0, 0] },
-                ].map((colorData, index) => (
+                ].map((colorData) => (
                     <mesh
                         key={colorData.color}
                         position={colorData.pos as [number, number, number]}
@@ -510,15 +465,6 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     </Text>
                 )
             )}
-
-            {/* Pulsing creative light */}
-            <pointLight
-                ref={pulsingLightRef}
-                position={[0, 4, 1]}
-                intensity={0.6}
-                distance={6}
-                color="#6A5ACD"
-            />
         </group>
     );
 };
