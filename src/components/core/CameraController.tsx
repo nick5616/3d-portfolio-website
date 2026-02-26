@@ -13,7 +13,6 @@ export const CameraController: React.FC = () => {
         virtualMovement,
         virtualRotation,
         movementJoystickIntensity,
-        performance,
         flyMode,
     } = useSceneStore();
 
@@ -31,16 +30,6 @@ export const CameraController: React.FC = () => {
     const forward = useRef(new THREE.Vector3());
     const right = useRef(new THREE.Vector3());
     const direction = useRef(new THREE.Vector3());
-
-    // Throttling for performance - less aggressive on mobile for smoother movement
-    const lastUpdate = useRef(0);
-    const updateInterval = isMobile
-        ? 1000 / 60 // Full 60fps on mobile for smooth movement
-        : performance.quality === "low"
-        ? 1000 / 20 // 20fps only for low quality desktop
-        : performance.quality === "medium"
-        ? 1000 / 30 // 30fps for medium quality desktop
-        : 1000 / 60; // 60fps for high quality desktop
 
     // Store camera's current position when mounted and handle teleportation rotation
     useEffect(() => {
@@ -61,18 +50,6 @@ export const CameraController: React.FC = () => {
     }, [camera, cameraTarget, cameraRotation]);
 
     useFrame((_, delta) => {
-        const now = window.performance.now();
-
-        // Only throttle updates on desktop low quality - mobile needs smooth updates
-        if (
-            !isMobile &&
-            performance.quality === "low" &&
-            now - lastUpdate.current < updateInterval
-        ) {
-            return;
-        }
-        lastUpdate.current = now;
-
         // More conservative delta clamping for mobile to prevent large jumps
         const clampedDelta = isMobile
             ? Math.min(delta, 0.033)

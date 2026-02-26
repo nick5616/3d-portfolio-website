@@ -268,8 +268,8 @@ export const Scene: React.FC = () => {
                 gl={glParams}
                 camera={{
                     fov: isMobile ? 80 : 75,
-                    near: 0.1,
-                    far: isMobile ? 500 : 1000,
+                    near: 0.5,
+                    far: 50,
                     position: [0, 1.8, 12], // Spawn further back to avoid cylinder
                 }}
                 shadows={performance.quality !== "low" && !isMobile}
