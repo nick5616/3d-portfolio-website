@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { usePersona } from "../../hooks/usePersona";
 import { useSceneStore } from "../../stores/sceneStore";
 
 interface EducationalModalProps {
@@ -285,6 +286,10 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
     onClose,
 }) => {
     const { isMobile } = useDeviceDetection();
+    const { name } = usePersona();
+    const { isNicole } = usePersona();
+    console.log("isNicole", isNicole);
+    console.log("name", name);
     const { setEducationalModalOpen, showStartPrompt, setShowStartPrompt } =
         useSceneStore();
     const isLandscape = useDeviceOrientation();
@@ -510,7 +515,7 @@ export const EducationalModal: React.FC<EducationalModalProps> = ({
                                 isMobile ? "text-2xl" : "text-3xl"
                             }`}
                         >
-                            Welcome! I'm Nick
+                            Welcome! I'm {name}
                         </h2>
                         <p
                             className={`${
