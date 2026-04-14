@@ -38,13 +38,29 @@ export const desktopDimensions = {
 export const displaysConfig: DisplayConfig[] = [
     // Left wall displays
     {
+        id: "sw-spending-viz",
+        url: "https://star-wars-spending-viz.netlify.app/",
+        title: "Star Wars Starship Spending Viz: Cost of Every Ship Across Episodes 1–6",
+        description:
+            "Opens with the iconic Star Wars yellow text crawl as a loading screen, then drops you into an interactive visualization of starship costs across all six films. Built across two repos: a React frontend and a TypeScript/Node backend API. Fun personal project.",
+        screenshotUrl: "/screenshots/vgq-desktop.png",
+        position: [-9.7, 2, -6],
+        rotation: [0, Math.PI / 2, 0],
+        scale: [1.2, 1.2, 1],
+        lightColor: "#ffe81f",
+        responsive: {
+            desktop: desktopDimensions.imaginaryDesktop,
+            mobile: mobileDimensions.pixel7,
+        },
+    },
+    {
         id: "curie-shop-desktop",
         url: "https://curie.shop",
         title: "Working with Curie: eCommerce Shoe Store with 3D Product Models",
         description:
             "An innovative 3D e-commerce platform featuring interactive product models powered by Google Model Viewer. Users can rotate, zoom, and explore products in 3D before purchasing.",
         screenshotUrl: "/screenshots/curie-shop-desktop.png",
-        position: [-9.7, 2, -3],
+        position: [-9.7, 2, -2],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#999999",
@@ -60,7 +76,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "Mobile view of the innovative 3D e-commerce platform with touch-optimized controls for exploring interactive product models.",
         screenshotUrl: "/screenshots/curie-shop-mobile.png",
-        position: [-9.7, 2, 0],
+        position: [-9.7, 2, 2],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#999999",
@@ -76,7 +92,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "Personal portfolio website showcasing development work and projects with modern design and interactive elements.",
         screenshotUrl: "/screenshots/nicolas-portfolio.png",
-        position: [-9.7, 2, 3],
+        position: [-9.7, 2, 6],
         rotation: [0, Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -97,7 +113,7 @@ export const displaysConfig: DisplayConfig[] = [
             "An interactive smart piano that incorporates mathematical concepts in music theory, providing visual and contextual guidance on which notes to play based on the musical context.",
         screenshotUrl: "/screenshots/saucedog-art.png",
         textSizeFactor: 0.7, // 70% of the original text size
-        position: [9.7, 2, -5],
+        position: [9.7, 2, -8],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#ffffff",
@@ -123,22 +139,22 @@ export const displaysConfig: DisplayConfig[] = [
             mobile: mobileDimensions.pixel7,
         },
     },
-    // {
-    //     id: "pocket-coach",
-    //     url: "https://pocketcoach.fitness",
-    //     title: "Pocket Coach",
-    //     description:
-    //         "(down) A mobile fitness app that helps you track your progress and stay motivated with personalized coaching features. This one is down right now, I'm just not paying for intra to host and serve it.",
-    //     screenshotUrl: "/screenshots/pocket-coach.png",
-    //     position: [9.7, 2, -3],
-    //     rotation: [0, -Math.PI / 2, 0],
-    //     scale: [1.2, 1.2, 1],
-    //     lightColor: "#00FF00",
-    //     responsive: {
-    //         desktop: mobileDimensions.iPhoneSE,
-    //         mobile: { width: 280, height: 580 },
-    //     },
-    // },
+    {
+        id: "the-circle",
+        url: "https://live.saucedog.art/",
+        title: "The Circle: Real-Time Video Chat with Fire-Inspired Presence",
+        description:
+            "Up to 8 people join one persistent room with camera and mic. Your video tile glows brighter the louder you speak. Colors are drawn from fire-salt chemistry — your username hashes to a unique flame hue, so every person burns a different color. The fire is a nod to the most primal form of community: gathering around a flame. Built as a senior frontend engineering interview project. React + TypeScript + WebRTC, Django Channels backend, Redis signaling.",
+        screenshotUrl: "/screenshots/vgq-desktop.png",
+        position: [9.7, 2, -4],
+        rotation: [0, -Math.PI / 2, 0],
+        scale: [1.2, 1.2, 1],
+        lightColor: "#ff5500",
+        responsive: {
+            desktop: desktopDimensions.imaginaryDesktop,
+            mobile: mobileDimensions.pixel7,
+        },
+    },
     {
         id: "vgq-mobile",
         url: "https://videogamequest.me",
@@ -147,7 +163,7 @@ export const displaysConfig: DisplayConfig[] = [
             "A mobile gaming platform for discovering and tracking video game quests and achievements with social features.",
         screenshotUrl: "/screenshots/vgq-mobile.png",
         textSizeFactor: 0.9,
-        position: [9.7, 2, 3],
+        position: [9.7, 2, 4],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#ff00ff",
@@ -164,7 +180,7 @@ export const displaysConfig: DisplayConfig[] = [
             "A college course project from 2019 that uses APIs to create a website that tells you what recipes you can make based on the ingredients you have in your house.",
         screenshotUrl: "/screenshots/vgq-mobile.png",
         textSizeFactor: 0.7, // 70% of the original text size
-        position: [9.7, 2, 5],
+        position: [9.7, 2, 8],
         rotation: [0, -Math.PI / 2, 0],
         scale: [1.2, 1.2, 1],
         displayType: "youtube",
@@ -183,7 +199,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A comprehensive gaming platform for discovering and tracking video game quests and achievements with detailed analytics.",
         screenshotUrl: "/screenshots/vgq-desktop.png",
-        position: [-8, 2, -9.7],
+        position: [-7, 2, -9.7],
         textSizeFactor: 0.7, // 70% of the original text size
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
@@ -201,7 +217,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A mobile tier list builder and manager with a focus on simplicity and efficiency.",
         screenshotUrl: "/screenshots/vgq-desktop.png",
-        position: [-4, 2, -9.7],
+        position: [-3.5, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -218,7 +234,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A mobile-only friend rolodex for collecting your friends.",
         screenshotUrl: "/screenshots/vgq-desktop.png",
-        position: [-1, 2, -9.7],
+        position: [0, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         crtStyle: false, // Enable retro CRT styling
@@ -235,7 +251,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "An animated demonstration of the WebSpatial Curie platform showcasing interactive 3D experiences and spatial web technologies.",
         screenshotUrl: "/webspatial-curie.gif",
-        position: [2, 2, -9.7],
+        position: [3.5, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         displayType: "gif",
@@ -252,7 +268,7 @@ export const displaysConfig: DisplayConfig[] = [
         description:
             "A 3D shopping shelf and examine experience with interactive product models powered by Google Model Viewer.",
         screenshotUrl: "/screenshots/curie-world.png",
-        position: [6, 2, -9.7],
+        position: [7, 2, -9.7],
         rotation: [0, 0, 0],
         scale: [1.2, 1.2, 1],
         lightColor: "#dddddd",
