@@ -72,7 +72,7 @@ export const PlayerBody: React.FC = () => {
         if (pos.y < UNDERGROUND_THRESHOLD) {
             const entrance = currentRoom?.defaultEntrance.position ?? [0, 1.5, 0];
             playerRef.current.setTranslation(
-                { x: entrance[0], y: entrance[1], z: entrance[2] },
+                { x: entrance[0], y: entrance[1] + 4, z: entrance[2] },
                 true
             );
             playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
