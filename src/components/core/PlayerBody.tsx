@@ -14,6 +14,7 @@ import * as THREE from "three";
 
 const JUMP_FORCE = 4;
 const JUMP_COOLDOWN = 500; // milliseconds
+const UNDERGROUND_THRESHOLD = -10; // Y position below which the player is considered underground
 
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
@@ -27,6 +28,7 @@ export const PlayerBody: React.FC = () => {
         updatePlayerVelocity,
         setPlayerGrounded,
         updatePlayerPosition,
+        currentRoom,
     } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
@@ -65,6 +67,17 @@ export const PlayerBody: React.FC = () => {
         // Always keep camera following the player
         const pos = playerRef.current.translation();
         camera.position.set(pos.x, pos.y + 1.8, pos.z);
+
+        // Underground safety net — if the player clips below the world, snap them back
+        if (pos.y < UNDERGROUND_THRESHOLD) {
+            const entrance = currentRoom?.defaultEntrance.position ?? [0, 1.5, 0];
+            playerRef.current.setTranslation(
+                { x: entrance[0], y: entrance[1], z: entrance[2] },
+                true
+            );
+            playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            playerRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        }
 
         // Update player position in store for collision detection
         const currentPosition = playerRef.current.translation();
