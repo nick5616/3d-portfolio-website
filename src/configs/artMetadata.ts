@@ -78,7 +78,8 @@ export const artPieces: ArtPiece[] = [
     },
     {
         name: "Seal",
-        description: "A playful seal in its natural aquatic environment",
+        description:
+            'A playful seal in its natural aquatic environment. \n "You got games on your phone?"',
         date: "Circa 2023",
         fileName: "seal.jpg",
     },
