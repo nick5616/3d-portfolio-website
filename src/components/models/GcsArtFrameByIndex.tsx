@@ -1,18 +1,18 @@
 import { useThree, useFrame, useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense, useEffect, useRef, useState, useMemo } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
-import { useAzureArtByIndex } from "../../hooks/useAzureArtByIndex";
+import { useGcsArtByIndex } from "../../hooks/useGcsArtByIndex";
 import { ArtPlaque } from "./ArtPlaque";
 import { nearestArtManager } from "../../utils/nearestArtManager";
 
-interface AzureArtFrameByIndexProps {
+interface GcsArtFrameByIndexProps {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
     artPieceIndex: number; // Index of the art piece (0, 1, 2, etc.)
-    useAzureStorage?: boolean; // Whether to use Azure Storage (default: true)
+    useGcsStorage?: boolean; // Whether to use GCS-hosted images (default: true)
     showPlaque?: boolean; // Whether to show the plaque (default: true)
     proximityRadius?: number; // Distance in world units to trigger loading
 }
@@ -56,12 +56,12 @@ const LazyImagePlane: React.FC<{
     );
 };
 
-const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
+const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
     position,
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     artPieceIndex,
-    useAzureStorage = true,
+    useGcsStorage = true,
     showPlaque = true,
     proximityRadius = DEFAULT_PROXIMITY_RADIUS,
 }) => {
@@ -82,13 +82,13 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
         groupRef.current.getWorldPosition(groupWorldPos);
         const currentDistance = camera.position.distanceTo(groupWorldPos);
         distanceRef.current = currentDistance;
-        
+
         // Small hysteresis to prevent rapid toggling
         const wasNear = isNear;
         const nowNear = wasNear
             ? currentDistance < proximityRadius + 2
             : currentDistance < proximityRadius;
-        
+
         if (nowNear !== wasNear) {
             setIsNear(nowNear);
         }
@@ -113,48 +113,43 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     // But if it's already loaded, keep showing it
     const shouldLoad = (isNear && isNearest) || hasLoaded;
 
-    // Calculate priority based on distance (closer = higher priority)
-    // Priority range: 0-1000, where 1000 is closest
-    const priority = useMemo(() => {
-        if (!shouldLoad || distanceRef.current === Infinity) return 0;
-        // Invert distance so closer = higher priority
-        const normalizedDistance = Math.min(
-            distanceRef.current / proximityRadius,
-            1
-        );
-        return Math.round((1 - normalizedDistance) * 1000);
-    }, [shouldLoad, proximityRadius]);
-
-    // Hook always loads metadata (so frames show), but only loads images when enabled
-    // We pass shouldLoad as enabled to control image loading
+    // Hook always loads metadata (so frames show), but only resolves the image URL when enabled
     const {
-        imageUrl: azureImageUrl,
+        imageUrl: gcsImageUrl,
         isLoading,
-        error,
         artPieceName,
         artPieceExists,
-    } = useAzureArtByIndex(artPieceIndex, useAzureStorage, shouldLoad, priority);
+    } = useGcsArtByIndex(artPieceIndex, useGcsStorage, shouldLoad);
 
     const finalArtPieceName = artPieceName;
 
     // Persist the loaded image URL so it stays even when moving away
     useEffect(() => {
-        if (azureImageUrl && !isLoading && !error) {
-            setLoadedImageUrl(azureImageUrl);
+        if (gcsImageUrl && !isLoading) {
+            setLoadedImageUrl(gcsImageUrl);
             setHasLoaded(true);
-        } else if (error && finalArtPieceName && !loadedImageUrl) {
-            // Fallback to local if Azure failed and we don't have a loaded URL
-            setLoadedImageUrl(`/images/art/${finalArtPieceName}`);
-            setHasLoaded(true);
-        } else if (!useAzureStorage && finalArtPieceName && !loadedImageUrl && shouldLoad) {
-            // Azure disabled: use local (only when should load)
+        } else if (
+            !useGcsStorage &&
+            finalArtPieceName &&
+            !loadedImageUrl &&
+            shouldLoad
+        ) {
+            // GCS disabled: use local (only when should load)
             setLoadedImageUrl(`/images/art/${finalArtPieceName}`);
             setHasLoaded(true);
         }
-    }, [azureImageUrl, isLoading, error, finalArtPieceName, useAzureStorage, loadedImageUrl, shouldLoad]);
+    }, [
+        gcsImageUrl,
+        isLoading,
+        finalArtPieceName,
+        useGcsStorage,
+        loadedImageUrl,
+        shouldLoad,
+    ]);
 
     // Use persisted loaded URL if available, otherwise use current URL if near
-    const finalImageUrl = loadedImageUrl || (isNear && azureImageUrl && !error ? azureImageUrl : null);
+    const finalImageUrl =
+        loadedImageUrl || (isNear && gcsImageUrl ? gcsImageUrl : null);
 
     const [dimensions, setDimensions] = useState<ImageDimensions>({
         width: 2,
@@ -192,7 +187,7 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     const mountPosition = getMountPosition();
 
     // Show loading state when this is the nearest and loading (and hasn't loaded yet)
-    const showLoading = isNear && isNearest && useAzureStorage && isLoading && !hasLoaded;
+    const showLoading = isNear && isNearest && useGcsStorage && isLoading && !hasLoaded;
 
     // Always render the frame, even if art piece doesn't exist yet or is loading
     // This ensures all frames are visible from the start
@@ -332,7 +327,7 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
             ))}
 
             {/* Plaque */}
-            {showPlaque && finalArtPieceName && (
+            {showPlaque && finalArtPieceName && artPieceExists && (
                 <ArtPlaque
                     position={[
                         0,
@@ -349,12 +344,12 @@ const AzureFrameByIndex: React.FC<AzureArtFrameByIndexProps> = ({
     );
 };
 
-export const AzureArtFrameByIndex: React.FC<AzureArtFrameByIndexProps> = (
+export const GcsArtFrameByIndex: React.FC<GcsArtFrameByIndexProps> = (
     props
 ) => {
     return (
         <Suspense fallback={null}>
-            <AzureFrameByIndex {...props} />
+            <GcsFrameByIndex {...props} />
         </Suspense>
     );
 };

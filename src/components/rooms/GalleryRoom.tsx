@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
-import { AzureArtFrameByIndex } from "../models/AzureArtFrameByIndex";
+import { GcsArtFrameByIndex } from "../models/GcsArtFrameByIndex";
 import { ArtPieceMapper } from "../../utils/artPieceMapper";
 import { LightSwitch } from "../ui/LightSwitch";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -292,13 +292,13 @@ export const GalleryRoom: React.FC<GalleryRoomProps> = ({
 
             {/* Frames placed aesthetically around the room */}
             {layout.map((slot) => (
-                <AzureArtFrameByIndex
+                <GcsArtFrameByIndex
                     key={`gallery-frame-${slot.index}`}
                     position={slot.position}
                     rotation={slot.rotation}
                     scale={slot.scale}
                     artPieceIndex={slot.index}
-                    useAzureStorage={true}
+                    useGcsStorage={true}
                     showPlaque={true}
                     proximityRadius={10}
                 />

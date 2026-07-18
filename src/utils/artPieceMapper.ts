@@ -66,7 +66,7 @@ export class ArtPieceMapper {
         }
 
         // Create new mapping from metadata
-        artPieceMapping = getAllArtPieces();
+        artPieceMapping = await getAllArtPieces();
         return artPieceMapping;
     }
 
