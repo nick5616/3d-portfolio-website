@@ -1,11 +1,40 @@
 // src/configs/rooms.ts
 import { RoomConfig, InteractiveElement } from "../types/scene.types";
 
-const ART_GALLERY_CEILING_HEIGHT = 7.5;
 const ATRIUM_CEILING_HEIGHT = 7.5;
 const PROJECTS_CEILING_HEIGHT = 6;
 const ABOUT_CEILING_HEIGHT = 8;
 const RELAXATION_CEILING_HEIGHT = 6;
+const GALLERY_ATRIUM_CEILING_HEIGHT = 7.5;
+const GALLERY_HALL_CEILING_HEIGHT = 7.5;
+const GALLERY_SECRET_ROOM_CEILING_HEIGHT = 6;
+
+// Simple, mostly-neutral light preset shared by the gallery wing's plain
+// rectangular halls - each room's GcsArtFrameByIndex spotlighting comes from
+// the frame itself; this just keeps the space readable.
+const galleryHallLightPreset = (accent: string) => ({
+    ambient: { intensity: 1.2, color: "#ffffff" },
+    directional: {
+        position: [0, 6, 0] as [number, number, number],
+        intensity: 0,
+        color: "#ffffff",
+    },
+    spots: [
+        {
+            position: [0, GALLERY_HALL_CEILING_HEIGHT - 1, 0] as [
+                number,
+                number,
+                number
+            ],
+            target: [0, 0, 0] as [number, number, number],
+            intensity: 1.5,
+            color: accent,
+            distance: 25,
+            angle: Math.PI / 2.2,
+            penumbra: 0.6,
+        },
+    ],
+});
 
 export const roomConfigs: { [key: string]: RoomConfig } = {
     atrium: {
@@ -66,8 +95,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [7, 1.5, 0] as [number, number, number],
-                    rotation: [0, -Math.PI, 0] as [number, number, number],
+                    // The gallery is now the circular atrium hub directly (no
+                    // lobby); land just inside its west-side door, facing in.
+                    position: [-7, 1.5, 0] as [number, number, number],
+                    rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
             {
@@ -109,341 +140,284 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         ],
     },
 
+    // The circular hub of the gallery wing. Keeps the id "gallery" (no
+    // separate lobby room anymore) so routing/theming/quick-access that
+    // already targets "gallery" keeps working unchanged.
     gallery: {
         id: "gallery",
         name: "Art Gallery",
         position: [-20, 0, 0] as [number, number, number],
-        dimensions: [20, ART_GALLERY_CEILING_HEIGHT, 20],
+        dimensions: [20, GALLERY_ATRIUM_CEILING_HEIGHT, 20], // circular room, width is the diameter
+        galleryRoomKind: { kind: "atrium" },
+        // GalleryAtriumRoom bypasses BaseRoom and lights itself directly, so
+        // this preset only exists to satisfy the RoomConfig type.
         lightPreset: {
-            ambient: { intensity: 1, color: "#ffffff" }, // Minimal ambient light
+            ambient: { intensity: 0.3, color: "#fff5e6" },
             directional: {
-                position: [5, 5, 0] as [number, number, number],
-                intensity: 0, // No directional light - spotlights only
-                color: "#ffffff",
+                position: [0, 8, 0] as [number, number, number],
+                intensity: 0,
+                color: "#fff5e6",
             },
-            spots: [
-                // ═══════════════════════════════════════════════════════════════════════════
-                // INDIVIDUAL SPOTLIGHTS FOR EACH ART PIECE (22 total: 14 outer + 8 inner)
-                // Spotlights positioned away from art pieces to shine ONTO them
-                // Targets are the actual art piece positions
-                // ═══════════════════════════════════════════════════════════════════════════
-
-                // OUTER WALL SPOTLIGHTS (14 art pieces)
-                // North Wall (z = -9.75): 4 pieces at x = [-7.5, -1.5, 1.5, 7.5]
-                {
-                    position: [-7.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-7.5, 2.8, -9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#ff0000", // red
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [-1.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-1.5, 2.8, -9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#ff00ff",
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [7.5, ART_GALLERY_CEILING_HEIGHT, -6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [7.5, 2.8, -9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#8b4513", // brown
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-
-                // South Wall (z = 9.75): 4 pieces at x = [-7.5, -1.5, 1.5, 7.5]
-                {
-                    position: [-7.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-7.5, 2.8, 9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#00ff99", // light green
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [1.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [1.5, 2.8, 9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#ffff00", // courageous yellow
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [7.5, ART_GALLERY_CEILING_HEIGHT, 6] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [7.5, 2.8, 9.75] as [number, number, number],
-                    intensity: 10,
-                    color: "#6495ed", // unsaturated blue from the rainbow
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 5,
-                    penumbra: 0.3,
-                },
-
-                // West Wall (x = -9.75): 4 pieces at z = [-7.5, -1.5, 1.5, 7.5]
-                {
-                    position: [-6, ART_GALLERY_CEILING_HEIGHT, -7.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-9.75, 2.8, -7.5] as [number, number, number],
-                    intensity: 5,
-                    color: "#ff00ff",
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [-6, ART_GALLERY_CEILING_HEIGHT, -1.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-9.75, 2.8, -1.5] as [number, number, number],
-                    intensity: 10,
-                    color: "#191970", // midnight blue
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [-6, ART_GALLERY_CEILING_HEIGHT, 1.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-9.75, 2.8, 1.5] as [number, number, number],
-                    intensity: 10,
-                    color: "#800080", // unsaturated purple
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [-6, ART_GALLERY_CEILING_HEIGHT, 7.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-9.75, 2.8, 7.5] as [number, number, number],
-                    intensity: 10,
-                    color: "#008000", // sea moss
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-
-                // East Wall (x = 9.75): 2 pieces at z = [-7.5, 7.5] (filtered for entrance)
-                {
-                    position: [6, ART_GALLERY_CEILING_HEIGHT, -7.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [9.75, 2.8, -7.5] as [number, number, number],
-                    intensity: 10,
-                    color: "#f5f5dc", // sand
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                {
-                    position: [6, ART_GALLERY_CEILING_HEIGHT, 7.5] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [9.75, 2.8, 7.5] as [number, number, number],
-                    intensity: 10,
-                    color: "#808080", // grey
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-
-                // INNER WALL SPOTLIGHTS (8 art pieces - 1 per vertical section, no crossbar)
-                // Section 1: Left Outside Top (x=-5.25, z=-4)
-                {
-                    position: [-9.5, ART_GALLERY_CEILING_HEIGHT, -4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-5.25, 2.8, -4] as [number, number, number],
-                    intensity: 10,
-                    color: "#00ffff", // light blue
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 2: Left Inside Top (x=-4.75, z=-2)
-                {
-                    position: [-2, ART_GALLERY_CEILING_HEIGHT, -2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-4.75, 2.8, -2] as [number, number, number],
-                    intensity: 10,
-                    color: "#ff00ff", // purple
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 4: Right Inside Top (x=4.75, z=-2)
-                {
-                    position: [2, ART_GALLERY_CEILING_HEIGHT, -2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [4.75, 2.8, -2] as [number, number, number],
-                    intensity: 10,
-                    color: "#ffff00", // yellow
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 5: Right Outside Top (x=5.25, z=-4)
-                {
-                    position: [9, ART_GALLERY_CEILING_HEIGHT, -4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [5.25, 2.8, -4] as [number, number, number],
-                    intensity: 10,
-                    color: "#ffa000", // orange
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 6: Left Outside Bottom (x=-5.25, z=4)
-                {
-                    position: [-9, ART_GALLERY_CEILING_HEIGHT, 4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-5.25, 2.8, 4] as [number, number, number],
-                    intensity: 10,
-                    color: "#aaaaaa", // grey
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 7: Left Inside Bottom (x=-4.75, z=2)
-                {
-                    position: [0, ART_GALLERY_CEILING_HEIGHT, 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [-4.75, 2.8, 2] as [number, number, number],
-                    intensity: 10,
-                    color: "#927b7b", // sepia
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 9: Right Inside Bottom (x=4.75, z=2)
-                {
-                    position: [0, ART_GALLERY_CEILING_HEIGHT, 2] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [4.75, 2.8, 2] as [number, number, number],
-                    intensity: 10,
-                    color: "#134113", // nature green
-                    distance: 20,
-                    decay: 0.5,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-                // Section 10: Right Outside Bottom (x=5.25, z=4)
-                {
-                    position: [10, ART_GALLERY_CEILING_HEIGHT, 4] as [
-                        number,
-                        number,
-                        number
-                    ],
-                    target: [5.25, 2.8, 4] as [number, number, number],
-                    intensity: 10,
-                    color: "#0000ff", // blue
-                    distance: 20,
-                    decay: 1,
-                    angle: Math.PI / 4,
-                    penumbra: 0.3,
-                },
-            ],
         },
         defaultEntrance: {
-            position: [7, 1.5, 0] as [number, number, number],
-            rotation: [0, -Math.PI / 2, 0] as [number, number, number],
+            position: [-7, 1.5, 0] as [number, number, number],
+            rotation: [0, Math.PI / 2, 0] as [number, number, number],
         },
-        interactiveElements: [], // Art frames are handled by GalleryRoom component
+        interactiveElements: [],
         archways: [
             {
                 id: "to-atrium-from-gallery",
                 targetRoomId: "atrium",
-                position: [9.73, 0, 0] as [number, number, number],
+                position: [-9.9, 0, 0] as [number, number, number],
+                rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [-7, 1.5, 0] as [number, number, number], // Clearly in front of the main atrium's own gallery door
+                    rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-gallery-hall-digitalart",
+                targetRoomId: "gallery-hall-digitalart",
+                position: [9.9, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [-7, 1.5, 0] as [number, number, number], // Clearly in front of gallery, away from play room
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-gallery-hall-paintings",
+                targetRoomId: "gallery-hall-paintings",
+                position: [0, 0, 9.9] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-gallery-hall-sketches",
+                targetRoomId: "gallery-hall-sketches",
+                position: [0, 0, -9.9] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-digitalart": {
+        id: "gallery-hall-digitalart",
+        name: "Digital Art Hall",
+        position: [-45, 0, 0] as [number, number, number],
+        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
+        galleryRoomKind: { kind: "hall", category: "digitalart" },
+        lightPreset: galleryHallLightPreset("#fff5e6"),
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-from-digitalart",
+                targetRoomId: "gallery",
+                position: [0, 0, 9.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [9.9 - 2, 1.5, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-paintings": {
+        id: "gallery-hall-paintings",
+        name: "Paintings Hall",
+        position: [-20, 0, -25] as [number, number, number],
+        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
+        galleryRoomKind: { kind: "hall", category: "paintings" },
+        lightPreset: galleryHallLightPreset("#ffe0cc"),
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-from-paintings",
+                targetRoomId: "gallery",
+                position: [0, 0, 9.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, -9.9 + 2] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-gallery-hall-lefthanded",
+                targetRoomId: "gallery-hall-lefthanded",
+                position: [0, 0, -9.7] as [number, number, number],
+                rotation: [0, Math.PI, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-sketches": {
+        id: "gallery-hall-sketches",
+        name: "Sketches Hall",
+        position: [-20, 0, 25] as [number, number, number],
+        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
+        galleryRoomKind: { kind: "hall", category: "sketches" },
+        lightPreset: galleryHallLightPreset("#e0e8ff"),
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-from-sketches",
+                targetRoomId: "gallery",
+                position: [0, 0, 9.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 9.9 - 2] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
+                },
+            },
+            {
+                id: "to-gallery-hall-miscellaneous",
+                targetRoomId: "gallery-hall-miscellaneous",
+                position: [0, 0, -9.7] as [number, number, number],
+                rotation: [0, Math.PI, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-lefthanded": {
+        id: "gallery-hall-lefthanded",
+        name: "Left-Handed Hall",
+        position: [-20, 0, -50] as [number, number, number],
+        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
+        galleryRoomKind: { kind: "hall", category: "lefthanded" },
+        lightPreset: galleryHallLightPreset("#ffe0cc"),
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-hall-paintings-from-lefthanded",
+                targetRoomId: "gallery-hall-paintings",
+                position: [0, 0, 9.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, -7] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-miscellaneous": {
+        id: "gallery-hall-miscellaneous",
+        name: "Miscellaneous Hall",
+        position: [-20, 0, 50] as [number, number, number],
+        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
+        galleryRoomKind: { kind: "hall", category: "miscellaneous" },
+        lightPreset: galleryHallLightPreset("#e0e8ff"),
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-hall-sketches-from-miscellaneous",
+                targetRoomId: "gallery-hall-sketches",
+                position: [0, 0, 9.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, -7] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
+                },
+            },
+            {
+                // Deliberately smaller/subtler doorway - the "easter egg" that
+                // leads to the notesappart room, worth finding if you go deep
+                // enough.
+                id: "to-gallery-hall-notesappart",
+                targetRoomId: "gallery-hall-notesappart",
+                position: [0, 0, -9.7] as [number, number, number],
+                rotation: [0, Math.PI, 0] as [number, number, number],
+                width: 2,
+                height: 3,
+                entrancePoint: {
+                    position: [0, 1.5, 6] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    "gallery-hall-notesappart": {
+        id: "gallery-hall-notesappart",
+        name: "Notes App Art",
+        position: [-20, 0, 75] as [number, number, number],
+        dimensions: [16, GALLERY_SECRET_ROOM_CEILING_HEIGHT, 16],
+        galleryRoomKind: { kind: "hall", category: "notesappart" },
+        lightPreset: galleryHallLightPreset("#d0ffe0"),
+        defaultEntrance: {
+            position: [0, 1.5, 6] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-gallery-hall-miscellaneous-from-notesappart",
+                targetRoomId: "gallery-hall-miscellaneous",
+                position: [0, 0, 7.7] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 2,
+                height: 3,
+                entrancePoint: {
+                    position: [0, 1.5, -7] as [number, number, number],
+                    rotation: [0, Math.PI, 0] as [number, number, number],
                 },
             },
         ],

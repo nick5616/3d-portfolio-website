@@ -8,6 +8,7 @@ import { RouterIntegration } from "./RouterIntegration";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { updateAllShaders } from "../../configs/enhancedMaterials";
+import { roomConfigs } from "../../configs/rooms";
 
 export const SceneManager: React.FC = () => {
     const { scene, gl } = useThree();
@@ -83,11 +84,14 @@ export const SceneManager: React.FC = () => {
         | "park"
         | "sunset"
         | "warehouse" => {
+        // Every room in the gallery wing (the atrium hub + every hall)
+        // shares the same warm indoor environment.
+        if (roomId && roomConfigs[roomId]?.galleryRoomKind) {
+            return "apartment";
+        }
         switch (roomId) {
             case "projects":
                 return "studio"; // Clean, neutral environment for sci-fi
-            case "gallery":
-                return "apartment"; // Warm, indoor environment
             case "atrium":
                 return "forest"; // Natural environment for atrium
             case "about":
@@ -105,11 +109,13 @@ export const SceneManager: React.FC = () => {
     ): number => {
         const baseIntensity = quality === "low" ? 0.3 : 0.6;
 
+        if (roomId && roomConfigs[roomId]?.galleryRoomKind) {
+            return baseIntensity * 0; // Same low reflections as the old gallery, wing-wide
+        }
+
         switch (roomId) {
             case "projects":
                 return baseIntensity * 0; // Very low for sci-fi room to avoid unwanted reflections
-            case "gallery":
-                return baseIntensity * 0; // Slightly reduced for gallery
             case "atrium":
                 return baseIntensity * 1.2; // Enhanced for natural feel
             case "about":

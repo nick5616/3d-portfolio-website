@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useState } from "react";
 import { RupeeFormationEffect } from "./loading-effects/RupeeFormationEffect";
+import { roomConfigs } from "../../configs/rooms";
 
 type TransitionPhase = "starting" | "loading" | "completing" | "complete";
 
@@ -84,18 +85,9 @@ export const RoomTransitionLoadingScreen: React.FC<
     if (!isVisible || transitionPhase === "complete") return null;
 
     const getRoomDisplayName = (roomId?: string) => {
-        switch (roomId) {
-            case "atrium":
-                return "Central Hub";
-            case "gallery":
-                return "Art Gallery";
-            case "projects":
-                return "Software Projects";
-            case "about":
-                return "Play Place";
-            default:
-                return "Unknown Room";
-        }
+        if (roomId === "atrium") return "Central Hub";
+        if (!roomId) return "Unknown Room";
+        return roomConfigs[roomId]?.name || "Unknown Room";
     };
 
     return (

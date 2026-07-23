@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { RoomMaterials } from "../types/material.types";
+import { roomConfigs } from "./rooms";
 
 // Enhanced material system with custom shaders
 export class EnhancedMaterialSystem {
@@ -1793,7 +1794,11 @@ export class EnhancedMaterialSystem {
                         roughness: 0.4,
                         metalness: 0.1,
                     }),
-                    floor: this.createWoodFloor014PBRMaterial(),
+                    // White marble instead of the old wood floor - a single
+                    // ~100KB base color texture instead of 6 full-res PNGs
+                    // (~6MB total, including a displacement map that did
+                    // nothing on a flat, unsubdivided floor mesh anyway).
+                    floor: this.createMarbleWhitePBRMaterial(),
                     ceiling: this.createCeilingDropTilesPBRMaterial(),
                     enhanced: {
                         createSpotlight:
@@ -1904,6 +1909,23 @@ export const getEnhancedRoomMaterials = (roomId: string) => {
     return EnhancedMaterialSystem.getInstance().getEnhancedRoomMaterials(
         roomId
     );
+};
+
+// Room wall/floor/ceiling textures are meant to load eagerly (once, up
+// front) so walking between rooms never stalls on a first-time texture
+// fetch. Painting art (GcsArtFrameByIndex) stays lazy/proximity-gated on
+// purpose - preloading every painting up front would be a huge, pointless
+// download. This eagerly triggers every distinct room material set exactly
+// once; each one is internally cached, and every texture loader in this file
+// registers with THREE.DefaultLoadingManager, so the boot LoadingScreen's
+// useProgress() correctly stays active until all of them finish.
+export const preloadAllRoomMaterials = () => {
+    const materialsKeys = new Set(
+        Object.values(roomConfigs).map((room) =>
+            room.galleryRoomKind ? "gallery" : room.id
+        )
+    );
+    materialsKeys.forEach((key) => getEnhancedRoomMaterials(key));
 };
 
 export const updateAllShaders = (elapsed: number) => {

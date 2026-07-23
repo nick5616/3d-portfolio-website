@@ -1,13 +1,13 @@
 import React from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
-import { getArtPieceByName } from "../../configs/artMetadata";
+import { ArtPiece } from "../../configs/artMetadata";
 
 interface ArtPlaqueProps {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
-    artPieceName: string; // this is the fileName like "marvin-martian.jpg"
+    artPiece: ArtPiece | null;
     showPlaque?: boolean;
 }
 
@@ -19,17 +19,14 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
     position,
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
-    artPieceName,
+    artPiece,
     showPlaque = true,
 }) => {
-    if (!showPlaque) return null;
+    if (!showPlaque || !artPiece) return null;
 
-    const piece = getArtPieceByName(artPieceName);
-    if (!piece) return null;
-
-    const title = piece.name;
-    const date = piece.date;
-    const description = piece.description;
+    const title = artPiece.name;
+    const date = artPiece.date;
+    const description = artPiece.description;
 
     return (
         <group position={position} rotation={rotation} scale={scale}>

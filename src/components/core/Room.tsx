@@ -5,10 +5,11 @@ import { RigidBody, interactionGroups } from "@react-three/rapier";
 import { getEnhancedRoomMaterials } from "../../configs/enhancedMaterials";
 import { BaseRoom } from "../rooms/BaseRoom";
 import { AtriumRoom } from "../rooms/AtriumRoom";
-import { GalleryRoom } from "../rooms/GalleryRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
 import { AboutRoom } from "../rooms/AboutRoom";
 import { RelaxationRoom } from "../rooms/RelaxationRoom";
+import { GalleryAtriumRoom } from "../rooms/GalleryAtriumRoom";
+import { GalleryHallRoom } from "../rooms/GalleryHallRoom";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
@@ -18,7 +19,19 @@ interface RoomProps {
 export const Room: React.FC<RoomProps> = ({ config }) => {
     const [width, height, depth] = config.dimensions;
     const wallThickness = 0.1; // Reduced thickness for better performance
-    const materials = getEnhancedRoomMaterials(config.id);
+    // Every room in the gallery wing (atrium + every hall) shares the same
+    // white-walls/marble-floor/ornate-ceiling look, regardless of its own id.
+    const materialsKey = config.galleryRoomKind ? "gallery" : config.id;
+    // getEnhancedRoomMaterials() allocates a brand new THREE.MeshStandardMaterial
+    // for walls on every call (it's not cached like the PBR textures are), so
+    // without memoizing here, every unrelated re-render of this component
+    // (e.g. from frequent store updates elsewhere in the tree) was silently
+    // reallocating + reassigning wall materials and forcing shader recompiles -
+    // the actual source of the "lag while walking" reports, not just texture size.
+    const materials = useMemo(
+        () => getEnhancedRoomMaterials(materialsKey),
+        [materialsKey]
+    );
 
     // Simple wall rendering - just render solid walls
     const renderWall = useMemo(
@@ -47,21 +60,40 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
 
     // Determine which room component to render based on room type
     const renderRoomComponent = () => {
+        // Gallery wing rooms (lobby/atrium/halls) dispatch off galleryRoomKind
+        // rather than a hardcoded id, since there are many hall ids sharing
+        // the same generic hall component.
+        if (config.galleryRoomKind) {
+            switch (config.galleryRoomKind.kind) {
+                case "atrium":
+                    return (
+                        <GalleryAtriumRoom
+                            config={config}
+                            materials={materials}
+                            wallThickness={wallThickness}
+                            width={width}
+                            height={height}
+                            depth={depth}
+                        />
+                    );
+                case "hall":
+                    return (
+                        <GalleryHallRoom
+                            config={config}
+                            materials={materials}
+                            wallThickness={wallThickness}
+                            width={width}
+                            height={height}
+                            depth={depth}
+                        />
+                    );
+            }
+        }
+
         switch (config.id) {
             case "atrium":
                 return (
                     <AtriumRoom
-                        config={config}
-                        materials={materials}
-                        wallThickness={wallThickness}
-                        width={width}
-                        height={height}
-                        depth={depth}
-                    />
-                );
-            case "gallery":
-                return (
-                    <GalleryRoom
                         config={config}
                         materials={materials}
                         wallThickness={wallThickness}
@@ -142,8 +174,10 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     </RigidBody>
                     {renderRoomComponent()}
                 </>
-            ) : config.id === "relaxation" ? (
-                // Relaxation room handles its own cylindrical walls and hemisphere ceiling
+            ) : config.id === "relaxation" ||
+              config.galleryRoomKind?.kind === "atrium" ? (
+                // Relaxation room and the gallery atrium hub handle their own
+                // cylindrical walls, bypassing BaseRoom's rectangular walls
                 <>
                     <RoomEnvironmentReady />
                     {renderRoomComponent()}

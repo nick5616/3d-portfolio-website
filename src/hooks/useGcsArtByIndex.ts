@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { getArtPieceUrl } from "../configs/gcsConfig";
+import { ArtPiece } from "../configs/artMetadata";
+import { ArtCategoryId, getArtPieceUrl } from "../configs/gcsConfig";
 import { ArtPieceMapper } from "../utils/artPieceMapper";
 
 /**
- * Hook for loading art piece metadata and its GCS image URL by index
+ * Hook for loading art piece metadata and its GCS image URL by index within a category
+ * @param category - Which GCS art category/folder to pull from (digitalart, paintings, ...)
  * @param artPieceIndex - The index of the art piece to load
  * @param useGcsStorage - Whether to use GCS-hosted images (default: true)
  * @param enabled - Whether image loading should be performed (default: true). When false, only metadata is fetched.
  * @returns Object containing the image URL, loading state, and metadata
  */
 export const useGcsArtByIndex = (
+    category: ArtCategoryId,
     artPieceIndex: number,
     useGcsStorage: boolean = true,
     enabled: boolean = true
@@ -17,7 +20,9 @@ export const useGcsArtByIndex = (
     const [imageUrl, setImageUrl] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [artPieceName, setArtPieceName] = useState<string>("");
-    const [artPieceMetadata, setArtPieceMetadata] = useState<any>(null);
+    const [artPieceMetadata, setArtPieceMetadata] = useState<ArtPiece | null>(
+        null
+    );
     const [artPieceExists, setArtPieceExists] = useState<boolean>(false);
 
     // Load metadata immediately (always) so frames can be displayed
@@ -30,6 +35,7 @@ export const useGcsArtByIndex = (
                 }
 
                 const pieceMetadata = await ArtPieceMapper.getArtPieceByIndex(
+                    category,
                     artPieceIndex
                 );
 
@@ -50,7 +56,7 @@ export const useGcsArtByIndex = (
         };
 
         loadMetadata();
-    }, [artPieceIndex]);
+    }, [category, artPieceIndex]);
 
     // Resolve the image URL only when enabled
     useEffect(() => {
@@ -66,9 +72,9 @@ export const useGcsArtByIndex = (
             return;
         }
 
-        setImageUrl(getArtPieceUrl(artPieceMetadata.fileName));
+        setImageUrl(getArtPieceUrl(category, artPieceMetadata.fileName));
         setIsLoading(false);
-    }, [enabled, artPieceExists, useGcsStorage, artPieceMetadata]);
+    }, [enabled, artPieceExists, useGcsStorage, artPieceMetadata, category]);
 
     return {
         imageUrl,

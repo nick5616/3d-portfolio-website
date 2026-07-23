@@ -1,49 +1,24 @@
-import {
-    getAllArtPieces,
-    getArtPieceByIndex,
-    ArtPiece,
-} from "../configs/artMetadata";
+import { getAllArtPieces, ArtPiece } from "../configs/artMetadata";
+import { ArtCategoryId } from "../configs/gcsConfig";
 
-// Cache for the mapping to avoid repeated lookups
-let artPieceMapping: ArtPiece[] | null = null;
+// Cache for the mapping to avoid repeated lookups, keyed per category
+const artPieceMappingByCategory = new Map<ArtCategoryId, ArtPiece[]>();
 
 /**
- * Maps art piece indices to available art pieces from the metadata
- * This allows the frontend to use indices (0, 1, 2, etc.) while having rich metadata
+ * Maps art piece indices to available art pieces from the metadata, per
+ * category (digitalart, paintings, sketches, ...). This allows the frontend
+ * to use indices (0, 1, 2, etc.) within a category while having rich metadata.
  */
 export class ArtPieceMapper {
     /**
-     * Get the art piece name for a given index
-     * @param index - The art piece index (0, 1, 2, etc.)
-     * @returns Promise<string> - The art piece name to use
-     */
-    static async getArtPieceName(index: number): Promise<string> {
-        try {
-            const mapping = await this.getArtPieceMapping();
-
-            if (index >= 0 && index < mapping.length) {
-                return mapping[index].fileName;
-            }
-
-            // If index is out of bounds, return a random piece
-            const randomIndex = Math.floor(Math.random() * mapping.length);
-            return mapping[randomIndex].fileName;
-        } catch (error) {
-            // Fallback to a default piece name
-            return "marvin-martian.jpg";
-        }
-    }
-
-    /**
-     * Get the art piece object for a given index
-     * @param index - The art piece index (0, 1, 2, etc.)
-     * @returns Promise<ArtPiece | undefined> - The art piece object
+     * Get the art piece object for a given index within a category
      */
     static async getArtPieceByIndex(
+        category: ArtCategoryId,
         index: number
     ): Promise<ArtPiece | undefined> {
         try {
-            const mapping = await this.getArtPieceMapping();
+            const mapping = await this.getArtPieceMapping(category);
 
             if (index >= 0 && index < mapping.length) {
                 return mapping[index];
@@ -56,42 +31,37 @@ export class ArtPieceMapper {
     }
 
     /**
-     * Get the mapping of indices to art piece objects
-     * @returns Promise<ArtPiece[]> - Array of art piece objects indexed by position
+     * Get the mapping of indices to art piece objects for a category
      */
-    static async getArtPieceMapping(): Promise<ArtPiece[]> {
-        // Return cached mapping if available
-        if (artPieceMapping) {
-            return artPieceMapping;
+    static async getArtPieceMapping(
+        category: ArtCategoryId
+    ): Promise<ArtPiece[]> {
+        const cached = artPieceMappingByCategory.get(category);
+        if (cached) {
+            return cached;
         }
 
-        // Create new mapping from metadata
-        artPieceMapping = await getAllArtPieces();
-        return artPieceMapping;
+        const mapping = await getAllArtPieces(category);
+        artPieceMappingByCategory.set(category, mapping);
+        return mapping;
     }
 
     /**
-     * Get art piece names as a simple array
-     * @returns Promise<string[]> - Array of art piece names
+     * Clear the cached mapping for a category, or every category if none is given
      */
-    static async getArtPieceNames(): Promise<string[]> {
-        const mapping = await this.getArtPieceMapping();
-        return mapping.map((piece) => piece.fileName);
+    static clearCache(category?: ArtCategoryId): void {
+        if (category) {
+            artPieceMappingByCategory.delete(category);
+        } else {
+            artPieceMappingByCategory.clear();
+        }
     }
 
     /**
-     * Clear the cached mapping (useful for testing or when metadata changes)
+     * Get the total number of available art pieces in a category
      */
-    static clearCache(): void {
-        artPieceMapping = null;
-    }
-
-    /**
-     * Get the total number of available art pieces
-     * @returns Promise<number> - Number of available pieces
-     */
-    static async getArtPieceCount(): Promise<number> {
-        const mapping = await this.getArtPieceMapping();
+    static async getArtPieceCount(category: ArtCategoryId): Promise<number> {
+        const mapping = await this.getArtPieceMapping(category);
         return mapping.length;
     }
 }

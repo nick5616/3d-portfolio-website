@@ -91,7 +91,11 @@ const QuickAccess: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        teleportToRoom("gallery", [7, 1.5, 0], [0, 0, 0]);
+                        teleportToRoom(
+                            "gallery",
+                            [-7, 1.5, 0],
+                            [0, Math.PI / 2, 0]
+                        );
                         onClose();
                     }}
                     className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all"

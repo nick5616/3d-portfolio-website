@@ -40,17 +40,18 @@ body,
 @media (min-width: 769px) {
     /* Stats z-index is set directly on the elements now */
 
-    /* Stats panel: fixed size matching HUD, no scaling */
+    /* Stats panel: bottom-right, stacked above the debug info box, adhered to the right edge */
     [data-testid="stats-panel"],
     .fps-stats {
         position: absolute !important;
-        top: 8px !important;
+        top: auto !important;
+        bottom: 118px !important;
         right: 8px !important;
         left: auto !important;
         width: 80px !important;
         height: 48px !important;
         transform: none !important;
-        transform-origin: top right !important;
+        transform-origin: bottom right !important;
         z-index: 20 !important;
     }
 
@@ -125,12 +126,14 @@ body,
     .modal-hidden .fps-stats {
         display: block !important;
         position: fixed !important;
-        top: 8px !important;
+        top: auto !important;
+        bottom: 118px !important;
+        right: 8px !important;
         left: auto !important;
         width: 80px !important;
         height: 48px !important;
         transform: none !important;
-        transform-origin: top right !important;
+        transform-origin: bottom right !important;
         z-index: 20 !important; /* Below minimap (z-40) to avoid eclipsing */
     }
 

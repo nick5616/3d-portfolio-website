@@ -6,11 +6,13 @@ import { Html } from "@react-three/drei";
 import { useGcsArtByIndex } from "../../hooks/useGcsArtByIndex";
 import { ArtPlaque } from "./ArtPlaque";
 import { nearestArtManager } from "../../utils/nearestArtManager";
+import { ArtCategoryId } from "../../configs/gcsConfig";
 
 interface GcsArtFrameByIndexProps {
     position: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
+    category?: ArtCategoryId; // Which GCS art category/folder to pull from (default: digitalart)
     artPieceIndex: number; // Index of the art piece (0, 1, 2, etc.)
     useGcsStorage?: boolean; // Whether to use GCS-hosted images (default: true)
     showPlaque?: boolean; // Whether to show the plaque (default: true)
@@ -60,6 +62,7 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
     position,
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
+    category = "digitalart",
     artPieceIndex,
     useGcsStorage = true,
     showPlaque = true,
@@ -118,8 +121,9 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
         imageUrl: gcsImageUrl,
         isLoading,
         artPieceName,
+        artPieceMetadata,
         artPieceExists,
-    } = useGcsArtByIndex(artPieceIndex, useGcsStorage, shouldLoad);
+    } = useGcsArtByIndex(category, artPieceIndex, useGcsStorage, shouldLoad);
 
     const finalArtPieceName = artPieceName;
 
@@ -336,7 +340,7 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
                     ]}
                     rotation={[0, 0, 0]}
                     scale={[1, 1, 1]}
-                    artPieceName={finalArtPieceName}
+                    artPiece={artPieceMetadata}
                     showPlaque={showPlaque}
                 />
             )}

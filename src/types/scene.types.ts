@@ -1,4 +1,10 @@
 // src/types/scene.types.ts
+import { ArtCategoryId } from "../configs/gcsConfig";
+
+export type GalleryRoomKind =
+    | { kind: "atrium" }
+    | { kind: "hall"; category: ArtCategoryId };
+
 export interface RoomConfig {
     id: string;
     name: string;
@@ -11,6 +17,9 @@ export interface RoomConfig {
         position: [number, number, number];
         rotation: [number, number, number];
     };
+    // Set only for rooms in the art gallery wing (lobby/atrium/halls) so
+    // Room.tsx can dispatch to the right component without hardcoding ids.
+    galleryRoomKind?: GalleryRoomKind;
 }
 
 export interface LightPreset {

@@ -28,7 +28,7 @@ const Frame: React.FC<ArtFrameProps> = ({
     imageUrl,
 }) => {
     const finalImageUrl = useMemo(
-        () => (imageUrl ? getArtPieceUrl(imageUrl) : ""),
+        () => (imageUrl ? getArtPieceUrl("digitalart", imageUrl) : ""),
         [imageUrl]
     );
 

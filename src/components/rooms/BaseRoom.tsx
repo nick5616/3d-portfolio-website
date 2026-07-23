@@ -90,7 +90,7 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
             {/* Lighting */}
             <ambientLight
                 intensity={
-                    config.id === "gallery" && galleryWhiteLightMode
+                    config.galleryRoomKind && galleryWhiteLightMode
                         ? config.lightPreset.ambient.intensity * 2 // Double ambient for white light mode
                         : config.lightPreset.ambient.intensity * 0.5
                 }
@@ -130,7 +130,7 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                         position={spot.position}
                         intensity={spot.intensity}
                         color={
-                            config.id === "gallery" && galleryWhiteLightMode
+                            config.galleryRoomKind && galleryWhiteLightMode
                                 ? "#ffffff" // White light for gallery white mode
                                 : spot.color
                         }

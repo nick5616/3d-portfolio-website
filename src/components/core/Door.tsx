@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { useSceneStore } from "../../stores/sceneStore";
 import { Archway } from "../../types/scene.types";
+import { roomConfigs } from "../../configs/rooms";
 import {
     RigidBody,
     CuboidCollider,
@@ -59,32 +60,29 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     const lastTransitionTime = useRef<number>(0);
     const doorMeshRef = useRef<THREE.Object3D>(null);
 
-    // Get room-specific theming
+    // Get room-specific theming. Colors are picked per known room id; the
+    // label always comes from the room's actual config name, never a
+    // hardcoded/stale string, so every door (including the gallery wing's
+    // many halls) shows the real destination.
     const getRoomTheme = (roomId: string) => {
+        const roomName = roomConfigs[roomId]?.name || "Unknown Room";
+        const isGalleryWing = Boolean(roomConfigs[roomId]?.galleryRoomKind);
+
         switch (roomId) {
             case "atrium":
                 return {
                     color: "#F4E4BC", // Warm gold
                     frameColor: "#DAA520", // Golden
-                    label: "Atrium",
+                    label: roomName,
                     description: "Central Hub",
                     glowColor: "#FFD700",
                     isArched: false, // Keep it simple
-                };
-            case "gallery":
-                return {
-                    color: "#F8F8FF", // Gallery white
-                    frameColor: "#2F2F2F", // Elegant dark frame
-                    label: "Art Gallery",
-                    description: "Art Collection",
-                    glowColor: "#E6E6FA",
-                    isArched: false, // Modern rectangular
                 };
             case "projects":
                 return {
                     color: "#1E3A8A", // Tech blue
                     frameColor: "#00FFFF", // Cyan
-                    label: "Software Projects",
+                    label: roomName,
                     glowColor: "#00BFFF",
                     isArched: false, // Sleek rectangular
                 };
@@ -92,15 +90,27 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 return {
                     color: "#FF6B6B", // Warm coral
                     frameColor: "#FFB347", // Peach
-                    label: "Play Place",
+                    label: roomName,
                     glowColor: "#FF69B4",
                     isArched: false, // Keep it simple
                 };
             default:
+                if (isGalleryWing) {
+                    // Every room in the gallery wing (atrium + halls) shares
+                    // the same gallery look and feel.
+                    return {
+                        color: "#F8F8FF", // Gallery white
+                        frameColor: "#2F2F2F", // Elegant dark frame
+                        label: roomName,
+                        description: "Art Collection",
+                        glowColor: "#E6E6FA",
+                        isArched: false,
+                    };
+                }
                 return {
                     color: "#8B4513",
                     frameColor: "#654321",
-                    label: "UNKNOWN",
+                    label: roomName,
                     glowColor: "#FFFFFF",
                     isArched: false,
                 };
@@ -108,6 +118,81 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     };
 
     const theme = getRoomTheme(archway.targetRoomId);
+
+    // Snap the door to the room's ACTUAL wall surface instead of trusting
+    // each archway's hand-tuned position, which drifted inconsistently
+    // (existing rooms use gaps anywhere from ~0.2 to ~0.3 units short of the
+    // real wall) and left doors looking like they float away from the wall.
+    // Room.tsx's BaseRoom walls sit at half-dimension - 0.01 with thickness
+    // 0.1, so the inner (room-facing) surface is at half-dimension - 0.06;
+    // rest the door's center a hair inside that so it reads as flush rather
+    // than floating. Skipped for the circular gallery atrium, whose curved
+    // wall doesn't have a single flat "surface" this math applies to - its
+    // doors are already embedded directly in the wall ring.
+    const isCircularRoom = currentRoom?.galleryRoomKind?.kind === "atrium";
+    const doorPosition: [number, number, number] = (() => {
+        const dimensions = currentRoom?.dimensions;
+        if (!dimensions || isCircularRoom) return archway.position;
+
+        const [archX, , archZ] = archway.position;
+        const [roomWidth, , roomDepth] = dimensions;
+        const wallInnerFace = 0.06;
+        const doorStandoff = 0.02; // sits just inside the inner wall face
+
+        if (Math.abs(archX) > Math.abs(archZ)) {
+            const snappedX =
+                Math.sign(archX) *
+                (roomWidth / 2 - wallInnerFace - doorStandoff);
+            return [snappedX, archway.position[1], archZ];
+        }
+        const snappedZ =
+            Math.sign(archZ) * (roomDepth / 2 - wallInnerFace - doorStandoff);
+        return [archX, archway.position[1], snappedZ];
+    })();
+
+    // The frame and label are meant to sit a hair in front of / behind the
+    // door panel, offset toward/away from the room's center. This used to be
+    // derived from archway.rotation (sin/cos of rotationY), but rotation
+    // does NOT reliably encode which way a door faces in this codebase -
+    // e.g. north-wall archways are authored with rotation [0,0,0] in some
+    // rooms and [0,Math.PI,0] in others (both are "correct" for the wall itself,
+    // since BaseRoom's north/south walls share one rotation and only the
+    // interaction code's `Math.abs(dot(...))` check ever cared about it,
+    // which ignores sign). That made the frame/label face backwards on
+    // roughly half the doors. Every archway sits on its room's outer wall,
+    // and every room is centered at local (0,0,0), so the door's own
+    // position vector reliably points "outward" regardless of rotation -
+    // just negate it to get "inward, toward room center."
+    const [doorX, , doorZ] = doorPosition;
+    const distFromCenter = Math.hypot(doorX, doorZ) || 1;
+    const inward: [number, number, number] = [
+        -doorX / distFromCenter,
+        0,
+        -doorZ / distFromCenter,
+    ];
+    const FRAME_OFFSET = 0.08;
+    const framePosition: [number, number, number] = [
+        doorPosition[0] + inward[0] * FRAME_OFFSET,
+        doorPosition[1] + archway.height / 2,
+        doorPosition[2] + inward[2] * FRAME_OFFSET,
+    ];
+    const labelPosition: [number, number, number] = [
+        doorPosition[0] - inward[0] * FRAME_OFFSET,
+        doorPosition[1] + archway.height * 1.2,
+        doorPosition[2] - inward[2] * FRAME_OFFSET,
+    ];
+
+    // The label's <Text> is single-sided (only visible from its local +Z),
+    // so it must actually face inward to be readable at all - it can't just
+    // rely on archway.rotation like the plain (symmetric, rotation-agnostic)
+    // frame box could. Mesh-facing convention: local +Z ends up pointing at
+    // world (sin(rotY), 0, cos(rotY)), so solve for the inward vector above.
+    const inwardMeshRotationY = Math.atan2(inward[0], inward[2]);
+    const inwardMeshRotation: [number, number, number] = [
+        0,
+        inwardMeshRotationY,
+        0,
+    ];
 
     // Helper function to check if player is moving toward the door
     const isMovingTowardDoor = useCallback(() => {
@@ -164,16 +249,28 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             archway.position[2],
         ];
 
-        // Add 180-degree rotation to the entrance rotation
-        const baseRotation = archway.entrancePoint?.rotation || [0, 0, 0];
-        const entranceRotation = [
-            baseRotation[0],
-            baseRotation[1] + Math.PI, // 180 degrees
-            baseRotation[2],
+        // Compute arrival facing from the entrance position itself (face
+        // toward the target room's center, i.e. away from whichever wall you
+        // just walked in through) instead of trusting entrancePoint.rotation.
+        // Hand-authored rotation values turned out to be inconsistent room to
+        // room (the same issue found in archway.rotation - see the frame/
+        // label fix above), so any door landing you facing the "wrong" way
+        // depended on which convention that specific entrancePoint happened
+        // to be written with. Note this uses the CAMERA's own forward
+        // convention (forward = (-sin, 0, -cos) at rotation.y, since
+        // THREE.Camera looks down -Z by default), which is the exact
+        // opposite sign from the mesh-facing formula used for door
+        // frames/labels (where the visible face is local +Z) - mixing the
+        // two up is what caused the "backwards" spawns.
+        const [entranceX, , entranceZ] = entrancePosition;
+        const entranceRotation: [number, number, number] = [
+            0,
+            Math.atan2(entranceX, entranceZ),
+            0,
         ];
 
         console.log(`📍 Teleporting to:`, entrancePosition);
-        console.log(`🔄 With 180° rotation:`, entranceRotation);
+        console.log(`🔄 With rotation:`, entranceRotation);
 
         // Delay the actual teleportation to allow loading screen to show
         setTimeout(() => {
@@ -268,11 +365,11 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             <mesh
                 ref={doorMeshRef as any}
                 position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height / 2,
-                    archway.position[2],
+                    doorPosition[0],
+                    doorPosition[1] + archway.height / 2,
+                    doorPosition[2],
                 ]}
-                rotation={archway.rotation}
+                rotation={inwardMeshRotation}
                 castShadow
                 receiveShadow
                 onClick={handleDoorClick}
@@ -363,11 +460,11 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
             <mesh
                 position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height / 2,
-                    archway.position[2],
+                    doorPosition[0],
+                    doorPosition[1] + archway.height / 2,
+                    doorPosition[2],
                 ]}
-                rotation={archway.rotation}
+                rotation={inwardMeshRotation}
                 visible={true}
             >
                 <boxGeometry
@@ -378,8 +475,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
             <RigidBody
                 type="fixed"
-                position={archway.position}
-                rotation={archway.rotation}
+                position={doorPosition}
+                rotation={inwardMeshRotation}
                 sensor
                 collisionGroups={interactionGroups(1, [0])}
                 // onIntersectionEnter={handleCollisionEnter}
@@ -391,14 +488,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </RigidBody>
 
-            <mesh
-                position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height / 2,
-                    archway.position[2] - 0.08,
-                ]}
-                rotation={archway.rotation}
-            >
+            <mesh position={framePosition} rotation={inwardMeshRotation}>
                 <boxGeometry
                     args={[archway.width + 0.4, archway.height + 0.4, 0.06]}
                 />
@@ -409,14 +499,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </mesh>
 
-            <group
-                position={[
-                    archway.position[0],
-                    archway.position[1] + archway.height * 1.2,
-                    archway.position[2] + 0.08,
-                ]}
-                rotation={archway.rotation}
-            >
+            <group position={labelPosition} rotation={inwardMeshRotation}>
                 {/* Label Background */}
                 <mesh position={[0, 0, 0]}>
                     <planeGeometry

@@ -7,12 +7,21 @@ import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useSceneStore } from "./stores/sceneStore";
 import { useRoomInitialization } from "./hooks/useRoomInitialization";
+import { preloadAllRoomMaterials } from "./configs/enhancedMaterials";
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
     const { setPerformanceQuality } = useSceneStore();
     useRoomInitialization(); // Initialize room based on URL
     const [hasInteracted, setHasInteracted] = useState(false);
+
+    useEffect(() => {
+        // Kick off every room's wall/floor/ceiling textures immediately so
+        // the loading screen's progress genuinely reflects "the whole site
+        // is ready to walk around," not just the room you happen to spawn
+        // in. Painting art is intentionally excluded - it stays lazy.
+        preloadAllRoomMaterials();
+    }, []);
 
     useEffect(() => {
         // Optimize performance for real mobile devices
@@ -188,12 +197,21 @@ export default function App() {
     }, [isMobile]);
 
     return (
-        <Suspense fallback={<LoadingScreen />}>
+        <Suspense fallback={null}>
             <WebGLErrorBoundary>
                 <Scene />
             </WebGLErrorBoundary>
             <Interface />
             <HolodeckLoadingScreen />
+            {/*
+                Rendered unconditionally (not just as the Suspense fallback)
+                because Scene.tsx wraps its own suspending content (models,
+                Environment, etc.) in a local <Suspense fallback={null}>, so
+                nothing ever bubbles up to trigger this boundary's fallback.
+                LoadingScreen tracks useProgress()/DefaultLoadingManager
+                directly and hides/latches itself.
+            */}
+            <LoadingScreen />
         </Suspense>
     );
 }

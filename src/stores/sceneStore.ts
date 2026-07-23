@@ -38,6 +38,11 @@ interface RotationState {
 interface CameraData {
     position: { x: number; y: number; z: number };
     rotation: { x: number; y: number; z: number };
+    // Normalized horizontal facing direction (derived from the camera quaternion,
+    // not the Euler rotation, since CameraController composes rotation in YXZ order
+    // while camera.rotation decodes in XYZ order — using rotation.y directly would
+    // misreport yaw whenever pitch is non-zero).
+    facing: { x: number; z: number };
 }
 
 interface SceneData {
@@ -200,6 +205,7 @@ export const useSceneStore = create<SceneState>((set) => {
         cameraData: {
             position: { x: 0, y: 0.5, z: 5 },
             rotation: { x: 0, y: 0, z: 0 },
+            facing: { x: 0, z: -1 },
         },
         sceneData: {
             objectCount: 0,
