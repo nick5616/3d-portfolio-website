@@ -115,12 +115,25 @@ export const Rupee: React.FC<RupeeProps> = ({
                 }
                 break;
 
-            case "rotating":
-                // Rotating animation - use base position + upright spinning like Zelda
+            case "rotating": {
+                // Upright spinning like Zelda, plus a slow, gentle bob that
+                // rises up from the base position and settles back down -
+                // base position is the floor of the motion, not the middle,
+                // so it never dips below where it was placed.
+                const ROTATING_BOB_SPEED = 0.6;
+                const ROTATING_BOB_HEIGHT = 0.18;
+                const bobPhase =
+                    time * ROTATING_BOB_SPEED +
+                    rupee.position.x * 3 +
+                    rupee.position.z * 3;
+
                 meshRef.current.position.x = rupee.position.x;
-                meshRef.current.position.y = rupee.position.y;
+                meshRef.current.position.y =
+                    rupee.position.y +
+                    ((Math.sin(bobPhase) + 1) / 2) * ROTATING_BOB_HEIGHT;
                 meshRef.current.position.z = rupee.position.z;
                 break;
+            }
 
             case "static":
                 // No position animation, just rotation
@@ -171,6 +184,9 @@ export const Rupee: React.FC<RupeeProps> = ({
                 clearcoatRoughness={0.03}
                 ior={1.9}
                 reflectivity={1}
+                transparent
+                opacity={0.8}
+                depthWrite={false}
                 side={THREE.DoubleSide}
             />
         </mesh>

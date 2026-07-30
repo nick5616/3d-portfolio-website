@@ -111,6 +111,10 @@ interface SceneState {
     // Start prompt state
     showStartPrompt: boolean;
     setShowStartPrompt: (show: boolean) => void;
+    // Notice shown when Control (crouch) collides with a reserved browser
+    // shortcut (e.g. Ctrl+D) and steals focus/pointer lock
+    crouchKeyNotice: boolean;
+    setCrouchKeyNotice: (show: boolean) => void;
     // Math game actions
     setMathGameActive: (active: boolean) => void;
     updateMathGameMeteors: (
@@ -258,6 +262,9 @@ export const useSceneStore = create<SceneState>((set) => {
         // Start prompt state
         showStartPrompt: false,
         setShowStartPrompt: (show) => set({ showStartPrompt: show }),
+        // Ctrl-shortcut collision notice
+        crouchKeyNotice: false,
+        setCrouchKeyNotice: (show) => set({ crouchKeyNotice: show }),
         // Math game actions
         setMathGameActive: (active) =>
             set((state) => ({

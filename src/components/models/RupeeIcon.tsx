@@ -40,6 +40,9 @@ export const RupeeIcon: React.FC<RupeeIconProps> = ({
                 clearcoatRoughness={0.03}
                 ior={1.9}
                 reflectivity={1}
+                transparent
+                opacity={0.8}
+                depthWrite={false}
                 side={THREE.DoubleSide}
             />
         </mesh>

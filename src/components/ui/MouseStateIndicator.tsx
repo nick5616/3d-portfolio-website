@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
+import { useSceneStore } from "../../stores/sceneStore";
+
+const CROUCH_NOTICE_DURATION = 6000; // milliseconds
 
 export const MouseStateIndicator: React.FC = () => {
     const [isPointerLocked, setIsPointerLocked] = useState(false);
     const { isMobile } = useDeviceDetection();
+    const { crouchKeyNotice, setCrouchKeyNotice } = useSceneStore();
+
+    useEffect(() => {
+        if (!crouchKeyNotice) return;
+        const timer = setTimeout(() => {
+            setCrouchKeyNotice(false);
+        }, CROUCH_NOTICE_DURATION);
+        return () => clearTimeout(timer);
+    }, [crouchKeyNotice, setCrouchKeyNotice]);
 
     useEffect(() => {
         const handlePointerLockChange = () => {
@@ -84,6 +96,20 @@ export const MouseStateIndicator: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {crouchKeyNotice && (
+                <div className="fixed inset-x-0 top-20 flex justify-center z-50 pointer-events-none px-4">
+                    <div
+                        className="bg-black/80 text-white px-4 py-3 rounded-lg border border-white/20 text-sm font-medium max-w-md text-center pointer-events-auto cursor-pointer"
+                        style={{ backdropFilter: "blur(16px)" }}
+                        onClick={() => setCrouchKeyNotice(false)}
+                    >
+                        The Control key has unavoidable shortcuts for browser
+                        safety. That's a good thing. But use the C key
+                        instead :)
+                    </div>
+                </div>
+            )}
         </>
     );
 };

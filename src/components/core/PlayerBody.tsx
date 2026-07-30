@@ -16,6 +16,14 @@ const JUMP_FORCE = 4;
 const JUMP_COOLDOWN = 500; // milliseconds
 const UNDERGROUND_THRESHOLD = -10; // Y position below which the player is considered underground
 
+const RUN_SPEED = 8;
+const WALK_SPEED = 4;
+const CROUCH_SPEED = 2; // CS2-style: crouching is slower than walking and can't be combined with sprint
+
+const STANDING_EYE_HEIGHT = 1.8;
+const CROUCH_EYE_HEIGHT = 1.3;
+const CROUCH_TRANSITION_SPEED = 10; // higher = snappier crouch/stand transition
+
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
@@ -37,6 +45,7 @@ export const PlayerBody: React.FC = () => {
     const direction = useRef(new THREE.Vector3());
     const [canJump, setCanJump] = useState(true);
     const lastJumpTime = useRef(0);
+    const eyeHeight = useRef(STANDING_EYE_HEIGHT);
 
     // Helper to check if player is grounded
     const checkIfGrounded = () => {
@@ -66,8 +75,18 @@ export const PlayerBody: React.FC = () => {
         );
     }, [flyMode, roomEnvironmentReady]);
 
-    useFrame(() => {
+    useFrame((_, delta) => {
         if (!playerRef.current) return;
+
+        // Smoothly transition eye height between standing and crouched, CS2-style
+        const targetEyeHeight = movement.crouching
+            ? CROUCH_EYE_HEIGHT
+            : STANDING_EYE_HEIGHT;
+        eyeHeight.current = THREE.MathUtils.lerp(
+            eyeHeight.current,
+            targetEyeHeight,
+            Math.min(delta * CROUCH_TRANSITION_SPEED, 1)
+        );
 
         // Handle teleportation (process even before room is ready so player
         // is positioned correctly while waiting for floor colliders)
@@ -110,7 +129,7 @@ export const PlayerBody: React.FC = () => {
 
         // Always keep camera following the player
         const pos = playerRef.current.translation();
-        camera.position.set(pos.x, pos.y + 1.8, pos.z);
+        camera.position.set(pos.x, pos.y + eyeHeight.current, pos.z);
 
         // Underground safety net — if the player clips below the world, snap them back
         if (pos.y < UNDERGROUND_THRESHOLD) {
@@ -184,8 +203,13 @@ export const PlayerBody: React.FC = () => {
             // Get current velocity
             const currentVel = playerRef.current.linvel();
 
-            // Set movement speed (reduced in air)
-            const speed = movement.running ? 8 : 4;
+            // Set movement speed (reduced in air). Crouching overrides running -
+            // CS2-style, you can't sprint while crouched.
+            const speed = movement.crouching
+                ? CROUCH_SPEED
+                : movement.running
+                ? RUN_SPEED
+                : WALK_SPEED;
             const airMultiplier = isGrounded ? 1 : 1;
 
             // Apply horizontal movement

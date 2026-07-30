@@ -25,6 +25,18 @@ body,
     overflow: hidden;
 }
 
+/* Each rupee-counter digit slides down into place from above when it changes. */
+@keyframes rupee-digit-in {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Canvas should take full viewport */
 .main-canvas {
     touch-action: none !important;
