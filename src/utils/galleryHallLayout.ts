@@ -26,6 +26,18 @@ const CENTER_Y = 2.8; // consistent vertical center for all art pieces
 const SMALL_SCALE: [number, number, number] = [1.0, 1.0, 1];
 const LARGE_SCALE: [number, number, number] = [1.2, 1.2, 1];
 const DOOR_CLEARANCE = 2.5; // keep frames this far from a wall's door-center
+const CORNER_MARGIN = 2.5; // keep the outermost frame this far from the wall's corner
+
+// Four slot offsets along a wall of the given span, scaled to that wall's own
+// length so frames stay CORNER_MARGIN away from the corner on any room size
+// (a fixed absolute offset like 7.5 only avoids the corner on a 20-wide wall;
+// on a smaller hall like the 16x16 notes-app room it lands right on top of
+// the adjacent wall's frame).
+const wallSlotOffsets = (span: number): [number, number, number, number] => {
+    const outer = span / 2 - CORNER_MARGIN;
+    const inner = outer * 0.4;
+    return [-outer, -inner, inner, outer];
+};
 
 // Frame slots hung directly on the room's own outer walls. Any wall that has
 // a door on it (per doorWalls) has its two centermost slots skipped so
@@ -44,9 +56,11 @@ const buildOuterWallSlots = (
     const outerZ = depth / 2 - wallThickness / 2;
     const outerX = width / 2 - wallThickness / 2;
     const clear = (offset: number) => Math.abs(offset) > DOOR_CLEARANCE;
+    const widthSlots = wallSlotOffsets(width);
+    const depthSlots = wallSlotOffsets(depth);
 
     // North wall (z = -outerZ)
-    [-7.5, -3, 3, 7.5]
+    widthSlots
         .filter((x) => !doorWalls.has("north") || clear(x))
         .forEach((x, i) => {
             add(
@@ -57,7 +71,7 @@ const buildOuterWallSlots = (
         });
 
     // South wall (z = outerZ)
-    [-7.5, -3, 3, 7.5]
+    widthSlots
         .filter((x) => !doorWalls.has("south") || clear(x))
         .forEach((x, i) => {
             add(
@@ -68,7 +82,7 @@ const buildOuterWallSlots = (
         });
 
     // West wall (x = -outerX)
-    [-7.5, -3, 3, 7.5]
+    depthSlots
         .filter((z) => !doorWalls.has("west") || clear(z))
         .forEach((z, i) => {
             add(
@@ -79,7 +93,7 @@ const buildOuterWallSlots = (
         });
 
     // East wall (x = outerX)
-    [-7.5, -3, 3, 7.5]
+    depthSlots
         .filter((z) => !doorWalls.has("east") || clear(z))
         .forEach((z, i) => {
             add(
