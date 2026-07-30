@@ -46,7 +46,7 @@ const buildOuterWallSlots = (
     const clear = (offset: number) => Math.abs(offset) > DOOR_CLEARANCE;
 
     // North wall (z = -outerZ)
-    [-7.5, -1.5, 1.5, 7.5]
+    [-7.5, -3, 3, 7.5]
         .filter((x) => !doorWalls.has("north") || clear(x))
         .forEach((x, i) => {
             add(
@@ -57,7 +57,7 @@ const buildOuterWallSlots = (
         });
 
     // South wall (z = outerZ)
-    [-7.5, -1.5, 1.5, 7.5]
+    [-7.5, -3, 3, 7.5]
         .filter((x) => !doorWalls.has("south") || clear(x))
         .forEach((x, i) => {
             add(
@@ -68,7 +68,7 @@ const buildOuterWallSlots = (
         });
 
     // West wall (x = -outerX)
-    [-7.5, -1.5, 1.5, 7.5]
+    [-7.5, -3, 3, 7.5]
         .filter((z) => !doorWalls.has("west") || clear(z))
         .forEach((z, i) => {
             add(
@@ -79,7 +79,7 @@ const buildOuterWallSlots = (
         });
 
     // East wall (x = outerX)
-    [-7.5, -1.5, 1.5, 7.5]
+    [-7.5, -3, 3, 7.5]
         .filter((z) => !doorWalls.has("east") || clear(z))
         .forEach((z, i) => {
             add(
@@ -125,11 +125,10 @@ export const buildHallLayout = (
     add([rightWallX + wallThickness / 2, CENTER_Y, 4], [0, Math.PI / 2, 0], LARGE_SCALE);
     add([rightWallX - wallThickness / 2, CENTER_Y, 2], [0, -Math.PI / 2, 0], SMALL_SCALE);
 
-    add([-2, CENTER_Y, wallThickness / 2], [0, 0, 0], LARGE_SCALE);
-    add([0, CENTER_Y, wallThickness / 2], [0, 0, 0], SMALL_SCALE);
-    add([2, CENTER_Y, wallThickness / 2], [0, 0, 0], LARGE_SCALE);
-    add([-2, CENTER_Y, -wallThickness / 2], [0, Math.PI, 0], SMALL_SCALE);
-    add([2, CENTER_Y, -wallThickness / 2], [0, Math.PI, 0], LARGE_SCALE);
+    add([-2.5, CENTER_Y, wallThickness / 2], [0, 0, 0], LARGE_SCALE);
+    add([2.5, CENTER_Y, wallThickness / 2], [0, 0, 0], LARGE_SCALE);
+    add([-2.5, CENTER_Y, -wallThickness / 2], [0, Math.PI, 0], SMALL_SCALE);
+    add([2.5, CENTER_Y, -wallThickness / 2], [0, Math.PI, 0], SMALL_SCALE);
 
     const dividers: HallDivider[] = [
         {

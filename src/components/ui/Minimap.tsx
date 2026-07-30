@@ -3,25 +3,11 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { RoomConfig } from "../../types/scene.types";
+import { roomColors } from "../../configs/roomColors";
 import {
   archwayDirection,
   CardinalDirection,
 } from "../../utils/archwayDirection";
-
-// Colors per room id. Rooms not listed fall back to a neutral grey.
-const roomColors: { [key: string]: string } = {
-  atrium: "#4A90E2",
-  gallery: "#E8C468",
-  projects: "#7ED321",
-  about: "#F5A623",
-  "gallery-hall-digitalart": "#C77DFF",
-  "gallery-hall-paintings": "#FF9F7D",
-  "gallery-hall-sketches": "#7DB8FF",
-  "gallery-hall-lefthanded": "#FFC97D",
-  "gallery-hall-miscellaneous": "#7DFFD4",
-  "gallery-hall-notesappart": "#7DFF9F",
-  achievements: "#FFD700",
-};
 
 const DIRECTION_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> =
   {

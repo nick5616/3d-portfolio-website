@@ -25,6 +25,7 @@ export const RoomTransitionLoadingScreen: React.FC<
     const [transitionPhase, setTransitionPhase] =
         useState<TransitionPhase>("starting");
     const [fadeOut, setFadeOut] = useState(false);
+    const [effectReady, setEffectReady] = useState(false);
 
     // Handle transition phases
     useEffect(() => {
@@ -35,6 +36,7 @@ export const RoomTransitionLoadingScreen: React.FC<
         // Start transition
         setTransitionPhase("starting");
         setFadeOut(false);
+        setEffectReady(false);
 
         // Fallback timer to ensure transition completes even if something goes wrong
         const fallbackTimer = setTimeout(() => {
@@ -97,11 +99,24 @@ export const RoomTransitionLoadingScreen: React.FC<
             }`}
             style={{ backgroundColor: "#1a1a2e" }}
         >
-            {/* Rupee formation effect canvas */}
-            <div className="absolute inset-0">
+            {/* Rupee formation effect canvas - stays invisible until the
+                WebGL context and shaders have actually warmed up, so it
+                fades in smoothly instead of popping in with a stutter. */}
+            <div
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                    effectReady ? "opacity-100" : "opacity-0"
+                }`}
+            >
                 <Canvas
                     camera={{ position: [0, 0, 5], fov: 75 }}
                     style={{ background: "transparent" }}
+                    onCreated={() => {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                setEffectReady(true);
+                            });
+                        });
+                    }}
                 >
                     <color attach="background" args={["#1a1a2e"]} />
                     <RupeeFormationEffect />

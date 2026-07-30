@@ -277,6 +277,14 @@ export const Scene: React.FC = () => {
                 linear={true}
                 flat={performance.quality === "low" || isMobile}
                 performance={performanceConfig}
+                // The room-transition overlay fully covers this canvas with
+                // its own separate Canvas + WebGL context on top. Without
+                // this, both render loops (this scene's physics/lighting/etc
+                // AND the transition effect) run in parallel the whole time,
+                // which is the main source of the transition-time jank -
+                // this scene is completely invisible during that window, so
+                // there's nothing lost by pausing it.
+                frameloop={roomTransitionLoading ? "never" : "always"}
             >
                 {/* Data bridge to update store with Three.js data */}
                 <SceneDataBridge />

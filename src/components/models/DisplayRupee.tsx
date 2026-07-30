@@ -1,6 +1,7 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { createRupeeGeometry } from "../../utils/rupeeGeometry";
 
 export interface RupeeData {
     position: THREE.Vector3;
@@ -27,50 +28,7 @@ interface DisplayRupeeProps {
 }
 
 const RupeeGeometry = () => {
-    const geometry = useMemo(() => {
-        const geometry = new THREE.BufferGeometry();
-
-        const vertices = new Float32Array([
-            // Front hexagon vertices (0-6)
-            0, 0, 0, 0, 2.0, 0, 0.866, 1.0, 0, 0.866, -1.0, 0, 0, -2.0, 0,
-            -0.866, -1.0, 0, -0.866, 1.0, 0,
-
-            // Back hexagon vertices (7-13)
-            0, 0, -0.5, 0, 2.0, -0.5, 0.866, 1.0, -0.5, 0.866, -1.0, -0.5, 0,
-            -2.0, -0.5, -0.866, -1.0, -0.5, -0.866, 1.0, -0.5,
-
-            // Middle ridge vertices (14-19)
-            0, 2.5, -0.25, 1.2, 1.3, -0.25, 1.2, -1.3, -0.25, 0, -2.5, -0.25,
-            -1.2, -1.3, -0.25, -1.2, 1.3, -0.25,
-        ]);
-
-        const indices = new Uint16Array([
-            // Front hexagon faces
-            0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 1,
-
-            // Back hexagon faces
-            7, 8, 9, 7, 9, 10, 7, 10, 11, 7, 11, 12, 7, 12, 13, 7, 13, 8,
-
-            // Connect front to middle ridge
-            1, 14, 2, 14, 15, 2, 2, 15, 3, 15, 16, 3, 3, 16, 4, 16, 17, 4, 4,
-            17, 5, 17, 18, 5, 5, 18, 6, 18, 19, 6, 6, 19, 1, 19, 14, 1,
-
-            // Connect back to middle ridge
-            8, 14, 9, 14, 15, 9, 9, 15, 10, 15, 16, 10, 10, 16, 11, 16, 17, 11,
-            11, 17, 12, 17, 18, 12, 12, 18, 13, 18, 19, 13, 13, 19, 8, 19, 14,
-            8,
-        ]);
-
-        geometry.setAttribute(
-            "position",
-            new THREE.BufferAttribute(vertices, 3)
-        );
-        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-        geometry.computeVertexNormals();
-
-        return geometry;
-    }, []);
-
+    const geometry = useMemo(() => createRupeeGeometry(), []);
     return geometry;
 };
 
@@ -179,17 +137,22 @@ export const DisplayRupee: React.FC<DisplayRupeeProps> = ({
             rotation={rupee.initialRotation}
             renderOrder={999}
         >
-            <meshPhongMaterial
+            <meshPhysicalMaterial
                 color={rupee.color}
-                transparent={true}
-                opacity={0.9}
-                shininess={90}
-                specular={new THREE.Color(0xffffff)}
-                reflectivity={0.5}
+                emissive={rupee.color}
+                emissiveIntensity={0.2}
+                flatShading
+                roughness={0.05}
+                metalness={0.85}
+                envMapIntensity={4}
+                clearcoat={1}
+                clearcoatRoughness={0.03}
+                ior={1.9}
+                reflectivity={1}
+                transparent
+                opacity={0.8}
+                depthWrite={false}
                 side={THREE.DoubleSide}
-                depthWrite={true}
-                depthTest={true}
-                alphaTest={0.1}
             />
         </mesh>
     );

@@ -19,7 +19,9 @@ interface GalleryAtriumRoomProps {
 // Exactly one "grandiose" piece per side, per the sketch - not a whole arc.
 const LEFT_ANGLE_DEG = 45;
 const RIGHT_ANGLE_DEG = 315;
-const LEFT_INDEX = 0;
+// "Lion Sun" (art-order 14) - was Marvin Martian (order 0) before the user
+// asked for a different piece in the left slot.
+const LEFT_INDEX = 14;
 const RIGHT_INDEX = 1;
 
 // The gallery wing's circular hub: a solid cylindrical wall (matching the

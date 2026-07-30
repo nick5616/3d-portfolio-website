@@ -1,10 +1,9 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { OrbitControls } from "@react-three/drei";
 import { DisplayRupee, RupeeData } from "../../models/DisplayRupee";
 
-const NUM_RUPEES = 30;
+const NUM_RUPEES = 14;
 const GROUP_ROTATION_SPEED = 0.1;
 
 // Rupee types with their colors, values, and spawn rates
@@ -94,13 +93,6 @@ export const RupeeFormationEffect = () => {
             </mesh>
 
             <group ref={groupRef}>
-                <OrbitControls
-                    enableZoom={true}
-                    enablePan={false}
-                    minDistance={2}
-                    maxDistance={10}
-                />
-
                 {rupees.map((rupee, index) => (
                     <DisplayRupee
                         key={index}
@@ -114,7 +106,12 @@ export const RupeeFormationEffect = () => {
                     />
                 ))}
 
-                {/* Enhanced lighting setup */}
+                {/* This canvas has no environment map (it's a separate,
+                    throwaway Canvas from the main scene's), so the rupees'
+                    metallic material needs light from multiple directions
+                    to read as shiny rather than flat/dark - kept as
+                    directional lights (cheaper than point lights) and
+                    dropped the redundant blue point-light accents. */}
                 <ambientLight intensity={0.4} />
                 <directionalLight position={[1, 1, 2]} intensity={0.5} />
                 <directionalLight position={[-1, -1, -2]} intensity={0.5} />
@@ -122,18 +119,6 @@ export const RupeeFormationEffect = () => {
                 <directionalLight position={[-2, 0, 0]} intensity={0.3} />
                 <directionalLight position={[0, 2, 0]} intensity={0.3} />
                 <directionalLight position={[0, -2, 0]} intensity={0.3} />
-
-                {/* Soft point lights for depth */}
-                <pointLight
-                    position={[0, 0, 5]}
-                    intensity={0.2}
-                    color="#4444ff"
-                />
-                <pointLight
-                    position={[0, 0, -5]}
-                    intensity={0.2}
-                    color="#4444ff"
-                />
             </group>
         </>
     );
