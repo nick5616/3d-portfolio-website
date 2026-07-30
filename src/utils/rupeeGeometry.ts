@@ -16,9 +16,15 @@ export const createRupeeGeometry = (): THREE.BufferGeometry => {
         0, 0, -0.5, 0, 2.0, -0.5, 0.866, 1.0, -0.5, 0.866, -1.0, -0.5, 0, -2.0,
         -0.5, -0.866, -1.0, -0.5, -0.866, 1.0, -0.5,
 
-        // Middle ridge vertices (14-19)
-        0, 2.5, -0.25, 1.2, 1.3, -0.25, 1.2, -1.3, -0.25, 0, -2.5, -0.25, -1.2,
-        -1.3, -0.25, -1.2, 1.3, -0.25,
+        // Middle ridge vertices (14-19). Each one is the matching front-hex
+        // vertex scaled by the same RIDGE_SCALE factor from the center -
+        // that uniform radial scale is what makes every side facet a true
+        // planar quad (a frustum lateral face), not just two triangles that
+        // are almost, but not quite, coplanar. Hand-picked numbers here
+        // (rather than an exact multiple) cause a visible crease down the
+        // middle of each facet once the gem is flat-shaded.
+        0, 2.6, -0.25, 1.126, 1.3, -0.25, 1.126, -1.3, -0.25, 0, -2.6, -0.25,
+        -1.126, -1.3, -0.25, -1.126, 1.3, -0.25,
     ]);
 
     const indices = new Uint16Array([
