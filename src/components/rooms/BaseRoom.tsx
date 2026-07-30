@@ -21,6 +21,8 @@ const getRupeeCountForRoom = (roomId: string): number => {
             return 1;
         case "relaxation":
             return 2;
+        case "achievements":
+            return 2;
         default:
             return 6;
     }

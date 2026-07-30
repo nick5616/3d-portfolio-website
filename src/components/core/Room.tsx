@@ -10,6 +10,7 @@ import { AboutRoom } from "../rooms/AboutRoom";
 import { RelaxationRoom } from "../rooms/RelaxationRoom";
 import { GalleryAtriumRoom } from "../rooms/GalleryAtriumRoom";
 import { GalleryHallRoom } from "../rooms/GalleryHallRoom";
+import { AchievementsRoom } from "../rooms/AchievementsRoom";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
@@ -127,6 +128,17 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
             case "relaxation":
                 return (
                     <RelaxationRoom
+                        config={config}
+                        materials={materials}
+                        wallThickness={wallThickness}
+                        width={width}
+                        height={height}
+                        depth={depth}
+                    />
+                );
+            case "achievements":
+                return (
+                    <AchievementsRoom
                         config={config}
                         materials={materials}
                         wallThickness={wallThickness}

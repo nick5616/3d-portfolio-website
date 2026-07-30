@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
+import { useAchievementStore } from "../../../stores/achievementStore";
 
 const API_BASE = "https://holodeck-art-api-24500868376.us-central1.run.app";
 
@@ -96,6 +97,7 @@ export const ArtExperience: React.FC = () => {
                 .then(() => {
                     console.log("Artwork submitted successfully");
                     fetchFavorites();
+                    useAchievementStore.getState().unlock("art-submission");
                 })
                 .catch((err) => {
                     console.error("Failed to submit artwork:", err);

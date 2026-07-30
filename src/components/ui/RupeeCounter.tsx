@@ -17,7 +17,7 @@ export const RupeeCounter: React.FC = () => {
       </div>
 
       {/* Rupee Count */}
-      <span className="text-white font-bold font-medium text-xl tabular-nums tracking-wide">
+      <span className="text-white font-stretch-150% font-bold font-medium text-xl tabular-nums tracking-wide">
         {totalValue.toLocaleString()}
       </span>
     </div>

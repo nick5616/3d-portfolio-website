@@ -20,6 +20,7 @@ const roomColors: { [key: string]: string } = {
   "gallery-hall-lefthanded": "#FFC97D",
   "gallery-hall-miscellaneous": "#7DFFD4",
   "gallery-hall-notesappart": "#7DFF9F",
+  achievements: "#FFD700",
 };
 
 const DIRECTION_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> =
@@ -31,7 +32,7 @@ const DIRECTION_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> =
   };
 
 export const Minimap: React.FC = () => {
-  const { currentRoom, minimap, cameraData } = useSceneStore();
+  const { currentRoom, minimap, cameraData, playerPosition } = useSceneStore();
   const { isMobile } = useDeviceDetection();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({
@@ -226,17 +227,35 @@ export const Minimap: React.FC = () => {
     drawRoomLabel(centerX, centerY, centerRoomSize, currentRoom.name, true);
 
     // Player marker: triangle pointing in the direction the camera faces,
-    // always drawn at the center since the map is centered on the player's room.
+    // offset from the room-box center by the player's actual position within
+    // the room (rooms are always rendered at local origin, so playerPosition
+    // is already room-local). Previously this was hardcoded to the center
+    // regardless of where the player actually was, which meant the minimap
+    // could never reveal it when the player had physically fallen outside
+    // the room's floor - it always looked like "you are here, safe inside."
+    const [roomHalfWidth, , roomHalfDepth] = currentRoom.dimensions.map(
+      (d) => d / 2
+    );
+    const rawNormX = roomHalfWidth > 0 ? playerPosition[0] / roomHalfWidth : 0;
+    const rawNormZ = roomHalfDepth > 0 ? playerPosition[2] / roomHalfDepth : 0;
+    // Clamp to the room box but let the marker visibly press past its own
+    // half-size at the very edge, so actually leaving the floor still reads
+    // as "at/past the wall" rather than snapping back to a safe-looking spot.
+    const clampedNormX = Math.max(-1.15, Math.min(1.15, rawNormX));
+    const clampedNormZ = Math.max(-1.15, Math.min(1.15, rawNormZ));
+    const playerX = centerX + clampedNormX * (centerRoomSize / 2);
+    const playerY = centerY + clampedNormZ * (centerRoomSize / 2);
+
     const angle = Math.atan2(cameraData.facing.z, cameraData.facing.x);
     const markerSize = isMobile ? 6 : 8;
     const backAngleOffset = (5 * Math.PI) / 6; // 150 degrees from the tip on each side
 
-    const tipX = centerX + Math.cos(angle) * markerSize;
-    const tipY = centerY + Math.sin(angle) * markerSize;
-    const leftX = centerX + Math.cos(angle + backAngleOffset) * markerSize;
-    const leftY = centerY + Math.sin(angle + backAngleOffset) * markerSize;
-    const rightX = centerX + Math.cos(angle - backAngleOffset) * markerSize;
-    const rightY = centerY + Math.sin(angle - backAngleOffset) * markerSize;
+    const tipX = playerX + Math.cos(angle) * markerSize;
+    const tipY = playerY + Math.sin(angle) * markerSize;
+    const leftX = playerX + Math.cos(angle + backAngleOffset) * markerSize;
+    const leftY = playerY + Math.sin(angle + backAngleOffset) * markerSize;
+    const rightX = playerX + Math.cos(angle - backAngleOffset) * markerSize;
+    const rightY = playerY + Math.sin(angle - backAngleOffset) * markerSize;
 
     ctx.beginPath();
     ctx.moveTo(tipX, tipY);
@@ -261,16 +280,20 @@ export const Minimap: React.FC = () => {
     isMobile,
     cameraData.facing.x,
     cameraData.facing.z,
+    playerPosition,
   ]);
 
   if (!minimap.visible) return null;
 
-  const spacingClass = isMobile ? "top-14" : "bottom-4";
+  // On mobile, sit top-left below the FPS stats panel (top:8px, 48px tall) so they don't
+  // overlap, using the same 8px edge spacing as the FPS panel. Desktop keeps its previous
+  // top-right placement.
+  const positionClass = isMobile
+    ? "left-2 top-16"
+    : "right-3 bottom-4 md:top-20 md:bottom-auto";
 
   return (
-    <div
-      className={`fixed right-3 ${spacingClass} md:top-20 md:bottom-auto z-40`}
-    >
+    <div className={`fixed ${positionClass} z-40`}>
       <div
         className={`bg-black/60 rounded-lg ${
           isMobile ? "p-0" : "p-2"

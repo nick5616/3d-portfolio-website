@@ -1,6 +1,6 @@
 import { useThree, useFrame, useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Component, ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useGcsArtByIndex } from "../../hooks/useGcsArtByIndex";
@@ -29,6 +29,48 @@ const FRAME_DEPTH = 0.1;
 const FRAME_THICKNESS = 0.08;
 const FLUSH_GAP = -0.02; // Slight embed to appear perfectly flush and avoid z-fighting
 const DEFAULT_PROXIMITY_RADIUS = 16; // ~a room-width away
+
+const EmptyCanvasPlane: React.FC<{ width: number; height: number }> = ({
+    width,
+    height,
+}) => (
+    <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+        <planeGeometry args={[width, height]} />
+        <meshBasicMaterial color="#555555" />
+    </mesh>
+);
+
+// useLoader throws into Suspense on a failed fetch (404, CORS, offline API, etc).
+// Catch it here so one broken piece falls back to an empty canvas instead of
+// taking down the whole scene (WebGLErrorBoundary above re-throws anything
+// that isn't a WebGL error).
+class ArtTextureErrorBoundary extends Component<
+    { url: string; width: number; height: number; children: ReactNode },
+    { hasError: boolean }
+> {
+    state = { hasError: false };
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error) {
+        console.warn("Failed to load art piece texture, showing fallback:", error);
+    }
+
+    componentDidUpdate(prevProps: { url: string }) {
+        if (prevProps.url !== this.props.url && this.state.hasError) {
+            this.setState({ hasError: false });
+        }
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return <EmptyCanvasPlane width={this.props.width} height={this.props.height} />;
+        }
+        return this.props.children;
+    }
+}
 
 const LazyImagePlane: React.FC<{
     url: string;
@@ -224,22 +266,23 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
 
             {/* Art canvas/image - show if we have a final image URL */}
             {finalImageUrl ? (
-                <LazyImagePlane
+                <ArtTextureErrorBoundary
                     url={finalImageUrl}
                     width={dimensions.width - FRAME_THICKNESS * 2}
                     height={dimensions.height - FRAME_THICKNESS * 2}
-                    onTextureLoaded={updateDimensionsFromAspect}
-                />
-            ) : (
-                <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
-                    <planeGeometry
-                        args={[
-                            dimensions.width - FRAME_THICKNESS * 2,
-                            dimensions.height - FRAME_THICKNESS * 2,
-                        ]}
+                >
+                    <LazyImagePlane
+                        url={finalImageUrl}
+                        width={dimensions.width - FRAME_THICKNESS * 2}
+                        height={dimensions.height - FRAME_THICKNESS * 2}
+                        onTextureLoaded={updateDimensionsFromAspect}
                     />
-                    <meshBasicMaterial color="#555555" />
-                </mesh>
+                </ArtTextureErrorBoundary>
+            ) : (
+                <EmptyCanvasPlane
+                    width={dimensions.width - FRAME_THICKNESS * 2}
+                    height={dimensions.height - FRAME_THICKNESS * 2}
+                />
             )}
 
             {/* Loading spinner overlay */}

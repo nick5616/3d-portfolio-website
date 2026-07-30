@@ -36,29 +36,53 @@ body,
     z-index: 0;
 }
 
-/* Desktop styles - normal behavior */
-@media (min-width: 769px) {
-    /* Stats z-index is set directly on the elements now */
+/* Stats panel placement is keyed off the app's own touch-based isMobile detection
+   (via .fps-stats-mobile / .fps-stats-desktop, set in Scene.tsx) rather than a CSS
+   viewport-width media query - those two checks can disagree (e.g. a touch laptop
+   with a wide viewport), which used to leave the desktop rule active while the rest
+   of the UI (minimap, settings gear) had already switched to mobile layout, causing
+   the FPS panel to overlap the settings panel instead of sitting top-left. */
 
-    /* Stats panel: bottom-right, stacked above the debug info box, adhered to the right edge */
-    [data-testid="stats-panel"],
-    .fps-stats {
-        position: absolute !important;
-        top: auto !important;
-        bottom: 118px !important;
-        right: 8px !important;
-        left: auto !important;
-        width: 80px !important;
-        height: 48px !important;
-        transform: none !important;
-        transform-origin: bottom right !important;
-        z-index: 20 !important;
-    }
+/* Desktop: bottom-right, stacked above the debug info box, adhered to the right edge */
+[data-testid="stats-panel"].fps-stats-desktop,
+.fps-stats.fps-stats-desktop {
+    position: absolute !important;
+    top: auto !important;
+    bottom: 118px !important;
+    right: 8px !important;
+    left: auto !important;
+    width: 80px !important;
+    height: 48px !important;
+    transform: none !important;
+    transform-origin: bottom right !important;
+    z-index: 20 !important;
+}
 
-    /* Make stats panel background slightly transparent */
-    div.stats-box-bg {
-        opacity: 0.8 !important;
-    }
+/* Make stats panel background slightly transparent */
+div.stats-box-bg {
+    opacity: 0.8 !important;
+}
+
+/* Mobile: hidden by default - only shown once the educational modal closes
+   (.modal-hidden, toggled by JS), then pinned top-left above the minimap. */
+[data-testid="stats-panel"].fps-stats-mobile,
+.fps-stats.fps-stats-mobile {
+    display: none !important;
+}
+
+.modal-hidden [data-testid="stats-panel"].fps-stats-mobile,
+.modal-hidden .fps-stats.fps-stats-mobile {
+    display: block !important;
+    position: fixed !important;
+    top: 8px !important;
+    bottom: auto !important;
+    left: 8px !important;
+    right: auto !important;
+    width: 80px !important;
+    height: 48px !important;
+    transform: none !important;
+    transform-origin: top left !important;
+    z-index: 20 !important; /* Below minimap (z-40) to avoid eclipsing */
 }
 
 /* Enhanced mobile optimizations */
@@ -115,27 +139,6 @@ body,
         touch-action: none !important;
     }
 
-    /* Hide Stats component on mobile by default - will be shown conditionally via JS */
-    [data-testid="stats-panel"],
-    .fps-stats {
-        display: none !important;
-    }
-
-    /* Show stats when modal is hidden - this class will be toggled by JS */
-    .modal-hidden [data-testid="stats-panel"],
-    .modal-hidden .fps-stats {
-        display: block !important;
-        position: fixed !important;
-        top: auto !important;
-        bottom: 118px !important;
-        right: 8px !important;
-        left: auto !important;
-        width: 80px !important;
-        height: 48px !important;
-        transform: none !important;
-        transform-origin: bottom right !important;
-        z-index: 20 !important; /* Below minimap (z-40) to avoid eclipsing */
-    }
 
     /* Optimize animations for mobile performance without causing jitter */
     * {

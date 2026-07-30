@@ -46,9 +46,13 @@ export const GalleryHallRoom: React.FC<GalleryHallRoomProps> = ({
 
     useEffect(() => {
         setAvailableArtCount(0);
-        ArtPieceMapper.getArtPieceCount(category).then((count) => {
-            setAvailableArtCount(count);
-        });
+        ArtPieceMapper.getArtPieceCount(category)
+            .then((count) => {
+                setAvailableArtCount(count);
+            })
+            .catch((err) => {
+                console.warn(`Could not load art count for ${category}:`, err);
+            });
     }, [category]);
 
     const layout = useMemo(() => {

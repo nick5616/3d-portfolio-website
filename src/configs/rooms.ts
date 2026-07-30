@@ -8,6 +8,7 @@ const RELAXATION_CEILING_HEIGHT = 6;
 const GALLERY_ATRIUM_CEILING_HEIGHT = 7.5;
 const GALLERY_HALL_CEILING_HEIGHT = 7.5;
 const GALLERY_SECRET_ROOM_CEILING_HEIGHT = 6;
+const ACHIEVEMENTS_CEILING_HEIGHT = 7;
 
 // Simple, mostly-neutral light preset shared by the gallery wing's plain
 // rectangular halls - each room's GcsArtFrameByIndex spotlighting comes from
@@ -137,6 +138,20 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             //         rotation: [0, Math.PI, 0] as [number, number, number],
             //     },
             // },
+            {
+                // The atrium's one remaining bare wall - a hall of
+                // plaques celebrating everything there is to find/do here.
+                id: "to-achievements",
+                targetRoomId: "achievements",
+                position: [0, 0, 9.77] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
         ],
     },
 
@@ -582,6 +597,55 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 id: "to-atrium-from-relaxation",
                 targetRoomId: "atrium",
                 position: [0, 0, -6] as [number, number, number],
+                rotation: [0, 0, 0] as [number, number, number],
+                width: 3,
+                height: 4,
+                entrancePoint: {
+                    position: [0, 1.5, 7] as [number, number, number],
+                    rotation: [0, 0, 0] as [number, number, number],
+                },
+            },
+        ],
+    },
+
+    achievements: {
+        id: "achievements",
+        name: "Hall of Achievements",
+        position: [0, 0, 40] as [number, number, number],
+        dimensions: [20, ACHIEVEMENTS_CEILING_HEIGHT, 20],
+        lightPreset: {
+            ambient: { intensity: 0.5, color: "#fff5e6" },
+            directional: {
+                position: [0, 7, 0] as [number, number, number],
+                intensity: 0.2,
+                color: "#ffe9c7",
+            },
+            spots: [
+                {
+                    position: [0, ACHIEVEMENTS_CEILING_HEIGHT - 1, 0] as [
+                        number,
+                        number,
+                        number
+                    ],
+                    target: [0, 0, 0] as [number, number, number],
+                    intensity: 1.2,
+                    color: "#ffe9c7",
+                    distance: 25,
+                    angle: Math.PI / 2.2,
+                    penumbra: 0.6,
+                },
+            ],
+        },
+        defaultEntrance: {
+            position: [0, 1.5, 7] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-atrium-from-achievements",
+                targetRoomId: "atrium",
+                position: [0, 0, 9.77] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,

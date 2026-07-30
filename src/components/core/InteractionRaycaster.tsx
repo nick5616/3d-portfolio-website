@@ -146,8 +146,14 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
             );
         };
 
+        // "virtualtap" is dispatched by VirtualControls for taps that land inside the mobile
+        // joystick regions, where preventDefault() suppresses the browser's synthetic click.
         window.addEventListener("click", handleClick);
-        return () => window.removeEventListener("click", handleClick);
+        window.addEventListener("virtualtap", handleClick);
+        return () => {
+            window.removeEventListener("click", handleClick);
+            window.removeEventListener("virtualtap", handleClick);
+        };
     }, [config.triggerActions, isHovering, enabled, target, callbacks]);
 
     // Update visual feedback

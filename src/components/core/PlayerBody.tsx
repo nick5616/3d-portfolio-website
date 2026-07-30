@@ -1,5 +1,5 @@
 // src/components/core/PlayerBody.tsx
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
     RigidBody,
@@ -29,6 +29,7 @@ export const PlayerBody: React.FC = () => {
         setPlayerGrounded,
         updatePlayerPosition,
         currentRoom,
+        roomEnvironmentReady,
     } = useSceneStore();
 
     const playerRef = useRef<RapierRigidBody>(null);
@@ -44,6 +45,26 @@ export const PlayerBody: React.FC = () => {
         // Consider player grounded if vertical velocity is very small
         return Math.abs(currentVel.y) < 0.1;
     };
+
+    // Gravity only applies to the physics body outside of flight - while
+    // flying the body is driven directly from the camera every frame below,
+    // so leaving gravity on would fight that and yank the player down the
+    // instant flight is toggled off. It's also held off until the room
+    // reports its collision bodies are ready: right after a teleport, the
+    // new room's floor RigidBody hasn't necessarily registered with the
+    // Rapier world yet, and without this the player could start falling
+    // before there's anything underneath them - the underground safety net
+    // (below) would then just bounce them back up into the same still-not-
+    // ready room, repeating for as long as it takes to become ready. This
+    // was previously dead code: roomEnvironmentReady existed in the store
+    // and was documented as existing for exactly this purpose, but nothing
+    // ever actually read it.
+    useEffect(() => {
+        playerRef.current?.setGravityScale(
+            flyMode || !roomEnvironmentReady ? 0 : 1,
+            true
+        );
+    }, [flyMode, roomEnvironmentReady]);
 
     useFrame(() => {
         if (!playerRef.current) return;
@@ -62,6 +83,29 @@ export const PlayerBody: React.FC = () => {
             playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
             playerRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
             clearTeleportFlag();
+        }
+
+        if (flyMode) {
+            // Free flight: the camera leads (CameraController moves it in full
+            // 3D based on look direction + movement keys) and the physics body
+            // just follows along underneath it, instead of the usual body-leads
+            // arrangement. Without this, the rigid body stayed put (or fell
+            // under gravity) and the unconditional camera-follows-body sync
+            // below immediately snapped the camera back, so flying appeared to
+            // do nothing.
+            const flightPosition = {
+                x: camera.position.x,
+                y: camera.position.y - 1.8,
+                z: camera.position.z,
+            };
+            playerRef.current.setTranslation(flightPosition, true);
+            playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            updatePlayerPosition([
+                flightPosition.x,
+                flightPosition.y,
+                flightPosition.z,
+            ]);
+            return;
         }
 
         // Always keep camera following the player
@@ -86,9 +130,6 @@ export const PlayerBody: React.FC = () => {
             currentPosition.y,
             currentPosition.z,
         ]);
-
-        // Skip normal physics-based movement if in flight mode
-        if (flyMode) return;
 
         const currentTime = Date.now();
         const isGrounded = checkIfGrounded();
@@ -171,7 +212,7 @@ export const PlayerBody: React.FC = () => {
             ref={playerRef}
             mass={1}
             type="dynamic"
-            gravityScale={1}
+            gravityScale={flyMode || !roomEnvironmentReady ? 0 : 1}
             enabledRotations={[false, false, false]}
             lockRotations
             position={playerPosition}

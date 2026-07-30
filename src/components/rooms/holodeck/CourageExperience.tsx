@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { CourageComputer } from "../../models/CourageComputer";
 import { useSceneStore } from "../../../stores/sceneStore";
+import { useAchievementStore } from "../../../stores/achievementStore";
 import {
     InteractionRaycaster,
     TriggerAction,
@@ -276,6 +277,9 @@ export const CourageExperience: React.FC = () => {
                     onTrigger: (action: TriggerAction) => {
                         if (action.type === "keypress") {
                             setConsoleActive(true);
+                            useAchievementStore
+                                .getState()
+                                .unlock("courage-computer");
                         }
                     },
                 }}

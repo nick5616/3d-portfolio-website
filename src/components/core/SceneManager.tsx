@@ -98,6 +98,8 @@ export const SceneManager: React.FC = () => {
                 return "lobby"; // Neutral indoor environment
             case "relaxation":
                 return "park"; // Peaceful outdoor environment for relaxation
+            case "achievements":
+                return "lobby"; // Warm, gallery-like environment for the plaque hall
             default:
                 return "city"; // Default fallback
         }
@@ -122,6 +124,8 @@ export const SceneManager: React.FC = () => {
                 return baseIntensity * 0.7; // Reduced for about room
             case "relaxation":
                 return baseIntensity * 1.5; // Enhanced for peaceful outdoor feel
+            case "achievements":
+                return baseIntensity * 1.2; // Bright enough to read the plaques
             default:
                 return baseIntensity;
         }

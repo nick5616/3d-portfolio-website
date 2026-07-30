@@ -50,9 +50,9 @@ export const PerformanceControls: React.FC = () => {
 
     return (
         <div
-            className={`absolute bottom-4 ${
-                isMobile ? "right-4" : "left-4"
-            } z-50 pointer-events-auto ${isMobile ? "top-2" : "bottom-4"}`}
+            className={`absolute z-50 pointer-events-auto ${
+                isMobile ? "bottom-2 right-2" : "bottom-4 left-4"
+            }`}
         >
             {/* Toggle button */}
             <button
@@ -87,8 +87,8 @@ export const PerformanceControls: React.FC = () => {
                 <div
                     ref={menuRef}
                     onClick={(e) => e.stopPropagation()}
-                    className={`absolute ${isMobile ? "top-12" : "bottom-12"} ${
-                        isMobile ? "right-4" : "left-4"
+                    className={`absolute bottom-12 ${
+                        isMobile ? "right-2" : "left-4"
                     } bg-black/50 backdrop-blur-md text-white p-3 rounded-lg w-56 shadow-lg`}
                 >
                     <h3 className="text-sm font-bold mb-2">

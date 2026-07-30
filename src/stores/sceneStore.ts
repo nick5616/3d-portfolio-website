@@ -8,6 +8,8 @@ import {
     loadPerformanceSettings,
     savePerformanceSettings,
 } from "../utils/localStorage";
+import { detectIsMobile } from "../utils/deviceDetection";
+import { useAchievementStore } from "./achievementStore";
 
 // Configuration for experience-specific rotation angles (in radians)
 // Each angle represents the optimal orientation for the user to face when the experience loads
@@ -198,7 +200,9 @@ export const useSceneStore = create<SceneState>((set) => {
         performance: savedPerformanceSettings,
         minimap: {
             enabled: true,
-            visible: true,
+            // Hidden by default on mobile - the small screen makes it more clutter than
+            // help, but the settings menu can still toggle it back on.
+            visible: !detectIsMobile(),
         },
         flyMode: false,
         // Camera and scene data for UI components
@@ -270,15 +274,16 @@ export const useSceneStore = create<SceneState>((set) => {
                 },
             })),
         setMathGameScore: (score) =>
-            set((state) => ({
-                mathGame: {
-                    ...state.mathGame,
-                    score:
-                        typeof score === "function"
-                            ? score(state.mathGame.score)
-                            : score,
-                },
-            })),
+            set((state) => {
+                const newScore =
+                    typeof score === "function"
+                        ? score(state.mathGame.score)
+                        : score;
+                useAchievementStore.getState().checkMathScore(newScore);
+                return {
+                    mathGame: { ...state.mathGame, score: newScore },
+                };
+            }),
         // Console actions
         setConsoleActive: (active) =>
             set((state) => ({
@@ -375,7 +380,12 @@ export const useSceneStore = create<SceneState>((set) => {
         updateSceneData: (sceneData) => set({ sceneData }),
         updatePlayerVelocity: (velocity) => set({ playerVelocity: velocity }), // Update player velocity
         clearTeleportFlag: () => set({ shouldTeleportPlayer: false }),
-        toggleFlyMode: () => set((state) => ({ flyMode: !state.flyMode })),
+        toggleFlyMode: () =>
+            set((state) => {
+                const flyMode = !state.flyMode;
+                if (flyMode) useAchievementStore.getState().unlock("flight");
+                return { flyMode };
+            }),
         setRoomEnvironmentReady: (ready) =>
             set({ roomEnvironmentReady: ready }),
         loadRoom: (roomId) => {
@@ -385,6 +395,7 @@ export const useSceneStore = create<SceneState>((set) => {
                     currentRoom: config,
                     roomEnvironmentReady: false,
                 });
+                useAchievementStore.getState().discoverRoom(roomId);
             } else {
                 console.error(`Room configuration not found for ID: ${roomId}`);
             }
@@ -413,6 +424,7 @@ export const useSceneStore = create<SceneState>((set) => {
                     lastTeleportTime: Date.now(),
                     roomEnvironmentReady: false, // Reset environment ready flag
                 });
+                useAchievementStore.getState().discoverRoom(roomId);
                 console.log(
                     `🔄 Store: State updated - shouldTeleportPlayer: true`
                 );
@@ -440,6 +452,8 @@ export const useSceneStore = create<SceneState>((set) => {
                     ...state.performance,
                     showStats: !state.performance.showStats,
                 };
+                if (newPerformance.showStats)
+                    useAchievementStore.getState().unlock("debug-info");
                 savePerformanceSettings(newPerformance);
                 return { performance: newPerformance };
             }),
@@ -453,12 +467,11 @@ export const useSceneStore = create<SceneState>((set) => {
                 return { performance: newPerformance };
             }),
         toggleMinimap: () =>
-            set((state) => ({
-                minimap: {
-                    ...state.minimap,
-                    visible: !state.minimap.visible,
-                },
-            })),
+            set((state) => {
+                const visible = !state.minimap.visible;
+                if (visible) useAchievementStore.getState().unlock("minimap");
+                return { minimap: { ...state.minimap, visible } };
+            }),
         rotateUser: (angle?: number) => {
             set((state) => {
                 // Get current rotation or default to [0, 0, 0]

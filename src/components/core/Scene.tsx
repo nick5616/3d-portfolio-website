@@ -284,7 +284,11 @@ export const Scene: React.FC = () => {
                 {/* Stats panel in top-right corner */}
                 {performance.monitoring && (
                     <Stats
-                        className="fps-stats"
+                        className={
+                            isMobile
+                                ? "fps-stats fps-stats-mobile"
+                                : "fps-stats fps-stats-desktop"
+                        }
                         showPanel={0}
                         data-testid="stats-panel"
                     />

@@ -66,6 +66,9 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
         // Track door hover state to deprioritize controls when door is being looked at
         const [isHoveringDoor, setIsHoveringDoor] = useState(false);
 
+        // Max finger movement (px) for a touch to still count as a tap rather than a joystick drag
+        const TAP_MAX_DISTANCE = 12;
+
         // Configure joystick based on performance
         const maxJoystickDistance = performance.quality === "low" ? 30 : 40;
         const joystickSize = performance.quality === "low" ? 100 : 120;
@@ -425,6 +428,31 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             smoothFactor,
         ]);
 
+        // Check if a touch lands on a higher-priority UI element (modal, settings panel, etc.)
+        // Walks up from the hit element because Tailwind's z-index class is usually set on a
+        // wrapper div, not the button/control the user actually taps - checking only the exact
+        // hit element misses that and lets the joystick swallow the touch.
+        const isTouchOnPriorityUI = useCallback((touch: Touch): boolean => {
+            const elementAtPoint = document.elementFromPoint(
+                touch.clientX,
+                touch.clientY
+            ) as HTMLElement | null;
+            if (!elementAtPoint) return false;
+
+            let current: HTMLElement | null = elementAtPoint;
+            while (current && current !== document.body) {
+                const style = window.getComputedStyle(current);
+                if (style.position !== "static") {
+                    const zIndex = parseInt(style.zIndex, 10);
+                    if (!Number.isNaN(zIndex) && zIndex >= 50 && style.pointerEvents !== "none") {
+                        return true;
+                    }
+                }
+                current = current.parentElement;
+            }
+            return false;
+        }, []);
+
         // Check if touch is on door prompt button
         const isTouchOnDoorPrompt = useCallback((touch: Touch): boolean => {
             const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -489,16 +517,9 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                     return;
                 }
 
-                // Check if touch is on a higher priority element (like modal buttons)
-                // We do this by checking if the element at the touch point has a higher z-index
-                const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (elementAtPoint) {
-                    const computedStyle = window.getComputedStyle(elementAtPoint);
-                    const zIndex = parseInt(computedStyle.zIndex || "0", 10);
-                    // If z-index is 50 or higher (modals are 60), don't handle this touch
-                    if (zIndex >= 50) {
-                        return;
-                    }
+                // Check if touch is on a higher priority element (like modal or settings buttons)
+                if (isTouchOnPriorityUI(touch)) {
+                    return;
                 }
 
                 // NOW prevent default since we're handling this touch
@@ -537,7 +558,12 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 // Start the continuous movement tracking
                 startContinuousMovement();
             },
-            [isTouchInElement, isTouchOnDoorPrompt, startContinuousMovement]
+            [
+                isTouchInElement,
+                isTouchOnDoorPrompt,
+                isTouchOnPriorityUI,
+                startContinuousMovement,
+            ]
         );
 
         // Handle camera joystick touch start
@@ -560,15 +586,9 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                     return;
                 }
 
-                // Check if touch is on a higher priority element (like modal buttons)
-                const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (elementAtPoint) {
-                    const computedStyle = window.getComputedStyle(elementAtPoint);
-                    const zIndex = parseInt(computedStyle.zIndex || "0", 10);
-                    // If z-index is 50 or higher (modals are 60), don't handle this touch
-                    if (zIndex >= 50) {
-                        return;
-                    }
+                // Check if touch is on a higher priority element (like modal or settings buttons)
+                if (isTouchOnPriorityUI(touch)) {
+                    return;
                 }
 
                 // NOW prevent default since we're handling this touch
@@ -598,7 +618,7 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                 // Clear any previous rotation
                 lastRotation.current = { x: 0, y: 0 };
             },
-            [isTouchInElement, isTouchOnDoorPrompt]
+            [isTouchInElement, isTouchOnDoorPrompt, isTouchOnPriorityUI]
         );
 
         // Handle global touch starts - route to appropriate handler
@@ -645,17 +665,10 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         return;
                     }
                     
-                    // Check if touch is on a higher priority element (like modal buttons)
-                    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (elementAtPoint) {
-                        const computedStyle = window.getComputedStyle(elementAtPoint);
-                        const zIndex = parseInt(computedStyle.zIndex || "0", 10);
-                        const pointerEvents = computedStyle.pointerEvents;
-                        // If z-index is 50 or higher (modals are 60, door prompt is 50) and has pointer-events: auto, don't handle this touch
-                        if (zIndex >= 50 && pointerEvents === "auto") {
-                            // Don't prevent default or stop propagation - let higher priority elements handle it
-                            return;
-                        }
+                    // Check if touch is on a higher priority element (like modal or settings buttons)
+                    if (isTouchOnPriorityUI(touch)) {
+                        // Don't prevent default or stop propagation - let higher priority elements handle it
+                        return;
                     }
                 }
 
@@ -684,7 +697,14 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                     return;
                 }
             },
-            [handleMovementTouchStart, handleCameraTouchStart, isTouchInElement, isTouchOnDoorPrompt, isHoveringDoor]
+            [
+                handleMovementTouchStart,
+                handleCameraTouchStart,
+                isTouchInElement,
+                isTouchOnDoorPrompt,
+                isTouchOnPriorityUI,
+                isHoveringDoor,
+            ]
         );
 
         // Handle touch move - with improved multi-touch handling and performance optimization
@@ -752,6 +772,28 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
                         e.preventDefault();
                         e.stopPropagation();
                         handledTouch = true;
+
+                        // If the touch never moved beyond a small tap tolerance, treat it as a
+                        // tap rather than a joystick drag. preventDefault() above suppresses the
+                        // browser's synthetic click event, which is what doors/light switches/
+                        // holodeck panels normally listen for via InteractionRaycaster - so
+                        // dispatch an equivalent event those listeners also handle.
+                        const tapSource =
+                            touchType === "movement"
+                                ? movementTouch.current
+                                : touchType === "camera"
+                                ? cameraTouch.current
+                                : null;
+                        if (
+                            tapSource &&
+                            touch.identifier === tapSource.identifier
+                        ) {
+                            const tapDx = touch.clientX - tapSource.startX;
+                            const tapDy = touch.clientY - tapSource.startY;
+                            if (Math.sqrt(tapDx * tapDx + tapDy * tapDy) < TAP_MAX_DISTANCE) {
+                                window.dispatchEvent(new CustomEvent("virtualtap"));
+                            }
+                        }
 
                         // Remove this touch from our tracking
                         setActiveTouchIds((prev) => {

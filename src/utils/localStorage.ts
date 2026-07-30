@@ -1,4 +1,6 @@
 // Local storage utilities for persisting performance settings
+import { detectIsMobile } from "./deviceDetection";
+
 export interface PerformanceSettings {
     showStats: boolean;
     monitoring: boolean;
@@ -12,7 +14,9 @@ const STORAGE_KEY = "portfolio-performance-settings";
  */
 export const getDefaultPerformanceSettings = (): PerformanceSettings => ({
     showStats: false,
-    monitoring: true,
+    // The FPS stats panel is debug info - keep it off by default on mobile where
+    // it's clutter, but leave it on by default for desktop as before.
+    monitoring: !detectIsMobile(),
     quality: "high",
 });
 

@@ -67,6 +67,12 @@ export const roomRoutes: RoomRoute[] = [
         title: "Relaxation Room",
         description: "A peaceful space for meditation and relaxation",
     },
+    {
+        path: "/achievements",
+        roomId: "achievements",
+        title: "Hall of Achievements",
+        description: "A wall of plaques celebrating everything there is to find and do",
+    },
 ];
 
 // Holodeck experience routes — each experience has a canonical path and short aliases
@@ -111,6 +117,7 @@ export const roomIdToPath = new Map<string, string>([
     ["projects", "/software"],
     ["about", "/holodeck"],
     ["relaxation", "/relaxation"],
+    ["achievements", "/achievements"],
 ]);
 
 // Helper function to get room ID from path (also matches experience routes → "about")

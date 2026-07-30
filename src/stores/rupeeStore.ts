@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { z } from "zod";
+import { useAchievementStore } from "./achievementStore";
 
 // Rupee types schema
 const RupeeTypeSchema = z.object({
@@ -68,6 +69,13 @@ export const useRupeeStore = create<RupeeStoreState>()(
                     newRupees[type].count += 1;
 
                     const totalValue = calculateTotalValue(newRupees);
+                    const totalCount = Object.values(newRupees).reduce(
+                        (sum, collection) => sum + collection.count,
+                        0
+                    );
+                    useAchievementStore
+                        .getState()
+                        .checkRupeeCollection(type, totalCount);
 
                     return {
                         rupees: newRupees,
