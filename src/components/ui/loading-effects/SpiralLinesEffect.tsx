@@ -1,37 +1,8 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-
-// Shader for the flowing lines
-const lineVertexShader = `
-  uniform float time;
-  varying vec3 vColor;
-  
-  vec3 getColor(float t) {
-    return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.7, 0.4) + vec3(0.0, 0.15, 0.20)));
-  }
-
-  void main() {
-    float t = position.y * 0.1 + time * 0.2;
-    vColor = getColor(t);
-    
-    // Add some waviness to the position
-    vec3 pos = position;
-    float wave = sin(t * 2.0 + position.x) * 0.2;
-    pos.x += wave;
-    pos.z += cos(t * 3.0 + position.x) * 0.2;
-    
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
-
-const lineFragmentShader = `
-  varying vec3 vColor;
-  
-  void main() {
-    gl_FragColor = vec4(vColor, 1.0);
-  }
-`;
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import { cos, positionLocal, sin, time, vec3 } from "three/tsl";
 
 const NUM_CURVES = 50;
 const POINTS_PER_CURVE = 100;
@@ -39,7 +10,6 @@ const CURVE_RADIUS = 5;
 
 export const SpiralLinesEffect = () => {
     const linesRef = useRef<THREE.Group>(null);
-    const shaderMaterialRef = useRef<THREE.ShaderMaterial>(null);
 
     // Create flowing curves
     const curves = useMemo(() => {
@@ -74,25 +44,33 @@ export const SpiralLinesEffect = () => {
         });
     }, [curves]);
 
-    // Create shader material
+    // TSL node material - the flowing-line color/wave animation is driven
+    // entirely by TSL's built-in `time` node, so there's no per-frame
+    // uniform to update here.
     const shaderMaterial = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            vertexShader: lineVertexShader,
-            fragmentShader: lineFragmentShader,
-            uniforms: {
-                time: { value: 0 },
-            },
+        const t = positionLocal.y.mul(0.1).add(time.mul(0.2));
+        const colorNode = vec3(0.5, 0.5, 0.5).add(
+            cos(
+                t
+                    .mul(vec3(1.0, 0.7, 0.4))
+                    .add(vec3(0.0, 0.15, 0.2))
+                    .mul(6.28318)
+            ).mul(0.5)
+        );
+        const wave = sin(t.mul(2.0).add(positionLocal.x)).mul(0.2);
+        const zOffset = cos(t.mul(3.0).add(positionLocal.x)).mul(0.2);
+
+        const material = new MeshBasicNodeMaterial({
             transparent: true,
             blending: THREE.AdditiveBlending,
         });
+        material.colorNode = colorNode;
+        material.positionNode = positionLocal.add(vec3(wave, 0.0, zOffset));
+        return material;
     }, []);
 
     // Animate the lines
     useFrame((state, delta) => {
-        if (shaderMaterialRef.current) {
-            shaderMaterialRef.current.uniforms.time.value += delta;
-        }
-
         if (linesRef.current) {
             linesRef.current.rotation.y += delta * 0.1;
             linesRef.current.rotation.x =
@@ -146,7 +124,6 @@ export const SpiralLinesEffect = () => {
                         <primitive
                             object={shaderMaterial}
                             attach="material"
-                            ref={i === 0 ? shaderMaterialRef : undefined}
                         />
                     </mesh>
                 ))}

@@ -1,6 +1,6 @@
 // src/components/core/InteractiveObject.tsx
 import * as THREE from "three";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import { InteractiveElement } from "../../types/scene.types";
 import { GreekPillar } from "../models/GreekPillar";
 import { DisplayPillar } from "../models/DisplayPillar";
@@ -78,7 +78,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
 
         case "text":
             return (
-                <Text
+                <WorldText
                     position={position}
                     rotation={rotation}
                     scale={scale}
@@ -87,7 +87,7 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                     anchorY="middle"
                 >
                     {content}
-                </Text>
+                </WorldText>
             );
 
         case "image":

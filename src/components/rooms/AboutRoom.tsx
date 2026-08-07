@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import { HolodeckControlPanel } from "./holodeck/HolodeckControlPanel";
 import { HolodeckGrid } from "./holodeck/HolodeckGrid";

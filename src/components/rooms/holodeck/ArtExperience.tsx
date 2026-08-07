@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as THREE from "three";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../../ui/WorldText";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
 import { useAchievementStore } from "../../../stores/achievementStore";
 
@@ -49,7 +49,7 @@ const WallPiece: React.FC<{
                     <meshBasicMaterial color="#CCCCCC" />
                 )}
             </mesh>
-            <Text
+            <WorldText
                 position={[0, -0.6, 0]}
                 fontSize={0.08}
                 color="#333333"
@@ -57,7 +57,7 @@ const WallPiece: React.FC<{
                 anchorY="middle"
             >
                 {title}
-            </Text>
+            </WorldText>
         </group>
     );
 };
@@ -218,7 +218,7 @@ export const ArtExperience: React.FC = () => {
             </group>
 
             {/* Encouraging text - above cork board */}
-            <Text
+            <WorldText
                 position={[0, 4.3, 3.9]}
                 fontSize={0.3}
                 color="#FF69B4"
@@ -227,7 +227,7 @@ export const ArtExperience: React.FC = () => {
                 rotation={[0, Math.PI, 0]}
             >
                 {"Teacher's Favorites"}
-            </Text>
+            </WorldText>
 
             {/* Art supplies scattered around - front area */}
             <group position={[-2, 0, 2]}>

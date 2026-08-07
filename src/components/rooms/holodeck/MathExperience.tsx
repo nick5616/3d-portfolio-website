@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Text, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { MathGameOverlay } from "../../ui/MathGameOverlay";
 import { useFrame } from "@react-three/fiber";
 import { useSceneStore } from "../../../stores/sceneStore";

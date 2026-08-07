@@ -1,7 +1,8 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useCallback } from "react";
-import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
+import { Stats, AdaptiveDpr, AdaptiveEvents } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
+import { WebGPURenderer, type WebGPURendererParameters } from "three/webgpu";
 import { SceneManager } from "./SceneManager";
 import { PlayerBody } from "./PlayerBody";
 import { RupeeCounter } from "../ui/RupeeCounter";
@@ -42,8 +43,8 @@ export const Scene: React.FC = () => {
             stencil: false,
             depth: true,
             powerPreference: (isMobile
-                ? "default"
-                : "high-performance") as WebGLPowerPreference,
+                ? "low-power"
+                : "high-performance") as "low-power" | "high-performance",
         };
 
         return baseConfig;
@@ -265,7 +266,18 @@ export const Scene: React.FC = () => {
             />
             <Canvas
                 className="main-canvas"
-                gl={glParams}
+                gl={async (props) => {
+                    // WebGPURenderer initializes asynchronously and
+                    // automatically falls back to the WebGL2 backend on
+                    // devices/browsers without WebGPU support - one renderer
+                    // for both paths.
+                    const renderer = new WebGPURenderer({
+                        ...(props as WebGPURendererParameters),
+                        ...glParams,
+                    });
+                    await renderer.init();
+                    return renderer;
+                }}
                 camera={{
                     fov: isMobile ? 80 : 75,
                     near: 0.5,
@@ -319,7 +331,6 @@ export const Scene: React.FC = () => {
                         {currentRoom && <PlayerBody key={currentRoom.id} />}
                         {!isMobile && <AdaptiveDpr pixelated />}
                         {!isMobile && <AdaptiveEvents />}
-                        <Preload all />
                     </Physics>
                 </Suspense>
             </Canvas>

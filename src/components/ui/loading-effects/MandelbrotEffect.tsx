@@ -1,68 +1,29 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { PointsNodeMaterial } from "three/webgpu";
+import {
+    Break,
+    Fn,
+    If,
+    Loop,
+    cos,
+    dot,
+    float,
+    length,
+    pointUV,
+    positionLocal,
+    sin,
+    smoothstep,
+    time,
+    vec2,
+    vec3,
+} from "three/tsl";
 
 const GRID_SIZE = 100;
-const SCALE = 0.02;
-const MAX_ITERATIONS = 20;
 
 export const MandelbrotEffect = () => {
     const meshRef = useRef<THREE.Points>(null);
-    const materialRef = useRef<THREE.ShaderMaterial>(null);
-
-    const mandelbrotShader = useMemo(
-        () => ({
-            vertexShader: `
-            uniform float time;
-            varying vec3 vColor;
-            varying vec3 vPosition;
-            
-            vec3 getColor(float iterations) {
-                float t = iterations / 20.0;
-                return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.5, 0.8) + vec3(0.0, 0.33, 0.67)));
-            }
-            
-            float mandelbrot(vec2 c) {
-                vec2 z = vec2(0.0);
-                for(int i = 0; i < 20; i++) {
-                    if(dot(z, z) > 4.0) return float(i);
-                    z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
-                }
-                return 20.0;
-            }
-            
-            void main() {
-                vec2 c = position.xy * 0.02 + vec2(sin(time * 0.1) * 0.5, cos(time * 0.15) * 0.3);
-                float iter = mandelbrot(c);
-                
-                vColor = getColor(iter);
-                vPosition = position;
-                
-                vec3 pos = position;
-                pos.z = (iter / 20.0) * 5.0 - 2.5;
-                pos.y += sin(time + position.x * 0.1) * 0.5;
-                
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-                gl_PointSize = 3.0;
-            }
-        `,
-            fragmentShader: `
-            varying vec3 vColor;
-            
-            void main() {
-                float dist = length(gl_PointCoord - vec2(0.5));
-                if(dist > 0.5) discard;
-                
-                float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
-                gl_FragColor = vec4(vColor, alpha);
-            }
-        `,
-            uniforms: {
-                time: { value: 0 },
-            },
-        }),
-        []
-    );
 
     const geometry = useMemo(() => {
         const positions = new Float32Array(GRID_SIZE * GRID_SIZE * 3);
@@ -84,19 +45,79 @@ export const MandelbrotEffect = () => {
         return geometry;
     }, []);
 
+    // TSL node material - the escape-time iteration, wave motion and point
+    // falloff all live on the GPU via nodes, driven by TSL's built-in
+    // `time` node (no per-frame uniform updates needed).
+    //
+    // Note: the WebGPU spec only supports 1px point primitives, so
+    // `sizeNode` (and this dot field's intended point size) only has
+    // effect when the WebGL2 fallback backend is in use.
     const material = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            ...mandelbrotShader,
+        const mandelbrot = Fn(([c]: [ReturnType<typeof vec2>]) => {
+            const z = vec2(0.0, 0.0).toVar();
+            const iter = float(20.0).toVar();
+
+            Loop(20, ({ i }) => {
+                If(dot(z, z).greaterThan(4.0), () => {
+                    iter.assign(float(i));
+                    Break();
+                });
+                z.assign(
+                    vec2(
+                        z.x.mul(z.x).sub(z.y.mul(z.y)),
+                        z.x.mul(z.y).mul(2.0)
+                    ).add(c)
+                );
+            });
+
+            return iter;
+        });
+
+        const c = positionLocal.xy
+            .mul(0.02)
+            .add(
+                vec2(
+                    sin(time.mul(0.1)).mul(0.5),
+                    cos(time.mul(0.15)).mul(0.3)
+                )
+            );
+        const iter = mandelbrot(c);
+        const t = iter.div(20.0);
+        const colorNode = vec3(0.5, 0.5, 0.5).add(
+            cos(
+                t
+                    .mul(vec3(1.0, 0.5, 0.8))
+                    .add(vec3(0.0, 0.33, 0.67))
+                    .mul(6.28318)
+            ).mul(0.5)
+        );
+
+        const positionNode = vec3(
+            positionLocal.x,
+            positionLocal.y.add(
+                sin(time.add(positionLocal.x.mul(0.1))).mul(0.5)
+            ),
+            t.mul(5.0).sub(2.5)
+        );
+
+        const opacityNode = Fn(() => {
+            const dist = length(pointUV.sub(vec2(0.5, 0.5)));
+            dist.greaterThan(0.5).discard();
+            return float(1.0).sub(smoothstep(0.3, 0.5, dist));
+        })();
+
+        const mat = new PointsNodeMaterial({
             transparent: true,
             blending: THREE.AdditiveBlending,
         });
-    }, [mandelbrotShader]);
+        mat.colorNode = colorNode;
+        mat.positionNode = positionNode;
+        mat.opacityNode = opacityNode;
+        mat.sizeNode = float(3.0);
+        return mat;
+    }, []);
 
     useFrame((state, delta) => {
-        if (materialRef.current) {
-            materialRef.current.uniforms.time.value += delta;
-        }
-
         if (meshRef.current) {
             meshRef.current.rotation.z += delta * 0.05;
             meshRef.current.rotation.x =
@@ -107,11 +128,7 @@ export const MandelbrotEffect = () => {
     return (
         <group>
             <points ref={meshRef} geometry={geometry}>
-                <primitive
-                    object={material}
-                    attach="material"
-                    ref={materialRef}
-                />
+                <primitive object={material} attach="material" />
             </points>
             <ambientLight intensity={0.1} />
         </group>

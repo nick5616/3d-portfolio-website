@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { RigidBody } from "@react-three/rapier";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../../ui/WorldText";
 import * as THREE from "three";
 import { InteractionRaycaster } from "../../core/InteractionRaycaster";
 
@@ -138,7 +138,7 @@ const ControlButton: React.FC<ButtonProps> = ({
             />
 
             {/* Button Text */}
-            <Text
+            <WorldText
                 position={[0, 0, 0.05]}
                 fontSize={0.06}
                 color={isActive ? "#000" : "#fff"}
@@ -146,7 +146,7 @@ const ControlButton: React.FC<ButtonProps> = ({
                 anchorY="middle"
             >
                 {label}
-            </Text>
+            </WorldText>
         </group>
     );
 };
@@ -222,7 +222,7 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
             </mesh>
 
             {/* Title */}
-            <Text
+            <WorldText
                 position={[0, 0.7, 0.08]}
                 fontSize={0.08}
                 color="#00ffff"
@@ -230,7 +230,7 @@ export const HolodeckControlPanel: React.FC<HolodeckControlPanelProps> = ({
                 anchorY="middle"
             >
                 Environment Control Panel
-            </Text>
+            </WorldText>
 
             {/* Buttons arranged in 2 rows */}
             {buttons.map((button, index) => {

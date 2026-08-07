@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
-import { Text, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import * as THREE from "three";
+import { WorldText } from "../ui/WorldText";
 
 export interface TriggerAction {
     type: "click" | "keypress" | "hover";
@@ -307,7 +308,7 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
         }
 
         return (
-            <Text
+            <WorldText
                 position={promptPosition}
                 fontSize={visual.prompt.fontSize || 0.2}
                 anchorX="center"
@@ -319,7 +320,7 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
                 material-transparent={true}
             >
                 {visual.prompt.content as string}
-            </Text>
+            </WorldText>
         );
     };
 

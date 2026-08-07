@@ -1,6 +1,19 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import {
+    attribute,
+    cameraPosition,
+    float,
+    length,
+    normalWorld,
+    positionLocal,
+    positionWorld,
+    sin,
+    time,
+    vec3,
+} from "three/tsl";
 
 const NUM_CRYSTALS = 25; // Reduced slightly for better performance
 
@@ -14,62 +27,6 @@ interface Crystal {
 
 export const CrystalFormationEffect = () => {
     const groupRef = useRef<THREE.Group>(null);
-    const materialRef = useRef<THREE.ShaderMaterial>(null);
-
-    const crystalShader = useMemo(
-        () => ({
-            vertexShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec3 vNormal;
-            varying vec3 vColor;
-            varying vec3 vWorldPosition;
-            
-            attribute vec3 color;
-            
-            void main() {
-                vPosition = position;
-                vNormal = normalize(normalMatrix * normal);
-                vColor = color;
-                
-                vec3 pos = position;
-                float pulse = sin(time * 1.5 + length(position) * 0.3) * 0.05; // Reduced pulse
-                pos *= (1.0 + pulse);
-                
-                vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
-                vWorldPosition = worldPosition.xyz;
-                
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-            }
-        `,
-            fragmentShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec3 vNormal;
-            varying vec3 vColor;
-            varying vec3 vWorldPosition;
-            
-            void main() {
-                vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
-                float fresnel = pow(1.0 - max(0.0, dot(viewDirection, vNormal)), 1.5); // Reduced fresnel power
-                
-                // More balanced color mixing
-                vec3 baseColor = vColor * 0.7; // Reduced base intensity
-                vec3 fresnelColor = vec3(0.3, 0.5, 0.8) * fresnel * 0.4; // Reduced fresnel contribution
-                vec3 finalColor = baseColor + fresnelColor;
-                
-                // More controlled alpha
-                float alpha = 0.6 + fresnel * 0.2; // Reduced overall opacity
-                
-                gl_FragColor = vec4(finalColor, alpha);
-            }
-        `,
-            uniforms: {
-                time: { value: 0 },
-            },
-        }),
-        []
-    );
 
     const crystals = useMemo(() => {
         const crystalData: Crystal[] = [];
@@ -121,21 +78,38 @@ export const CrystalFormationEffect = () => {
         return geometry;
     }, []);
 
+    // TSL node material - pulse displacement and fresnel rim-lighting are
+    // driven entirely by nodes (using TSL's built-in `time`), so no
+    // per-frame uniform updates are needed here.
     const material = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            ...crystalShader,
+        const vColor = attribute("color", "vec3");
+        const pulse = sin(
+            time.mul(1.5).add(length(positionLocal).mul(0.3))
+        ).mul(0.05);
+        const positionNode = positionLocal.mul(float(1.0).add(pulse));
+
+        const viewDirection = cameraPosition.sub(positionWorld).normalize();
+        const fresnel = float(1.0)
+            .sub(viewDirection.dot(normalWorld).max(0.0))
+            .pow(1.5);
+        const colorNode = vColor
+            .mul(0.7)
+            .add(vec3(0.3, 0.5, 0.8).mul(fresnel).mul(0.4));
+        const opacityNode = float(0.6).add(fresnel.mul(0.2));
+
+        const mat = new MeshBasicNodeMaterial({
             transparent: true,
             side: THREE.DoubleSide,
             blending: THREE.NormalBlending, // Changed from AdditiveBlending to reduce brightness
             depthWrite: false,
         });
-    }, [crystalShader]);
+        mat.positionNode = positionNode;
+        mat.colorNode = colorNode;
+        mat.opacityNode = opacityNode;
+        return mat;
+    }, []);
 
     useFrame((state, delta) => {
-        if (materialRef.current) {
-            materialRef.current.uniforms.time.value += delta;
-        }
-
         if (groupRef.current) {
             groupRef.current.rotation.y += delta * 0.05; // Slower group rotation
 
@@ -167,11 +141,7 @@ export const CrystalFormationEffect = () => {
                         scale={crystal.scale}
                         geometry={crystalGeometry}
                     >
-                        <primitive
-                            object={material}
-                            attach="material"
-                            ref={i === 0 ? materialRef : undefined}
-                        />
+                        <primitive object={material} attach="material" />
                     </mesh>
                 ))}
             </group>

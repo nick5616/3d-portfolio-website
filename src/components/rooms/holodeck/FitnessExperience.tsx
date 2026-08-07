@@ -1,5 +1,6 @@
 import React from "react";
-import { Text, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
+import { WorldText } from "../../ui/WorldText";
 
 export const FitnessExperience: React.FC = () => {
     return (
@@ -30,7 +31,7 @@ export const FitnessExperience: React.FC = () => {
                 </mesh>
 
                 {/* Title */}
-                <Text
+                <WorldText
                     position={[0, 0.7, 0.02]}
                     rotation={[0, 0, 0]}
                     fontSize={0.12}
@@ -40,10 +41,10 @@ export const FitnessExperience: React.FC = () => {
                     maxWidth={2.8}
                 >
                     PERFECT PULL-UP TECHNIQUE
-                </Text>
+                </WorldText>
 
                 {/* Instructions */}
-                <Text
+                <WorldText
                     position={[0, 0, 0.02]}
                     rotation={[0, 0, 0]}
                     fontSize={0.06}
@@ -62,10 +63,10 @@ PULL: Drive elbows down and back. Think about straightening your spine, not just
 SCAPULA: Keep shoulder blades tight and engaged throughout the entire movement.
 
 DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, despite your own weight. Cancel your momentum and go alllll the way down.`}
-                </Text>
+                </WorldText>
 
                 {/* Quote */}
-                <Text
+                <WorldText
                     position={[0, -0.6, 0.02]}
                     rotation={[0, 0, 0]}
                     fontSize={0.05}
@@ -76,7 +77,7 @@ DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, d
                     fontStyle="italic"
                 >
                     "Pull-ups are my favorite!"
-                </Text>
+                </WorldText>
             </group>
 
             {/* Weight rack - against back wall */}
@@ -162,7 +163,7 @@ DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, d
             </group>
 
             {/* Motivational text - on right wall */}
-            <Text
+            <WorldText
                 position={[3.9, 5, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 fontSize={0.4}
@@ -171,8 +172,8 @@ DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, d
                 anchorY="middle"
             >
                 NO PAIN, NO GAIN
-            </Text>
-            <Text
+            </WorldText>
+            <WorldText
                 position={[3.9, 4.5, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 fontSize={0.4}
@@ -181,8 +182,8 @@ DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, d
                 anchorY="middle"
             >
                 Except for pain in the joints and ligaments. 
-            </Text>
-            <Text
+            </WorldText>
+            <WorldText
                 position={[3.9, 4.1, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
                 fontSize={0.4}
@@ -191,7 +192,7 @@ DESCENT: Control the negative. Feel your body's momentum. Slow and controlled, d
                 anchorY="middle"
             >
                 That's pain without gain.
-            </Text>
+            </WorldText>
             
 
             {/* Gym lighting — overhead spots with targets in scene graph */}

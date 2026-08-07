@@ -1,65 +1,21 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import {
+    attribute,
+    cos,
+    positionLocal,
+    sin,
+    time,
+    uv,
+    vec3,
+} from "three/tsl";
 
 export const ArtLoadingEffect = () => {
     const canvasRef = useRef<THREE.Group>(null);
     const brushStrokesRef = useRef<THREE.Group>(null);
     const colorsRef = useRef<THREE.Points>(null);
-    const materialRef = useRef<THREE.ShaderMaterial>(null);
-
-    // Paint splash shader
-    const paintShader = useMemo(
-        () => ({
-            vertexShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec2 vUv;
-            varying vec3 vColor;
-            
-            attribute vec3 color;
-            
-            void main() {
-                vPosition = position;
-                vUv = uv;
-                vColor = color;
-                
-                vec3 pos = position;
-                // Organic, flowing motion like paint
-                pos.x += sin(time * 2.0 + position.y * 0.5) * 0.3;
-                pos.y += cos(time * 1.5 + position.x * 0.3) * 0.2;
-                pos.z += sin(time * 3.0 + position.x + position.y) * 0.1;
-                
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-            }
-        `,
-            fragmentShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec2 vUv;
-            varying vec3 vColor;
-            
-            void main() {
-                // Create paint-like texture
-                vec2 uv = vUv;
-                float noise1 = sin(uv.x * 20.0 + time * 2.0) * sin(uv.y * 15.0 + time * 1.5);
-                float noise2 = sin(uv.x * 30.0 - time * 3.0) * cos(uv.y * 25.0 + time);
-                
-                // Blend colors organically
-                vec3 paintColor = vColor;
-                paintColor += vec3(noise1 * 0.2, noise2 * 0.15, (noise1 + noise2) * 0.1);
-                paintColor = clamp(paintColor, 0.0, 1.0);
-                
-                float alpha = 0.7 + abs(noise1) * 0.3;
-                gl_FragColor = vec4(paintColor, alpha);
-            }
-        `,
-            uniforms: {
-                time: { value: 0 },
-            },
-        }),
-        []
-    );
 
     // Create flowing brush strokes
     const brushStrokes = useMemo(() => {
@@ -173,20 +129,59 @@ export const ArtLoadingEffect = () => {
         return canvases;
     }, []);
 
+    // TSL node material - the organic paint-flow displacement and swirling
+    // color texture are driven by TSL's built-in `time` node, so no
+    // per-frame uniform updates are needed here.
     const paintMaterial = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            ...paintShader,
+        const vColor = attribute("color", "vec3");
+        const positionNode = vec3(
+            positionLocal.x.add(
+                sin(time.mul(2.0).add(positionLocal.y.mul(0.5))).mul(0.3)
+            ),
+            positionLocal.y.add(
+                cos(time.mul(1.5).add(positionLocal.x.mul(0.3))).mul(0.2)
+            ),
+            positionLocal.z.add(
+                sin(
+                    time
+                        .mul(3.0)
+                        .add(positionLocal.x)
+                        .add(positionLocal.y)
+                ).mul(0.1)
+            )
+        );
+
+        const uvNode = uv();
+        const noise1 = sin(uvNode.x.mul(20.0).add(time.mul(2.0))).mul(
+            sin(uvNode.y.mul(15.0).add(time.mul(1.5)))
+        );
+        const noise2 = sin(uvNode.x.mul(30.0).sub(time.mul(3.0))).mul(
+            cos(uvNode.y.mul(25.0).add(time))
+        );
+
+        const colorNode = vColor
+            .add(
+                vec3(
+                    noise1.mul(0.2),
+                    noise2.mul(0.15),
+                    noise1.add(noise2).mul(0.1)
+                )
+            )
+            .clamp(0.0, 1.0);
+        const opacityNode = noise1.abs().mul(0.3).add(0.7);
+
+        const mat = new MeshBasicNodeMaterial({
             transparent: true,
             side: THREE.FrontSide,
             blending: THREE.AdditiveBlending,
         });
-    }, [paintShader]);
+        mat.positionNode = positionNode;
+        mat.colorNode = colorNode;
+        mat.opacityNode = opacityNode;
+        return mat;
+    }, []);
 
     useFrame((state, delta) => {
-        if (materialRef.current) {
-            materialRef.current.uniforms.time.value += delta;
-        }
-
         if (canvasRef.current) {
             canvasRef.current.rotation.y += delta * 0.08;
         }
@@ -225,11 +220,7 @@ export const ArtLoadingEffect = () => {
                         rotation={canvas.rotation}
                     >
                         <planeGeometry args={[1.5, 2, 8, 8]} />
-                        <primitive
-                            object={paintMaterial}
-                            attach="material"
-                            ref={i === 0 ? materialRef : undefined}
-                        />
+                        <primitive object={paintMaterial} attach="material" />
                     </mesh>
                 ))}
             </group>

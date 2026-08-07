@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 import { InteractionRaycaster } from "../core/InteractionRaycaster";
-import { Text } from "@react-three/drei";
+import { WorldText } from "./WorldText";
 
 // Interaction prompt component - copied from Door.tsx
 const InteractionPrompt: React.FC<{ action: string }> = ({ action }) => (
@@ -126,7 +126,7 @@ export const LightSwitch: React.FC<LightSwitchProps> = ({
             />
 
             {/* Simple 3D text label */}
-            <Text
+            <WorldText
                 position={[-0.15, 0.3, 0.02]}
                 fontSize={0.08}
                 color="#080808"
@@ -136,7 +136,7 @@ export const LightSwitch: React.FC<LightSwitchProps> = ({
                 outlineColor="#ffffff"
             >
                 Lights
-            </Text>
+            </WorldText>
 
             {/* Collision body for interaction */}
             <RigidBody type="fixed" position={[0, 0, 0]}>

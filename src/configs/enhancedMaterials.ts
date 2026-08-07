@@ -1,6 +1,57 @@
 import * as THREE from "three";
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import {
+    Fn,
+    color,
+    dot,
+    float,
+    floor,
+    fract,
+    mix,
+    normalWorld,
+    positionWorld,
+    sin,
+    uv,
+    vec2,
+    vec3,
+    cameraPosition,
+    Loop,
+} from "three/tsl";
+import type { Node } from "three/webgpu";
 import { RoomMaterials } from "../types/material.types";
 import { roomConfigs } from "./rooms";
+
+// --- TSL noise helpers, shared by procedural wall materials ---
+const tslRandom2 = Fn(([st]: [Node]) => {
+    return fract(
+        sin(dot(st, vec2(12.9898, 78.233))).mul(43758.5453123)
+    );
+});
+
+const tslNoise2 = Fn(([st]: [Node]) => {
+    const i = floor(st);
+    const f = fract(st);
+    const a = tslRandom2(i);
+    const b = tslRandom2(i.add(vec2(1.0, 0.0)));
+    const c = tslRandom2(i.add(vec2(0.0, 1.0)));
+    const d = tslRandom2(i.add(vec2(1.0, 1.0)));
+    const u = f.mul(f).mul(float(3.0).sub(f.mul(2.0)));
+    return mix(a, b, u.x)
+        .add(c.sub(a).mul(u.y).mul(float(1.0).sub(u.x)))
+        .add(d.sub(b).mul(u.x).mul(u.y));
+});
+
+const tslFbm2 = Fn(([stIn]: [Node]) => {
+    const value = float(0.0).toVar();
+    const amplitude = float(0.5).toVar();
+    const st = vec2(stIn).toVar();
+    Loop(4, () => {
+        value.addAssign(tslNoise2(st).mul(amplitude));
+        st.mulAssign(2.0);
+        amplitude.mulAssign(0.5);
+    });
+    return value;
+});
 
 // Enhanced material system with custom shaders
 export class EnhancedMaterialSystem {
@@ -1559,140 +1610,54 @@ export class EnhancedMaterialSystem {
         return material;
     }
 
-    // WALL NOISE SHADER - adds texture and depth to walls
-    createWallNoiseShader(): THREE.ShaderMaterial {
-        const material = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0.0 },
-                noiseScale: { value: 2.0 },
-                noiseIntensity: { value: 0.3 },
-                baseColor: { value: new THREE.Vector3(0.96, 0.96, 0.98) },
-                noiseColor: { value: new THREE.Vector3(0.9, 0.9, 0.95) },
-                normalStrength: { value: 0.5 },
-            },
-            vertexShader: `
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying vec2 vUv;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
-        
-        void main() {
-          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-          vNormal = normalize(normalMatrix * normal);
-          vUv = uv;
-          
-          // Calculate tangent and bitangent for normal mapping
-          vec3 tangent = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
-          vec3 bitangent = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
-          vTangent = tangent;
-          vBitangent = bitangent;
-          
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-            fragmentShader: `
-        uniform float time;
-        uniform float noiseScale;
-        uniform float noiseIntensity;
-        uniform vec3 baseColor;
-        uniform vec3 noiseColor;
-        uniform float normalStrength;
-        
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying vec2 vUv;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
-        
-        // Noise functions
-        float random(vec2 st) {
-          return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-        }
-        
-        float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          float a = random(i);
-          float b = random(i + vec2(1.0, 0.0));
-          float c = random(i + vec2(0.0, 1.0));
-          float d = random(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
-        
-        float fbm(vec2 st) {
-          float value = 0.0;
-          float amplitude = 0.5;
-          float frequency = 1.0;
-          
-          for (int i = 0; i < 4; i++) {
-            value += amplitude * noise(st);
-            st *= 2.0;
-            amplitude *= 0.5;
-          }
-          return value;
-        }
-        
-        // Calculate normal from height field
-        vec3 calculateNormal(vec2 uv, float height) {
-          float eps = 0.01;
-          float hL = fbm(uv + vec2(-eps, 0.0));
-          float hR = fbm(uv + vec2(eps, 0.0));
-          float hD = fbm(uv + vec2(0.0, -eps));
-          float hU = fbm(uv + vec2(0.0, eps));
-          
-          vec3 normal = normalize(vec3(
-            (hL - hR) / (2.0 * eps),
-            (hD - hU) / (2.0 * eps),
+    // WALL NOISE SHADER - adds texture and depth to walls.
+    // Ported to a TSL node material for the WebGPURenderer; this is a
+    // static (non-animated) pattern - the original GLSL version declared a
+    // `time` uniform but never actually read it in the fragment shader, so
+    // there's nothing to wire into a per-frame update here.
+    createWallNoiseShader(): MeshBasicNodeMaterial {
+        const noiseScale = 2.0;
+        const noiseIntensity = 0.3;
+        const baseColorNode = color(0.96, 0.96, 0.98);
+        const noiseColorNode = color(0.9, 0.9, 0.95);
+
+        const noiseUV = positionWorld.xz.mul(noiseScale);
+        const uvNoise = tslNoise2(uv().mul(4.0)).mul(0.3);
+        const noisePattern = tslFbm2(noiseUV).add(uvNoise);
+
+        // Perturb the geometric normal using a central-difference height
+        // field from the same fbm, for a bit of fake surface relief.
+        const eps = 0.01;
+        const hL = tslFbm2(noiseUV.add(vec2(-eps, 0.0)));
+        const hR = tslFbm2(noiseUV.add(vec2(eps, 0.0)));
+        const hD = tslFbm2(noiseUV.add(vec2(0.0, -eps)));
+        const hU = tslFbm2(noiseUV.add(vec2(0.0, eps)));
+        const perturbedNormal = vec3(
+            hL.sub(hR).div(eps * 2.0),
+            hD.sub(hU).div(eps * 2.0),
             1.0
-          ));
-          
-          return normal;
-        }
-        
-        void main() {
-          // Create noise pattern based on world position
-          vec2 noiseUV = vWorldPosition.xz * noiseScale;
-          float noisePattern = fbm(noiseUV);
-          
-          // Add some variation based on UV coordinates
-          float uvNoise = noise(vUv * 4.0) * 0.3;
-          noisePattern += uvNoise;
-          
-          // Create height field for normal mapping
-          float height = noisePattern * noiseIntensity;
-          
-          // Calculate perturbed normal
-          vec3 perturbedNormal = calculateNormal(noiseUV, height);
-          
-          // Transform normal to world space
-          mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
-          vec3 worldNormal = normalize(TBN * perturbedNormal);
-          
-          // Mix base color with noise color
-          vec3 finalColor = mix(baseColor, noiseColor, noisePattern * noiseIntensity);
-          
-          // Enhanced lighting with normal mapping
-          vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-          float lightIntensity = dot(worldNormal, lightDir) * 0.5 + 0.5;
-          
-          // Add some rim lighting for depth
-          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-          float rim = 1.0 - max(dot(worldNormal, viewDir), 0.0);
-          rim = pow(rim, 2.0);
-          
-          vec3 rimColor = vec3(0.8, 0.9, 1.0) * rim * 0.3;
-          
-          gl_FragColor = vec4(finalColor * lightIntensity + rimColor, 1.0);
-        }
-      `,
+        ).normalize();
+        const worldNormal = normalWorld.add(perturbedNormal.mul(0.15)).normalize();
+
+        const finalColor = mix(
+            baseColorNode,
+            noiseColorNode,
+            noisePattern.mul(noiseIntensity)
+        );
+
+        const lightDir = vec3(1.0, 1.0, 1.0).normalize();
+        const lightIntensity = worldNormal.dot(lightDir).mul(0.5).add(0.5);
+
+        const viewDir = cameraPosition.sub(positionWorld).normalize();
+        const rim = float(1.0)
+            .sub(worldNormal.dot(viewDir).max(0.0))
+            .pow(2.0);
+        const rimColor = vec3(0.8, 0.9, 1.0).mul(rim).mul(0.3);
+
+        const material = new MeshBasicNodeMaterial({
             side: THREE.FrontSide, // Only render front faces for better performance
         });
-
-        this.shaderUpdateCallbacks.set("wallNoise", (elapsed: number) => {
-            material.uniforms.time.value = elapsed;
-        });
+        material.colorNode = finalColor.mul(lightIntensity).add(rimColor);
 
         return material;
     }

@@ -8,7 +8,7 @@ import React, {
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import { useSceneStore } from "../../stores/sceneStore";
 
 interface InteractiveEaselProps {
@@ -386,7 +386,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     <boxGeometry args={[0.6, 0.4, 0.1]} />
                     <meshStandardMaterial color="#8B4513" />
                 </mesh>
-                <Text
+                <WorldText
                     position={[0, 0, 0.06]}
                     fontSize={0.08}
                     color="#FFFFFF"
@@ -394,7 +394,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     anchorY="middle"
                 >
                     CLEAR
-                </Text>
+                </WorldText>
             </group>
 
             {/* Submit button */}
@@ -408,7 +408,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     <boxGeometry args={[0.6, 0.4, 0.1]} />
                     <meshStandardMaterial color="#2E7D32" />
                 </mesh>
-                <Text
+                <WorldText
                     position={[0, 0, 0.06]}
                     fontSize={0.08}
                     color="#FFFFFF"
@@ -416,7 +416,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     anchorY="middle"
                 >
                     SUBMIT
-                </Text>
+                </WorldText>
             </group>
 
             {/* Art supplies */}
@@ -439,7 +439,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
 
             {/* Drawing mode indicator / submission confirmation */}
             {showConfirmation ? (
-                <Text
+                <WorldText
                     position={[0, 3.3, 0.2]}
                     fontSize={0.15}
                     color="#2E7D32"
@@ -447,10 +447,10 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                     anchorY="middle"
                 >
                     Artwork submitted!
-                </Text>
+                </WorldText>
             ) : (
                 isCanvasFocused && (
-                    <Text
+                    <WorldText
                         position={[0, 3.3, 0.2]}
                         fontSize={0.15}
                         color={
@@ -462,7 +462,7 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
                         anchorY="middle"
                     >
                         Drawing Mode - Click outside the canvas to exit
-                    </Text>
+                    </WorldText>
                 )
             )}
         </group>

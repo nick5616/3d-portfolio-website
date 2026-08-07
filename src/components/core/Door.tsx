@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useThree } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import { useSceneStore } from "../../stores/sceneStore";
 import { Archway } from "../../types/scene.types";
 import { roomConfigs } from "../../configs/rooms";
@@ -220,7 +220,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         0,
     ];
 
-    // The label's <Text> (troika, via drei) renders DOUBLE-sided by default -
+    // The label's <WorldText> renders DOUBLE-sided by default -
     // the back is not culled, it's a mirrored view of the glyphs, and the
     // plain yellow background <mesh> behind it IS single-sided (default
     // meshStandardMaterial), so getting this rotation wrong doesn't just
@@ -561,7 +561,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 </mesh>
 
                 {/* Room Label Text */}
-                <Text
+                <WorldText
                     position={[0, 0, 0.01]}
                     fontSize={0.25}
                     color="black"
@@ -571,7 +571,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     fontWeight="bold"
                 >
                     {theme.label}
-                </Text>
+                </WorldText>
             </group>
         </group>
     );

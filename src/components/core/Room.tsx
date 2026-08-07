@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Preload } from "@react-three/drei";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import { getEnhancedRoomMaterials } from "../../configs/enhancedMaterials";
@@ -208,7 +207,6 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     {renderRoomComponent()}
                 </BaseRoom>
             )}
-            <Preload all />
         </group>
     );
 };

@@ -5,7 +5,8 @@ import React, {
     useCallback,
     useMemo,
 } from "react";
-import { Html, Text } from "@react-three/drei";
+import { Html } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useDisplayManager } from "../../stores/displayManager";
@@ -788,7 +789,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
 
             {/* 3D Title Text - only show when HTML is not visible */}
             {!shouldShowHtml && (
-                <Text
+                <WorldText
                     position={[0, 0, 0.021]}
                     fontSize={textSize}
                     color="#1a1a1a"
@@ -799,7 +800,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
                     fontWeight="bold"
                 >
                     {title}
-                </Text>
+                </WorldText>
             )}
 
             {/* Web content using Html component - only show when close or loaded */}

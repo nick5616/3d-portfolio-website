@@ -1,6 +1,6 @@
 import React from "react";
 import * as THREE from "three";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import { ArtPiece } from "../../configs/artMetadata";
 
 interface ArtPlaqueProps {
@@ -49,7 +49,7 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
             {/* Text content */}
             <group position={[0, 0, PLAQUE_DEPTH / 2 + 0.002]}>
                 {/* Title */}
-                <Text
+                <WorldText
                     position={[0, 0.12, 0]}
                     fontSize={0.04}
                     color="#ffffff"
@@ -59,11 +59,11 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                     textAlign="center"
                 >
                     {title}
-                </Text>
+                </WorldText>
 
                 {/* Date */}
                 {date && (
-                    <Text
+                    <WorldText
                         position={[0, 0.06, 0]}
                         fontSize={0.03}
                         color="#cccccc"
@@ -73,12 +73,12 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                         textAlign="center"
                     >
                         {date}
-                    </Text>
+                    </WorldText>
                 )}
 
                 {/* Description */}
                 {description && (
-                    <Text
+                    <WorldText
                         position={[0, -0.05, 0]}
                         fontSize={0.025}
                         color="#ffffff"
@@ -88,7 +88,7 @@ export const ArtPlaque: React.FC<ArtPlaqueProps> = ({
                         textAlign="center"
                     >
                         {description}
-                    </Text>
+                    </WorldText>
                 )}
             </group>
         </group>

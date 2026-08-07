@@ -3,10 +3,10 @@ import * as THREE from "three";
 import { MeshStandardMaterial } from "three";
 
 export interface RoomMaterials {
-    walls: MeshStandardMaterial | THREE.ShaderMaterial;
-    floor: MeshStandardMaterial | THREE.ShaderMaterial;
-    ceiling: MeshStandardMaterial | THREE.ShaderMaterial;
-    dividers?: MeshStandardMaterial | THREE.ShaderMaterial;
+    walls: MeshStandardMaterial | THREE.Material;
+    floor: MeshStandardMaterial | THREE.Material;
+    ceiling: MeshStandardMaterial | THREE.Material;
+    dividers?: MeshStandardMaterial | THREE.Material;
 }
 
 export interface WallSegment {

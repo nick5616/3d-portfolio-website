@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import { RupeeIcon } from "./RupeeIcon";
 
 interface AchievementPlaqueProps {
@@ -94,7 +94,7 @@ export const AchievementPlaque: React.FC<AchievementPlaqueProps> = ({
 
             {/* Text content */}
             <group position={[0.08, 0, PLAQUE_DEPTH / 2 + 0.003]}>
-                <Text
+                <WorldText
                     position={[0, 0.11, 0]}
                     fontSize={0.055}
                     color={isRupee ? "#111111" : locked ? "#888888" : "#ffffff"}
@@ -104,9 +104,9 @@ export const AchievementPlaque: React.FC<AchievementPlaqueProps> = ({
                     textAlign="center"
                 >
                     {title}
-                </Text>
+                </WorldText>
                 {subtitle && (
-                    <Text
+                    <WorldText
                         position={[0, -0.1, 0]}
                         fontSize={0.038}
                         color={isRupee ? "#333333" : locked ? "#666666" : "#cccccc"}
@@ -116,7 +116,7 @@ export const AchievementPlaque: React.FC<AchievementPlaqueProps> = ({
                         textAlign="center"
                     >
                         {subtitle}
-                    </Text>
+                    </WorldText>
                 )}
             </group>
         </group>

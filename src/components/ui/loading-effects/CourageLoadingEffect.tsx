@@ -1,60 +1,13 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { MeshBasicNodeMaterial } from "three/webgpu";
+import { cos, mix, positionLocal, sin, time, uv, vec3 } from "three/tsl";
 
 export const CourageLoadingEffect = () => {
     const fogRef = useRef<THREE.Group>(null);
     const shadowsRef = useRef<THREE.Group>(null);
     const eyesRef = useRef<THREE.Points>(null);
-    const materialRef = useRef<THREE.ShaderMaterial>(null);
-
-    // Eerie fog shader
-    const fogShader = useMemo(
-        () => ({
-            vertexShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec2 vUv;
-            
-            void main() {
-                vPosition = position;
-                vUv = uv;
-                
-                vec3 pos = position;
-                // Undulating fog motion
-                pos.y += sin(time * 0.5 + position.x * 0.1) * 0.3;
-                pos.x += cos(time * 0.3 + position.z * 0.1) * 0.2;
-                
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-            }
-        `,
-            fragmentShader: `
-            uniform float time;
-            varying vec3 vPosition;
-            varying vec2 vUv;
-            
-            void main() {
-                // Create swirling fog pattern
-                vec2 uv = vUv;
-                float fog = sin(uv.x * 10.0 + time) * sin(uv.y * 10.0 + time * 0.7);
-                fog += sin(uv.x * 20.0 - time * 2.0) * 0.5;
-                fog += sin(uv.y * 15.0 + time * 1.5) * 0.3;
-                
-                // Dark purple/green color scheme
-                vec3 color1 = vec3(0.2, 0.05, 0.3); // Dark purple
-                vec3 color2 = vec3(0.05, 0.3, 0.1); // Dark green
-                vec3 finalColor = mix(color1, color2, fog * 0.5 + 0.5);
-                
-                float alpha = 0.3 + abs(fog) * 0.4;
-                gl_FragColor = vec4(finalColor, alpha);
-            }
-        `,
-            uniforms: {
-                time: { value: 0 },
-            },
-        }),
-        []
-    );
 
     // Create mysterious shadows/silhouettes
     const shadowShapes = useMemo(() => {
@@ -156,20 +109,43 @@ export const CourageLoadingEffect = () => {
         return planes;
     }, []);
 
+    // TSL node material - the undulating motion and swirling fog pattern
+    // are driven by TSL's built-in `time` node, so no per-frame uniform
+    // updates are needed here.
     const fogMaterial = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            ...fogShader,
+        const positionNode = vec3(
+            positionLocal.x.add(
+                cos(time.mul(0.3).add(positionLocal.z.mul(0.1))).mul(0.2)
+            ),
+            positionLocal.y.add(
+                sin(time.mul(0.5).add(positionLocal.x.mul(0.1))).mul(0.3)
+            ),
+            positionLocal.z
+        );
+
+        const uvNode = uv();
+        const fog = sin(uvNode.x.mul(10.0).add(time))
+            .mul(sin(uvNode.y.mul(10.0).add(time.mul(0.7))))
+            .add(sin(uvNode.x.mul(20.0).sub(time.mul(2.0))).mul(0.5))
+            .add(sin(uvNode.y.mul(15.0).add(time.mul(1.5))).mul(0.3));
+
+        const color1 = vec3(0.2, 0.05, 0.3); // Dark purple
+        const color2 = vec3(0.05, 0.3, 0.1); // Dark green
+        const colorNode = mix(color1, color2, fog.mul(0.5).add(0.5));
+        const opacityNode = fog.abs().mul(0.4).add(0.3);
+
+        const mat = new MeshBasicNodeMaterial({
             transparent: true,
             side: THREE.DoubleSide,
             blending: THREE.NormalBlending,
         });
-    }, [fogShader]);
+        mat.positionNode = positionNode;
+        mat.colorNode = colorNode;
+        mat.opacityNode = opacityNode;
+        return mat;
+    }, []);
 
     useFrame((state, delta) => {
-        if (materialRef.current) {
-            materialRef.current.uniforms.time.value += delta;
-        }
-
         if (fogRef.current) {
             fogRef.current.rotation.y += delta * 0.05;
         }
@@ -217,11 +193,7 @@ export const CourageLoadingEffect = () => {
                         scale={plane.scale}
                     >
                         <planeGeometry args={[2, 2, 10, 10]} />
-                        <primitive
-                            object={fogMaterial}
-                            attach="material"
-                            ref={i === 0 ? materialRef : undefined}
-                        />
+                        <primitive object={fogMaterial} attach="material" />
                     </mesh>
                 ))}
             </group>

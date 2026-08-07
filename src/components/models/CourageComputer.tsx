@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { WorldText } from "../ui/WorldText";
 import * as THREE from "three";
 import { RigidBody } from "@react-three/rapier";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -365,7 +365,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
 
             {/* AI/Console Text Display */}
             {!consoleState.isActive && (
-                <Text
+                <WorldText
                     position={[0, 0.05, 0.103]}
                     fontSize={0.08}
                     color="#00ff88"
@@ -375,7 +375,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                     textAlign="center"
                 >
                     {currentText + (isTyping ? "" : cursor)}
-                </Text>
+                </WorldText>
             )}
 
             {/* Console screen - lines stacked, prompt at bottom */}
@@ -414,7 +414,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                         }
 
                         return (
-                            <Text
+                            <WorldText
                                 key={`${startIndex + idx}`}
                                 position={[-0.82, yPosition, 0]}
                                 fontSize={0.07}
@@ -425,13 +425,13 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                                 overflowWrap="break-word"
                             >
                                 {line}
-                            </Text>
+                            </WorldText>
                         );
                     })}
 
                     {/* Render wrapped prompt lines - always at the top */}
                     {createPromptWithCursor().map((line, idx) => (
-                        <Text
+                        <WorldText
                             key={`prompt-${idx}`}
                             position={[-0.82, 0.45 - idx * 0.08, 0]}
                             fontSize={0.07}
@@ -441,7 +441,7 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
                             maxWidth={1.5}
                         >
                             {line}
-                        </Text>
+                        </WorldText>
                     ))}
                 </group>
             )}
