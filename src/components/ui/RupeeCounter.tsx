@@ -4,10 +4,16 @@ import { useRupeeStore } from "../../stores/rupeeStore";
 // Tick speed scales with the size of the jump instead of a flat rate - a
 // flat 1-per-64th-of-a-second rate finishes a +1 (a Green rupee) in a single
 // frame, which reads as an instant snap rather than a dial-up. Small jumps
-// get a slow, deliberate tick; big jumps ramp up toward the fastest rate.
-const FASTEST_TICK_MS = 1000 / 64; // cap for large jumps (e.g. +300, Orange)
+// (below Blue) get a slow, deliberate tick. Blue and Red tick at the same
+// rate - Red just needs more of them, so it naturally takes longer. Anything
+// bigger than Red takes at least Red's total time, plus extra time that
+// grows with the value, so the biggest rupees still take the longest.
+const FASTEST_TICK_MS = 1000 / 64; // floor for the smallest jump (+1, Green)
 const SLOWEST_TICK_MS = 400; // cap for the smallest jump (+1, Green)
-const TICK_BUDGET_MS = 500; // roughly how long the whole dial-up should take
+const TICK_BUDGET_MS = 500; // Red's total dial-up time
+const BLUE_VALUE = 5;
+const RED_VALUE = 20;
+const REFERENCE_TICK_MS = TICK_BUDGET_MS / RED_VALUE; // shared Blue/Red rate
 
 // One character of the counter, clipped to its own line height so a new
 // value slides down into place from above instead of just popping in.
@@ -38,10 +44,23 @@ export const RupeeCounter: React.FC = () => {
     if (start === totalValue) return;
 
     const delta = Math.abs(totalValue - start);
-    const tickMs = Math.min(
-      SLOWEST_TICK_MS,
-      Math.max(FASTEST_TICK_MS, TICK_BUDGET_MS / delta)
-    );
+
+    let tickMs: number;
+    if (delta < BLUE_VALUE) {
+      // Smaller than Blue (e.g. +1, Green) - slow, deliberate tick.
+      tickMs = Math.min(
+        SLOWEST_TICK_MS,
+        Math.max(FASTEST_TICK_MS, TICK_BUDGET_MS / delta)
+      );
+    } else if (delta <= RED_VALUE) {
+      // Blue and Red tick at the same rate - Red just needs more of them.
+      tickMs = REFERENCE_TICK_MS;
+    } else {
+      // Bigger than Red - Red's total time, plus extra that grows with how
+      // far past Red's value this jump is.
+      const extraMs = (delta - RED_VALUE) / 5;
+      tickMs = (TICK_BUDGET_MS + extraMs) / delta;
+    }
 
     const interval = setInterval(() => {
       setDisplayedValue((current) => {
