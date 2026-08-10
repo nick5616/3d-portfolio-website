@@ -36,6 +36,9 @@ const Frame: React.FC<ArtFrameProps> = ({
     const texture = finalImageUrl
         ? useLoader(TextureLoader, finalImageUrl)
         : null;
+    // r3f v9 removed automatic sRGB conversion of texture props - has to be
+    // set explicitly now, or the photo texture renders washed out/desaturated.
+    if (texture) texture.colorSpace = THREE.SRGBColorSpace;
 
     const [dimensions, setDimensions] = useState<ImageDimensions>({
         width: 2,
@@ -103,7 +106,18 @@ const Frame: React.FC<ArtFrameProps> = ({
     }
 
     return (
-        <group position={mountPosition} rotation={rotation} scale={scale}>
+        // Keyed on aspect ratio so the one-time jump from the placeholder
+        // dimensions to the image's real aspect ratio fully remounts this
+        // subtree instead of reassigning the box/plane geometries' `args`
+        // on an already-mounted mesh - WebGPU corrupts renderer state when
+        // a mesh's geometry is swapped in place (see the same fix in
+        // GcsArtFrameByIndex.tsx for the full explanation).
+        <group
+            key={`frame-${dimensions.aspectRatio}`}
+            position={mountPosition}
+            rotation={rotation}
+            scale={scale}
+        >
             {/* Main frame box */}
             <mesh castShadow>
                 <boxGeometry

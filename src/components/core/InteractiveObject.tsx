@@ -95,7 +95,10 @@ export const InteractiveObject: React.FC<InteractiveObjectProps> = ({
                 <mesh position={position} rotation={rotation} scale={scale}>
                     <planeGeometry args={[1, 1]} />
                     <meshStandardMaterial
-                        map={new THREE.TextureLoader().load(content)}
+                        map={Object.assign(
+                            new THREE.TextureLoader().load(content),
+                            { colorSpace: THREE.SRGBColorSpace }
+                        )}
                     />
                 </mesh>
             );

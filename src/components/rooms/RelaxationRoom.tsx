@@ -84,15 +84,28 @@ export const RelaxationRoom: React.FC<RelaxationRoomProps> = ({
 
     return (
         <>
-            {/* Cylindrical walls with collision */}
+            {/* Cylindrical walls with collision. Keyed on radius/height:
+            dormant today since the room remounts wholesale on room change
+            (these props never actually change within one mounted instance),
+            but geometry passed via the `geometry` prop to an already-mounted
+            mesh is the exact WebGPU footgun fixed elsewhere in this repo -
+            cheap insurance if that ever stops being true. */}
             <RigidBody type="fixed" colliders="hull">
-                <mesh position={[0, height / 2, 0]} geometry={cylinderGeometry}>
+                <mesh
+                    key={`walls-${radius}-${height}`}
+                    position={[0, height / 2, 0]}
+                    geometry={cylinderGeometry}
+                >
                     <primitive object={materials.walls} attach="material" />
                 </mesh>
             </RigidBody>
 
             {/* Hemisphere ceiling */}
-            <mesh position={[0, height, 0]} geometry={hemisphereGeometry}>
+            <mesh
+                key={`ceiling-${radius}`}
+                position={[0, height, 0]}
+                geometry={hemisphereGeometry}
+            >
                 <primitive object={materials.ceiling} attach="material" />
             </mesh>
 

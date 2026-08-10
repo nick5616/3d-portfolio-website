@@ -1,6 +1,16 @@
 import { useThree, useFrame, useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
-import { Component, ReactNode, Suspense, useEffect, useRef, useState } from "react";
+import {
+    Component,
+    ReactNode,
+    Suspense,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useGcsArtByIndex } from "../../hooks/useGcsArtByIndex";
@@ -29,6 +39,57 @@ const FRAME_DEPTH = 0.1;
 const FRAME_THICKNESS = 0.08;
 const FLUSH_GAP = -0.02; // Slight embed to appear perfectly flush and avoid z-fighting
 const DEFAULT_PROXIMITY_RADIUS = 16; // ~a room-width away
+
+// The 4 corner decorations share identical geometry/material and differ
+// only by position - instancing them (1 draw call instead of 4) directly
+// targets WebGPURenderer's current weak point: its UBO/binding system has
+// severe overhead with many small non-instanced meshes (see three.js issue
+// mrdoob/three.js#30560), and this app's galleries can have many frames.
+const FrameCorners: React.FC<{ width: number; height: number }> = ({
+    width,
+    height,
+}) => {
+    const meshRef = useRef<THREE.InstancedMesh>(null);
+
+    const offsets = useMemo(
+        () =>
+            [
+                [-1, 1],
+                [1, 1],
+                [-1, -1],
+                [1, -1],
+            ] as const,
+        []
+    );
+
+    useLayoutEffect(() => {
+        const mesh = meshRef.current;
+        if (!mesh) return;
+        const matrix = new THREE.Matrix4();
+        offsets.forEach(([x, y], i) => {
+            matrix.makeTranslation(
+                x * (width / 2 - FRAME_THICKNESS / 2),
+                y * (height / 2 - FRAME_THICKNESS / 2),
+                FRAME_DEPTH / 2
+            );
+            mesh.setMatrixAt(i, matrix);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+    }, [offsets, width, height]);
+
+    return (
+        <instancedMesh ref={meshRef} args={[undefined, undefined, 4]}>
+            <boxGeometry
+                args={[
+                    FRAME_THICKNESS * 1.5,
+                    FRAME_THICKNESS * 1.5,
+                    FRAME_DEPTH * 1.2,
+                ]}
+            />
+            <meshStandardMaterial color="#6b5335" metalness={0.3} roughness={0.7} />
+        </instancedMesh>
+    );
+};
 
 const EmptyCanvasPlane: React.FC<{ width: number; height: number }> = ({
     width,
@@ -79,6 +140,9 @@ const LazyImagePlane: React.FC<{
     onTextureLoaded?: (aspectRatio: number) => void;
 }> = ({ url, width, height, onTextureLoaded }) => {
     const texture = useLoader(TextureLoader, url);
+    // r3f v9 removed automatic sRGB conversion of texture props - has to be
+    // set explicitly now, or photo textures render washed out/desaturated.
+    texture.colorSpace = THREE.SRGBColorSpace;
 
     // Notify parent of actual aspect ratio
     useEffect(() => {
@@ -203,20 +267,30 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
         aspectRatio: 4 / 3,
     });
 
-    const updateDimensionsFromAspect = (aspectRatio: number) => {
-        let width = 2;
-        let height = width / aspectRatio;
+    // Stable reference (useCallback) + a same-value bailout inside the
+    // updater: this is passed to LazyImagePlane and read as a useEffect
+    // dependency there. Without both, a fresh function identity on every
+    // render re-fires that effect, which calls this again, which calls
+    // setDimensions again (new object, same values) - an infinite
+    // render loop ("Maximum update depth exceeded").
+    const updateDimensionsFromAspect = useCallback((aspectRatio: number) => {
+        setDimensions((prev) => {
+            if (prev.aspectRatio === aspectRatio) return prev;
 
-        if (height > 2.5) {
-            height = 2.5;
-            width = height * aspectRatio;
-        }
-        if (width > 3) {
-            width = 3;
-            height = width / aspectRatio;
-        }
-        setDimensions({ width, height, aspectRatio });
-    };
+            let width = 2;
+            let height = width / aspectRatio;
+
+            if (height > 2.5) {
+                height = 2.5;
+                width = height * aspectRatio;
+            }
+            if (width > 3) {
+                width = 3;
+                height = width / aspectRatio;
+            }
+            return { width, height, aspectRatio };
+        });
+    }, []);
 
     // Calculate mounting position: offset center opposite the facing normal for flush mount
     const getMountPosition = (): [number, number, number] => {
@@ -244,6 +318,16 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
             rotation={rotation}
             scale={scale}
         >
+            {/* Keyed on aspect ratio so the one-time jump from the 4:3
+            placeholder to the image's real aspect ratio fully remounts this
+            subtree instead of reassigning the box geometries' `args` on an
+            already-mounted mesh. WebGPU has a known bug where swapping a
+            mesh's geometry in place (dispose old, assign new) corrupts
+            renderer state - the vertex buffer binding for the new geometry
+            doesn't get set, and the render pass eventually throws
+            "Vertex buffer slot N ... was not set". A full remount sidesteps
+            it by creating a fresh mesh/geometry instead of mutating one. */}
+            <group key={`frame-${dimensions.aspectRatio}`}>
             {/* Main frame box */}
             <mesh castShadow>
                 <boxGeometry
@@ -344,34 +428,7 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
             )}
 
             {/* Corner decorations */}
-            {[
-                [-1, 1],
-                [1, 1],
-                [-1, -1],
-                [1, -1],
-            ].map(([x, y], i) => (
-                <mesh
-                    key={i}
-                    position={[
-                        x * (dimensions.width / 2 - FRAME_THICKNESS / 2),
-                        y * (dimensions.height / 2 - FRAME_THICKNESS / 2),
-                        FRAME_DEPTH / 2,
-                    ]}
-                >
-                    <boxGeometry
-                        args={[
-                            FRAME_THICKNESS * 1.5,
-                            FRAME_THICKNESS * 1.5,
-                            FRAME_DEPTH * 1.2,
-                        ]}
-                    />
-                    <meshStandardMaterial
-                        color="#6b5335"
-                        metalness={0.3}
-                        roughness={0.7}
-                    />
-                </mesh>
-            ))}
+            <FrameCorners width={dimensions.width} height={dimensions.height} />
 
             {/* Plaque */}
             {showPlaque && finalArtPieceName && artPieceExists && (
@@ -387,6 +444,7 @@ const GcsFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
                     showPlaque={showPlaque}
                 />
             )}
+            </group>
         </group>
     );
 };

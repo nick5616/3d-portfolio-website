@@ -274,8 +274,26 @@ export const Scene: React.FC = () => {
                     const renderer = new WebGPURenderer({
                         ...(props as WebGPURendererParameters),
                         ...glParams,
+                        // Experiment: the actual WebGPU backend currently
+                        // has two documented upstream three.js issues that
+                        // hit this app specifically - severe overhead with
+                        // many small non-instanced meshes (#30560), and
+                        // washed-out PMREM environment reflections (#28827,
+                        // very visible on the rupees' near-mirror material).
+                        // The renderer's own internal WebGL2 backend is much
+                        // more mature and sidesteps both, while every other
+                        // WebGPU-migration change (TSL shaders, node
+                        // materials, WorldText) still applies unchanged.
+                        forceWebGL: true,
                     });
                     await renderer.init();
+                    console.log(
+                        `[renderer] backend: ${
+                            renderer.backend.isWebGPUBackend
+                                ? "WebGPU"
+                                : "WebGL2 (fallback)"
+                        }`
+                    );
                     return renderer;
                 }}
                 camera={{
@@ -286,7 +304,6 @@ export const Scene: React.FC = () => {
                 }}
                 shadows={performance.quality !== "low" && !isMobile}
                 dpr={dpr}
-                linear={true}
                 flat={performance.quality === "low" || isMobile}
                 performance={performanceConfig}
                 // The room-transition overlay fully covers this canvas with

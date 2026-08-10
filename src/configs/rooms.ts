@@ -48,18 +48,28 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [0, 0, 0] as [number, number, number],
         dimensions: [20, ATRIUM_CEILING_HEIGHT, 20], // width, height, depth (reduced height by 25%)
         lightPreset: {
-            ambient: { intensity: 0.1, color: "#ffff00" }, // Reduced from 0.5
+            // Cool ambient fill ("pristine waters") against a warm
+            // directional "sun" streaming through ("rays of light") - the
+            // complementary cool/warm pairing is what the room's lore
+            // comment above is describing. The previous values here were
+            // all tinted pure yellow and the directional light was cut to
+            // 0.0002 (effectively off), which is why the room read as flat
+            // and washed out rather than lit.
+            ambient: { intensity: 0.5, color: "#cfe8ff" },
             directional: {
-                position: [10, 7.5, 0] as [number, number, number],
-                intensity: 0.0002, // Reduced from 0.8
-                color: "#ffff00",
+                position: [10, 12, 6] as [number, number, number],
+                intensity: 0.6,
+                color: "#ffe9b8",
             },
             spots: [
                 {
                     position: [0, 6, 0] as [number, number, number],
                     target: [0, 0, 0] as [number, number, number],
-                    intensity: 0.3, // Reduced from 1
-                    color: "#ffff00",
+                    intensity: 0.5,
+                    color: "#fff3da",
+                    distance: 22,
+                    angle: Math.PI / 2.5,
+                    penumbra: 0.5,
                 },
             ],
         },
@@ -444,7 +454,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [0, 0, -20] as [number, number, number],
         dimensions: [20, PROJECTS_CEILING_HEIGHT, 20],
         lightPreset: {
-            ambient: { intensity: 4.5, color: "#ffffff" },
+            // 4.5 here (every other room's ambient is 0.1-1.5) would blow
+            // the sci-fi room's mood out to flat white; the 3 spots below
+            // already carry the room's lighting.
+            ambient: { intensity: 0.5, color: "#ffffff" },
             directional: {
                 position: [0, 8, -5] as [number, number, number],
                 intensity: 0,

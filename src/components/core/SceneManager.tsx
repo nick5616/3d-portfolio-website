@@ -36,7 +36,15 @@ export const SceneManager: React.FC = () => {
         // Enable shadows for enhanced lighting
         gl.shadowMap.enabled = true;
         gl.shadowMap.type = THREE.PCFSoftShadowMap;
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        // ACESFilmic is deliberately desaturating (that's its cinematic
+        // highlight rolloff) - combined with a known WebGPURenderer issue
+        // where PMREM-processed environment maps (drei's <Environment>,
+        // used for ambient/reflection lighting in every room) can render
+        // washed out (three.js issue mrdoob/three.js#28827), rooms were
+        // coming out visibly flatter than on WebGL. NeutralToneMapping
+        // preserves color more faithfully while still tone-mapping HDR
+        // values safely.
+        gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 1.2;
 
         // Room loading is now handled by RouterIntegration

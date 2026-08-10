@@ -14,7 +14,12 @@ import type { ThreeElements } from "@react-three/fiber";
 // GPURenderPassEncoder.drawIndexed(), which throws and can black out the
 // whole frame. That's a three.js upstream gap, not fixable from app code.
 
-const PX_PER_UNIT = 300; // canvas texel density per world unit of fontSize
+// Fixed raster resolution per line of text, independent of world-space
+// fontSize - supersampled at a constant pixel size so small in-world labels
+// (fontSize ~0.02-0.05) still rasterize crisp glyphs instead of a mushy
+// 5-10px-tall canvas font, then get downsampled onto their (much smaller)
+// world-space plane via mipmapping.
+const RASTER_FONT_PX = 96;
 const LINE_HEIGHT_FACTOR = 1.2;
 const FONT_FAMILY =
     'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -114,13 +119,14 @@ export const WorldText: React.FC<WorldTextProps> = ({
     );
 
     const { texture, geometry } = useMemo(() => {
-        const fontPx = Math.max(fontSize * PX_PER_UNIT, 1);
+        const unitsPerPx = Math.max(fontSize, 0.001) / RASTER_FONT_PX;
+        const fontPx = RASTER_FONT_PX;
         const lineHeightPx = fontPx * LINE_HEIGHT_FACTOR;
         const font = `${fontStyle === "italic" ? "italic " : ""}${
             fontWeight === "bold" ? "bold " : ""
         }${fontPx}px ${FONT_FAMILY}`;
-        const outlinePx = outlineWidth * PX_PER_UNIT;
-        const maxWidthPx = maxWidth ? maxWidth * PX_PER_UNIT : undefined;
+        const outlinePx = outlineWidth / unitsPerPx;
+        const maxWidthPx = maxWidth ? maxWidth / unitsPerPx : undefined;
 
         measureCtx.font = font;
         const lines = wrapText(text, maxWidthPx);
@@ -167,11 +173,13 @@ export const WorldText: React.FC<WorldTextProps> = ({
 
         const texture = new THREE.CanvasTexture(canvas);
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.LinearFilter;
+        texture.generateMipmaps = true;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = 8;
 
-        const planeWidth = canvasWidth / PX_PER_UNIT;
-        const planeHeight = canvasHeight / PX_PER_UNIT;
+        const planeWidth = canvasWidth * unitsPerPx;
+        const planeHeight = canvasHeight * unitsPerPx;
 
         let offsetX = 0;
         if (anchorX === "left") offsetX = planeWidth / 2;
@@ -207,8 +215,16 @@ export const WorldText: React.FC<WorldTextProps> = ({
         };
     }, [texture, geometry]);
 
+    // Keyed on the same inputs as the geometry/texture above so any change
+    // that rebuilds them (e.g. a typewriter effect updating text every
+    // keystroke) fully remounts this mesh instead of reassigning `geometry`
+    // on an already-mounted one. WebGPU has a known bug where swapping a
+    // mesh's geometry in place corrupts renderer state (see the note in
+    // GcsArtFrameByIndex.tsx for the same fix applied there).
+    const meshKey = `${text}|${fontSize}|${color}|${anchorX}|${anchorY}|${maxWidth}|${textAlign}|${outlineWidth}|${outlineColor}|${fontWeight}|${fontStyle}`;
+
     return (
-        <mesh geometry={geometry} {...meshProps}>
+        <mesh key={meshKey} geometry={geometry} {...meshProps}>
             <meshBasicMaterial
                 map={texture}
                 transparent

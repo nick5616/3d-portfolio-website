@@ -207,6 +207,7 @@ export class EnhancedMaterialSystem {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(1, 1);
+            texture.colorSpace = THREE.SRGBColorSpace;
         });
 
         return fallbackMaterial;
