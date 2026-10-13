@@ -21,8 +21,9 @@ const INITIAL_MOVEMENT: MovementState = {
     crouching: false,
 };
 
-const CROUCH_CODES = ["ControlLeft", "ControlRight", "KeyC"];
-const CONTROL_CODES = ["ControlLeft", "ControlRight"];
+// Crouch is C only. Control used to work too, but Ctrl+W/D/etc. are
+// browser shortcuts that can't be blocked, so crouch-walking closed tabs.
+const CROUCH_CODES = ["KeyC"];
 
 export const useKeyboardControls = () => {
     const [movement, setMovement] = useState<MovementState>(INITIAL_MOVEMENT);
@@ -33,6 +34,9 @@ export const useKeyboardControls = () => {
     const crouchKeysRef = useRef<Set<string>>(new Set());
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        // While an overlay owns the keyboard (art inspector, project viewer,
+        // console, ...) keys shouldn't walk the player around behind it.
+        if (useSceneStore.getState().isInteracting) return;
         switch (event.code) {
             case "KeyW":
             case "ArrowUp":
@@ -102,27 +106,28 @@ export const useKeyboardControls = () => {
         }
     }, []);
 
-    // Browsers reserve Ctrl-based combos (Ctrl+D bookmark, Ctrl+W close tab,
-    // etc.) and will act on them regardless of preventDefault(), stealing
-    // focus/pointer-lock away from the page. When that happens the real
-    // keyup for whatever was held never reaches us, so without this the
-    // movement/crouch state gets stuck on until the same key is pressed
-    // again. Reset everything on blur, and if Control specifically was the
-    // culprit, nudge the player toward the C key instead.
+    // Releasing keys while the window is unfocused never reaches us, so
+    // reset everything on blur instead of leaving movement stuck on.
     useEffect(() => {
         const handleBlur = () => {
-            const controlWasHeld = CONTROL_CODES.some((code) =>
-                crouchKeysRef.current.has(code)
-            );
-            if (controlWasHeld) {
-                useSceneStore.getState().setCrouchKeyNotice(true);
-            }
             crouchKeysRef.current.clear();
             setMovement(INITIAL_MOVEMENT);
         };
 
         window.addEventListener("blur", handleBlur);
-        return () => window.removeEventListener("blur", handleBlur);
+        // Opening an overlay mid-stride would otherwise leave the held keys
+        // "stuck" down, since their keyups are still processed but nothing
+        // resets the state they set.
+        const unsubscribe = useSceneStore.subscribe((state, previous) => {
+            if (state.isInteracting && !previous.isInteracting) {
+                crouchKeysRef.current.clear();
+                setMovement(INITIAL_MOVEMENT);
+            }
+        });
+        return () => {
+            window.removeEventListener("blur", handleBlur);
+            unsubscribe();
+        };
     }, []);
 
     useEffect(() => {

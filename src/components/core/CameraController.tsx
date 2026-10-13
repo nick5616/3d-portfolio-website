@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -14,11 +15,13 @@ export const CameraController: React.FC = () => {
         virtualRotation,
         movementJoystickIntensity,
         flyMode,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ cameraTarget: s.cameraTarget, cameraRotation: s.cameraRotation, virtualMovement: s.virtualMovement, virtualRotation: s.virtualRotation, movementJoystickIntensity: s.movementJoystickIntensity, flyMode: s.flyMode }))
+    );
 
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
-    const { rotation } = useMouseControls();
+    const { consumeRotation } = useMouseControls();
     const { isMobile } = useDeviceDetection();
 
     const targetPosition = useRef(new THREE.Vector3());
@@ -30,6 +33,7 @@ export const CameraController: React.FC = () => {
     const forward = useRef(new THREE.Vector3());
     const right = useRef(new THREE.Vector3());
     const direction = useRef(new THREE.Vector3());
+    const upVector = useRef(new THREE.Vector3());
 
     // Store camera's current position when mounted and handle teleportation rotation
     useEffect(() => {
@@ -50,12 +54,17 @@ export const CameraController: React.FC = () => {
     }, [camera, cameraTarget, cameraRotation]);
 
     useFrame((_, delta) => {
+        if (useSceneStore.getState().cameraOverride) {
+            consumeRotation(); // drop mouse movement made meanwhile
+            return;
+        }
         // More conservative delta clamping for mobile to prevent large jumps
         const clampedDelta = isMobile
             ? Math.min(delta, 0.033)
             : Math.min(delta, 0.1);
 
         // Handle rotation - on mobile, only use virtual rotation
+        const rotation = consumeRotation();
         const combinedRotationX = isMobile
             ? virtualRotation.x
             : rotation.x + virtualRotation.x;
@@ -79,7 +88,7 @@ export const CameraController: React.FC = () => {
         // Reuse vectors to reduce allocations
         forward.current.set(0, 0, -1);
         right.current.set(1, 0, 0);
-        const up = new THREE.Vector3(0, 1, 0);
+        const up = upVector.current.set(0, 1, 0);
 
         // Apply camera rotation to get proper directions
         forward.current.applyQuaternion(camera.quaternion);

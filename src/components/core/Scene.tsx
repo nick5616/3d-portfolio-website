@@ -1,6 +1,7 @@
+import { useShallow } from "zustand/react/shallow";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useCallback } from "react";
-import { Stats, AdaptiveDpr, AdaptiveEvents, Preload } from "@react-three/drei";
+import { Suspense, useMemo, useCallback, useState } from "react";
+import { Stats, AdaptiveEvents, PerformanceMonitor } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { PlayerBody } from "./PlayerBody";
@@ -21,7 +22,9 @@ export const Scene: React.FC = () => {
         roomTransitionFrom,
         roomTransitionTo,
         setRoomTransitionLoading,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ performance: s.performance, currentRoom: s.currentRoom, roomTransitionLoading: s.roomTransitionLoading, roomTransitionFrom: s.roomTransitionFrom, roomTransitionTo: s.roomTransitionTo, setRoomTransitionLoading: s.setRoomTransitionLoading }))
+    );
     const { isMobile } = useDeviceDetection();
     const { isHardwareAccelerationDisabled, isDetecting } =
         useHardwareAcceleration();
@@ -49,24 +52,28 @@ export const Scene: React.FC = () => {
         return baseConfig;
     }, [performance.quality, isMobile]);
 
-    // Configure dynamic DPR based on quality and device
-    const dpr = useMemo(() => {
-        if (isMobile) {
-            // Balanced DPR for mobile - not too blurry, still performant
-            return [0.6, 1.0] as [number, number];
-        }
-
+    // Resolution range per quality level. Within that range the actual DPR
+    // is driven by <PerformanceMonitor> below: it steps resolution down when
+    // the frame rate drops and back up when there's headroom. (The previous
+    // <AdaptiveDpr> only reacts to r3f's regress() signal, which nothing in
+    // this app ever called, so it never adjusted anything.)
+    const dprRange = useMemo((): [number, number] => {
+        if (isMobile) return [0.6, 1.0];
         switch (performance.quality) {
             case "low":
-                return [0.5, 1] as [number, number];
+                return [0.5, 1];
             case "medium":
-                return [0.75, 1.5] as [number, number];
-            case "high":
-                return [1, 2] as [number, number];
+                return [0.75, 1.25];
             default:
-                return [1, 2] as [number, number];
+                return [0.85, 1.6];
         }
     }, [performance.quality, isMobile]);
+    const [dprFactor, setDprFactor] = useState(1);
+    const maxDpr = Math.max(
+        dprRange[0],
+        Math.min(dprRange[1], window.devicePixelRatio || 1)
+    );
+    const dpr = dprRange[0] + (maxDpr - dprRange[0]) * dprFactor;
 
     // Mobile-specific performance settings
     const performanceConfig = useMemo(() => {
@@ -272,9 +279,13 @@ export const Scene: React.FC = () => {
                     far: 50,
                     position: [0, 1.8, 12], // Spawn further back to avoid cylinder
                 }}
-                shadows={performance.quality !== "low" && !isMobile}
+                // Shadows are off on purpose: almost nothing received them,
+                // so the shadow-map passes were pure per-frame cost.
+                shadows={false}
                 dpr={dpr}
-                linear={true}
+                // Standard sRGB output. This was `linear`, which skipped the
+                // final sRGB encode, so every texture and hex color rendered
+                // darker and more saturated than authored.
                 flat={performance.quality === "low" || isMobile}
                 performance={performanceConfig}
                 // The room-transition overlay fully covers this canvas with
@@ -317,9 +328,14 @@ export const Scene: React.FC = () => {
                     >
                         <SceneManager />
                         {currentRoom && <PlayerBody key={currentRoom.id} />}
-                        {!isMobile && <AdaptiveDpr pixelated />}
+                        <PerformanceMonitor
+                            factor={1}
+                            flipflops={4}
+                            onChange={({ factor }) =>
+                                setDprFactor(Math.round(factor * 10) / 10)
+                            }
+                        />
                         {!isMobile && <AdaptiveEvents />}
-                        <Preload all />
                     </Physics>
                 </Suspense>
             </Canvas>

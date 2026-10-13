@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
@@ -13,50 +14,50 @@ import {
 import * as THREE from "three";
 import { InteractionRaycaster } from "./InteractionRaycaster";
 import { GalleryDoorAccent } from "./GalleryDoorAccent";
+import { playSound } from "../../audio/soundManager";
+import { useUnlockStore } from "../../stores/unlockStore";
+import { useRupeeStore } from "../../stores/rupeeStore";
+import { useAchievementStore } from "../../stores/achievementStore";
+import { RupeeIcon } from "../models/RupeeIcon";
+import { GemPrompt } from "../ui/GemPrompt";
+import { FairyStonePortal } from "./FairyStonePortal";
 
 interface DoorProps {
     archway: Archway;
 }
 
-// Add a styled prompt component
-const InteractionPrompt: React.FC<{ action: string }> = ({ action }) => (
-    <div
-        style={{
-            background: "rgba(0, 0, 0, 0.8)",
-            color: "white",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            fontSize: "14px",
-            fontFamily: "Arial, sans-serif",
-            whiteSpace: "nowrap",
-        }}
-    >
-        Press{" "}
-        <kbd
-            style={{
-                background: "#fff",
-                color: "#000",
-                padding: "2px 6px",
-                borderRadius: "3px",
-                fontSize: "12px",
-                fontWeight: "bold",
-            }}
-        >
-            E
-        </kbd>{" "}
-        {action}
-    </div>
+// In-world prompt, in the HUD's gem-glass style.
+const InteractionPrompt: React.FC<{
+    action: string;
+    showKey?: boolean;
+    accent?: "green" | "gold" | "red";
+}> = ({ action, showKey = true, accent = "green" }) => (
+    <GemPrompt action={action} keyLabel={showKey ? "E" : null} accent={accent} />
 );
 
 export const Door: React.FC<DoorProps> = ({ archway }) => {
-    const {
-        teleportToRoom,
-        lastTeleportTime,
-        playerVelocity,
-        currentRoom,
-        setRoomTransitionLoading,
-    } = useSceneStore();
+    // playerVelocity/lastTeleportTime are read via getState() at the moment
+    // they're needed; subscribing to them re-rendered every door whenever
+    // the player moved.
+    const { teleportToRoom, currentRoom, setRoomTransitionLoading } =
+        useSceneStore(
+            useShallow((s) => ({
+                teleportToRoom: s.teleportToRoom,
+                currentRoom: s.currentRoom,
+                setRoomTransitionLoading: s.setRoomTransitionLoading,
+            }))
+        );
     const [isInTrigger, setIsInTrigger] = useState(false);
+    // In the holodeck forest, the exit door becomes a holed fairy stone.
+    const holodeckExperience = useSceneStore((s) => s.holodeckExperience);
+    const fairyStone =
+        currentRoom?.id === "about" && holodeckExperience === "forest";
+    const lock = archway.lock;
+    const isLocked = useUnlockStore(
+        (s) => Boolean(lock) && !s.unlocked[lock!.id]
+    );
+    const wallet = useRupeeStore((s) => s.totalValue);
+    const [justUnlocked, setJustUnlocked] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isHoveringFromCenter, setIsHoveringFromCenter] = useState(false);
     const lastTransitionTime = useRef<number>(0);
@@ -116,14 +117,16 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     // sharing one generic "gallery white" look.
                     const kind = roomConfigs[roomId]?.galleryRoomKind;
                     const styleKey =
-                        kind?.kind === "hall" ? kind.category : "gallery";
+                        kind?.kind === "hall" || kind?.kind === "sketchbook"
+                            ? kind.category
+                            : "gallery";
                     const style = galleryDoorStyles[styleKey];
                     return {
                         color: style.color,
                         frameColor: style.frameColor,
                         label: roomName,
                         description:
-                            kind?.kind === "hall"
+                            kind?.kind === "hall" || kind?.kind === "sketchbook"
                                 ? "Art Collection"
                                 : "Central Hub",
                         glowColor: style.glowColor,
@@ -155,10 +158,14 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     // Room.tsx's BaseRoom walls sit at half-dimension - 0.01 with thickness
     // 0.1, so the inner (room-facing) surface is at half-dimension - 0.06;
     // rest the door's center a hair inside that so it reads as flush rather
-    // than floating. Skipped for the circular gallery atrium, whose curved
-    // wall doesn't have a single flat "surface" this math applies to - its
-    // doors are already embedded directly in the wall ring.
-    const isCircularRoom = currentRoom?.galleryRoomKind?.kind === "atrium";
+    // than floating. Skipped for the circular rooms (gallery hub, main
+    // atrium rotunda, sketchbook), whose curved walls don't have a single
+    // flat "surface" this math applies to - their doors are placed on the
+    // curve directly.
+    const isCircularRoom =
+        currentRoom?.id === "atrium" ||
+        currentRoom?.galleryRoomKind?.kind === "atrium" ||
+        currentRoom?.galleryRoomKind?.kind === "sketchbook";
     const doorPosition: [number, number, number] = (() => {
         const dimensions = currentRoom?.dimensions;
         if (!dimensions || isCircularRoom) return archway.position;
@@ -233,6 +240,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
     // Helper function to check if player is moving toward the door
     const isMovingTowardDoor = useCallback(() => {
+        const { playerVelocity } = useSceneStore.getState();
         // If player is not moving, allow teleportation
         const velocityMagnitude = Math.sqrt(
             playerVelocity[0] ** 2 + playerVelocity[2] ** 2
@@ -261,9 +269,33 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         // Allow teleportation if angle is less than 45 degrees (π/4 radians)
         const maxAngle = Math.PI / 4; // 45 degrees
         return angle <= maxAngle;
-    }, [playerVelocity, archway.rotation]);
+    }, [archway.rotation]);
+
+    // Locked doors take payment on the first E press, then open normally.
+    const tryUnlock = useCallback(() => {
+        if (!lock) return;
+        if (useRupeeStore.getState().spendRupees(lock.cost)) {
+            useUnlockStore.getState().unlock(lock.id);
+            if (lock.id === "sketchbook") {
+                useAchievementStore.getState().unlock("sketchbook-unlocked");
+            }
+            playSound("rupee-spend");
+            setTimeout(() => playSound("door-unlock"), 220);
+            setJustUnlocked(true);
+            setTimeout(() => setJustUnlocked(false), 2500);
+        } else {
+            playSound("door-locked");
+        }
+    }, [lock]);
 
     const handleTeleport = useCallback(() => {
+        if (
+            lock &&
+            !useUnlockStore.getState().unlocked[lock.id]
+        ) {
+            tryUnlock();
+            return;
+        }
         // Check velocity direction before teleporting
         if (!isMovingTowardDoor()) {
             console.log(
@@ -278,6 +310,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
         console.log(`🏠 Starting room transition: ${fromRoom} → ${toRoom}`);
         setRoomTransitionLoading(true, fromRoom, toRoom);
+        playSound("door-enter");
 
         // Use entrance point if available, otherwise use archway position
         const entrancePosition = archway.entrancePoint?.position || [
@@ -323,6 +356,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         isMovingTowardDoor,
         currentRoom,
         setRoomTransitionLoading,
+        lock,
+        tryUnlock,
     ]);
 
     // // Handle collision events
@@ -346,7 +381,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         const now = Date.now();
         // Check both local and global debounce (1 second each)
         if (now - lastTransitionTime.current < 1000) return;
-        if (now - lastTeleportTime < 1000) return;
+        if (now - useSceneStore.getState().lastTeleportTime < 1000) return;
 
         console.log(
             `🚪 AUTO-TELEPORT TRIGGERED: Door ${archway.id} (${archway.targetRoomId}) - Starting transition`
@@ -359,7 +394,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             handleTeleport();
             setIsTransitioning(false);
         }, 100);
-    }, [isInTrigger, isTransitioning, handleTeleport, lastTeleportTime]);
+    }, [isInTrigger, isTransitioning, handleTeleport]);
 
     // Listen for UI click events
     useEffect(() => {
@@ -409,8 +444,9 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     doorPosition[2],
                 ]}
                 rotation={doorMeshRotation}
-                castShadow
-                receiveShadow
+                // Hidden (but still the aim target) when the fairy stone
+                // stands in for the door.
+                visible={!fairyStone}
             >
                 <boxGeometry args={[archway.width, archway.height, 0.15]} />
                 <meshStandardMaterial
@@ -480,9 +516,28 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     highlightIntensity: 0.2,
                     prompt: {
                         content: (
-                            <InteractionPrompt
-                                action={`to enter ${theme.label}`}
-                            />
+                            isLocked ? (
+                                wallet >= (lock?.cost ?? 0) ? (
+                                    <InteractionPrompt
+                                        accent="gold"
+                                        action={`Pay ${lock?.cost} rupees to unlock ${theme.label}`}
+                                    />
+                                ) : (
+                                    <InteractionPrompt
+                                        accent="red"
+                                        showKey={false}
+                                        action={`Locked: costs ${lock?.cost} rupees (you have ${Math.max(0, wallet)})`}
+                                    />
+                                )
+                            ) : (
+                                <InteractionPrompt
+                                    action={
+                                        justUnlocked
+                                            ? `Unlocked! Enter ${theme.label}`
+                                            : `Enter ${theme.label}`
+                                    }
+                                />
+                            )
                         ),
                         offset: [0, 0, 0],
                         visible: isHoveringFromCenter,
@@ -524,7 +579,16 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </RigidBody>
 
-            <group position={framePosition} rotation={doorMeshRotation}>
+            {fairyStone && (
+                <FairyStonePortal
+                    position={[doorPosition[0], 0, doorPosition[2]]}
+                    rotationY={doorMeshRotation[1]}
+                    label={theme.label}
+                    hovering={isHoveringFromCenter}
+                />
+            )}
+
+            <group position={framePosition} rotation={doorMeshRotation} visible={!fairyStone}>
                 <mesh>
                     <boxGeometry
                         args={[archway.width + 0.4, archway.height + 0.4, 0.06]}
@@ -547,7 +611,35 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 )}
             </group>
 
-            <group position={labelPosition} rotation={[0, labelRotationY, 0]}>
+            {isLocked && lock && (
+                <group
+                    position={[
+                        doorPosition[0] - outward[0] * 0.1,
+                        doorPosition[1] + archway.height * 0.55,
+                        doorPosition[2] - outward[2] * 0.1,
+                    ]}
+                    rotation={[0, labelRotationY, 0]}
+                >
+                    <RupeeIcon
+                        color="#3ee58f"
+                        scale={0.16}
+                        emissiveIntensity={1.4}
+                    />
+                    <Text
+                        position={[0, -0.42, 0.02]}
+                        fontSize={0.2}
+                        color="#ffe9a8"
+                        outlineWidth={0.012}
+                        outlineColor="#1a1208"
+                        anchorX="center"
+                        anchorY="middle"
+                    >
+                        {`${lock.cost} rupees`}
+                    </Text>
+                </group>
+            )}
+
+            <group position={labelPosition} rotation={[0, labelRotationY, 0]} visible={!fairyStone}>
                 {/* Label Background */}
                 <mesh position={[0, 0, 0]}>
                     <planeGeometry

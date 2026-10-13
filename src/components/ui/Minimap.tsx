@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { useRef, useEffect, useState } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { roomConfigs } from "../../configs/rooms";
@@ -18,7 +19,9 @@ const DIRECTION_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> =
   };
 
 export const Minimap: React.FC = () => {
-  const { currentRoom, minimap, cameraData, playerPosition } = useSceneStore();
+  const { currentRoom, minimap, cameraData, playerPosition } = useSceneStore(
+        useShallow((s) => ({ currentRoom: s.currentRoom, minimap: s.minimap, cameraData: s.cameraData, playerPosition: s.playerPosition }))
+    );
   const { isMobile } = useDeviceDetection();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({
@@ -73,7 +76,9 @@ export const Minimap: React.FC = () => {
     const centerRoomSize = unit * 0.34;
     const neighborRoomSize = unit * 0.24;
     const isCircular = (room: RoomConfig | null | undefined) =>
-      room?.galleryRoomKind?.kind === "atrium";
+      room?.id === "atrium" ||
+      room?.galleryRoomKind?.kind === "atrium" ||
+      room?.galleryRoomKind?.kind === "sketchbook";
 
     const drawRoomShape = (
       x: number,
@@ -248,15 +253,15 @@ export const Minimap: React.FC = () => {
     ctx.lineTo(leftX, leftY);
     ctx.lineTo(rightX, rightY);
     ctx.closePath();
-    ctx.fillStyle = "#FF0000";
+    ctx.fillStyle = "#3ee58f";
     ctx.fill();
     ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // Current room name, bottom-left
-    ctx.fillStyle = "#FFFF00";
-    ctx.font = isMobile ? "7px monospace" : "9px monospace";
+    ctx.fillStyle = "rgba(246, 243, 255, 0.85)";
+    ctx.font = isMobile ? "600 8px Manrope, sans-serif" : "600 10px Manrope, sans-serif";
     ctx.textAlign = "left";
     ctx.fillText(`Room: ${currentRoom.name}`, 5, height - 5);
   }, [
@@ -280,25 +285,15 @@ export const Minimap: React.FC = () => {
 
   return (
     <div className={`fixed ${positionClass} z-40`}>
-      <div
-        className={`bg-black/60 rounded-lg ${
-          isMobile ? "p-0" : "p-2"
-        } border border-gray-600`}
-      >
-        <div
-          className={`text-white text-xs ${
-            isMobile ? "mb-0" : "mb-1"
-          } text-center hidden sm:block ${isMobile ? "text-xs" : "text-sm"}`}
-        >
-          Minimap
-        </div>
+      <div className={`gem gem--blue ${isMobile ? "p-1" : "p-2"}`}>
+        <div className="gem-label text-center mb-1 hidden sm:block">Map</div>
         <canvas
           ref={canvasRef}
-          className="rounded border border-gray-500"
+          className="gem-shape gem--sm"
           style={{
             width: `${size.width}px`,
             height: `${size.height}px`,
-            backgroundColor: "rgba(40, 40, 40, 0.8)",
+            backgroundColor: "rgba(8, 7, 20, 0.55)",
           }}
         />
       </div>

@@ -1,4 +1,6 @@
-import React, { useMemo, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
+import React, { useEffect, useMemo, useRef } from "react";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
@@ -6,6 +8,8 @@ import { useFrame } from "@react-three/fiber";
 import { GcsArtFrameByIndex } from "../models/GcsArtFrameByIndex";
 import { LightSwitch } from "../ui/LightSwitch";
 import { useSceneStore } from "../../stores/sceneStore";
+import { GodRays, DustMotes } from "../effects/GodRays";
+import { EnhancedMaterialSystem } from "../../configs/enhancedMaterials";
 
 interface GalleryAtriumRoomProps {
   config: RoomConfig;
@@ -33,7 +37,9 @@ export const GalleryAtriumRoom: React.FC<GalleryAtriumRoomProps> = ({
   materials,
 }) => {
   const radius = width / 2;
-  const { galleryWhiteLightMode, toggleGalleryLightMode } = useSceneStore();
+  const { galleryWhiteLightMode, toggleGalleryLightMode } = useSceneStore(
+        useShallow((s) => ({ galleryWhiteLightMode: s.galleryWhiteLightMode, toggleGalleryLightMode: s.toggleGalleryLightMode }))
+    );
 
   // A ring of flat wall segments approximating the circle. A single
   // CylinderGeometry with a "hull"/"trimesh" collider was tried first, but
@@ -66,6 +72,51 @@ export const GalleryAtriumRoom: React.FC<GalleryAtriumRoomProps> = ({
       };
     });
   }, [radius, height]);
+
+  // Architecture: pilasters between the doors (doors sit at 0/90/180/270
+  // degrees, so pilasters go at 22.5 + 45n - which also frames the two
+  // feature paintings at 45 and 315), plus cornice and base mouldings.
+  const trim = useMemo(
+    () => {
+      const material = EnhancedMaterialSystem.getInstance().flat("gallery-hub-trim", {
+        color: "#f3efe7",
+        roughness: 0.6,
+        metalness: 0,
+      });
+      material.side = THREE.DoubleSide;
+      return material;
+    },
+    []
+  );
+  const brass = useMemo(
+    () =>
+      EnhancedMaterialSystem.getInstance().flat("gallery-hub-brass", {
+        color: "#b08d57",
+        roughness: 0.35,
+        metalness: 1,
+      }),
+    []
+  );
+  const pilasters = useMemo(() => {
+    const shaft = new THREE.BoxGeometry(0.55, height - 0.9, 0.18);
+    shaft.translate(0, (height - 0.9) / 2 + 0.4, 0);
+    const base = new THREE.BoxGeometry(0.72, 0.4, 0.3);
+    base.translate(0, 0.2, 0);
+    const capital = new THREE.BoxGeometry(0.76, 0.32, 0.32);
+    capital.translate(0, height - 0.55, 0);
+    const geometry = mergeGeometries([shaft, base, capital])!;
+    [shaft, base, capital].forEach((g) => g.dispose());
+    const mesh = new THREE.InstancedMesh(geometry, trim, 8);
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < 8; i++) {
+      const angle = ((22.5 + i * 45) * Math.PI) / 180;
+      matrix.makeRotationY(Math.PI / 2 - angle);
+      matrix.setPosition(Math.cos(angle) * (radius - 0.25), 0, Math.sin(angle) * (radius - 0.25));
+      mesh.setMatrixAt(i, matrix);
+    }
+    return mesh;
+  }, [trim, radius, height]);
+  useEffect(() => () => pilasters.geometry.dispose(), [pilasters]);
 
   const featureRef = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
@@ -181,6 +232,41 @@ export const GalleryAtriumRoom: React.FC<GalleryAtriumRoomProps> = ({
         <circleGeometry args={[radius, 48]} />
         <primitive object={materials.floor} attach="material" />
       </mesh>
+
+      {/* Pilasters, cornice, base moulding */}
+      <primitive object={pilasters} />
+      <mesh position={[0, height - 0.2, 0]} material={trim}>
+        <cylinderGeometry args={[radius - 0.45, radius - 0.12, 0.4, 72, 1, true]} />
+      </mesh>
+      <mesh position={[0, 0.15, 0]} material={trim}>
+        <cylinderGeometry args={[radius - 0.17, radius - 0.17, 0.3, 72, 1, true]} />
+      </mesh>
+
+      {/* Floor inlay: a brass ring and a compass of thin brass rays */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} material={brass}>
+        <ringGeometry args={[radius * 0.55, radius * 0.56, 96]} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} material={brass}>
+        <ringGeometry args={[1.55, 1.6, 64]} />
+      </mesh>
+      {Array.from({ length: 8 }, (_, i) => (
+        <mesh
+          key={i}
+          rotation={[-Math.PI / 2, 0, (i * Math.PI) / 4]}
+          position={[0, 0.016, 0]}
+          material={brass}
+        >
+          <planeGeometry args={[radius * 1.1, 0.025]} />
+        </mesh>
+      ))}
+
+      {/* Oculus: daylight falling around the glass rod */}
+      <mesh position={[0, height - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.95, 1.9, 64]} />
+        <meshBasicMaterial color="#fff6e3" toneMapped={false} />
+      </mesh>
+      <GodRays height={height} radiusTop={1.9} radiusBottom={2.6} intensity={0.13} />
+      <DustMotes radius={2.1} height={height - 0.5} count={180} />
 
       {/* Two curated "grandiose" pieces, one per side */}
       {arcFrame(LEFT_ANGLE_DEG, LEFT_INDEX)}

@@ -79,6 +79,21 @@ interface SceneState {
     galleryWhiteLightMode: boolean; // Gallery light mode: true = white lights, false = custom colors
     flyMode: boolean;
     isInteracting: boolean;
+    // When true, something else (e.g. the sketchbook reader) owns the
+    // camera: PlayerBody stops pinning it to the body and CameraController
+    // stops steering it.
+    cameraOverride: boolean;
+    setCameraOverride: (override: boolean) => void;
+    // When true, an experience (e.g. the holodeck forest with its day/night
+    // cycle) owns all lighting: the global fill lights and reflection
+    // environment switch off so its nights can actually get dark.
+    customEnvironment: boolean;
+    // Which holodeck program is running ("off" when none). Lets things
+    // outside the holodeck component react, e.g. the exit door turning
+    // into a fairy stone in the forest.
+    holodeckExperience: string;
+    setHolodeckExperience: (experience: string) => void;
+    setCustomEnvironment: (custom: boolean) => void;
     lastTeleportTime: number; // Add global teleportation debounce
     performance: {
         showStats: boolean;
@@ -198,6 +213,12 @@ export const useSceneStore = create<SceneState>((set) => {
         spotlightsEnabled: false,
         galleryWhiteLightMode: true, // Default to white light mode
         isInteracting: false,
+        cameraOverride: false,
+        setCameraOverride: (override) => set({ cameraOverride: override }),
+        customEnvironment: false,
+        holodeckExperience: "off",
+        setHolodeckExperience: (experience) => set({ holodeckExperience: experience }),
+        setCustomEnvironment: (custom) => set({ customEnvironment: custom }),
         lastTeleportTime: 0,
         playerGrounded: false,
 
@@ -422,6 +443,13 @@ export const useSceneStore = create<SceneState>((set) => {
                     `📋 Store: Room config found for ${roomId}`,
                     config
                 );
+                // Only a real room change resets readiness. Teleporting
+                // within the same room (holodeck experience switches do
+                // this) doesn't remount the room, so nothing would ever set
+                // the flag back to true - gravity stayed off and the player
+                // floated above the floor sliding around with no friction.
+                const changingRoom =
+                    useSceneStore.getState().currentRoom?.id !== roomId;
                 set({
                     currentRoom: config,
                     cameraTarget: new THREE.Vector3(...position),
@@ -429,7 +457,7 @@ export const useSceneStore = create<SceneState>((set) => {
                     playerPosition: position,
                     shouldTeleportPlayer: true,
                     lastTeleportTime: Date.now(),
-                    roomEnvironmentReady: false, // Reset environment ready flag
+                    ...(changingRoom ? { roomEnvironmentReady: false } : {}),
                 });
                 useAchievementStore.getState().discoverRoom(roomId);
                 console.log(

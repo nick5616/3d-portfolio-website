@@ -18,6 +18,9 @@ const RupeeCollectionSchema = z.object({
 const RupeeStoreSchema = z.object({
     rupees: z.record(z.string(), RupeeCollectionSchema),
     totalValue: z.number(),
+    // Rupees spent (e.g. on locked doors). Collected counts stay intact for
+    // the achievements wall; the wallet total is collected value - spent.
+    spent: z.number(),
 });
 
 type RupeeType = z.infer<typeof RupeeTypeSchema>;
@@ -42,6 +45,8 @@ interface RupeeStoreState extends RupeeStore {
     getRupeeCount: (type: string) => number;
     getTotalValue: () => number;
     resetRupees: () => void;
+    // Returns false (and spends nothing) if the wallet is short.
+    spendRupees: (amount: number) => boolean;
 }
 
 // Helper function to calculate total value
@@ -59,6 +64,7 @@ export const useRupeeStore = create<RupeeStoreState>()(
         (set, get) => ({
             rupees: {},
             totalValue: 0,
+            spent: 0,
 
             addRupee: (type: string) => {
                 set((state) => {
@@ -68,7 +74,8 @@ export const useRupeeStore = create<RupeeStoreState>()(
                     }
                     newRupees[type].count += 1;
 
-                    const totalValue = calculateTotalValue(newRupees);
+                    const totalValue =
+                        calculateTotalValue(newRupees) - state.spent;
                     const totalCount = Object.values(newRupees).reduce(
                         (sum, collection) => sum + collection.count,
                         0
@@ -94,7 +101,8 @@ export const useRupeeStore = create<RupeeStoreState>()(
                         }
                     }
 
-                    const totalValue = calculateTotalValue(newRupees);
+                    const totalValue =
+                        calculateTotalValue(newRupees) - state.spent;
 
                     return {
                         rupees: newRupees,
@@ -117,7 +125,18 @@ export const useRupeeStore = create<RupeeStoreState>()(
                 set({
                     rupees: {},
                     totalValue: 0,
+                    spent: 0,
                 });
+            },
+
+            spendRupees: (amount: number) => {
+                const state = get();
+                if (state.totalValue < amount) return false;
+                set({
+                    spent: state.spent + amount,
+                    totalValue: state.totalValue - amount,
+                });
+                return true;
             },
         }),
         {

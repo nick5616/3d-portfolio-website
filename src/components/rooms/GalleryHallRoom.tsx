@@ -6,6 +6,8 @@ import { GcsArtFrameByIndex } from "../models/GcsArtFrameByIndex";
 import { ArtPieceMapper } from "../../utils/artPieceMapper";
 import { buildHallLayout } from "../../utils/galleryHallLayout";
 import { archwayDirection, CardinalDirection } from "../../utils/archwayDirection";
+import { RoomTrim, Skylight } from "../architecture/RoomTrim";
+import { HallPlacard } from "../architecture/HallPlacard";
 
 interface GalleryHallRoomProps {
     config: RoomConfig;
@@ -31,7 +33,9 @@ export const GalleryHallRoom: React.FC<GalleryHallRoomProps> = ({
         return null;
     }
     const { category } = config.galleryRoomKind;
-    const showPlaque = category === "digitalart";
+    // Plaques appear for any piece with a curated title (see ArtPiece.titled),
+    // so uncurated halls gain plaques as their pieces get named.
+    const showPlaque = true;
 
     // Never hang art on a wall that has a doorway on it.
     const doorWalls = useMemo(() => {
@@ -71,6 +75,21 @@ export const GalleryHallRoom: React.FC<GalleryHallRoomProps> = ({
 
     return (
         <>
+            <RoomTrim
+                width={width}
+                depth={depth}
+                height={height}
+                archways={config.archways}
+            />
+            <Skylight width={2.4} length={depth * 0.62} height={height} />
+            {/* Wall text beside the entrance (every hall's way in is south) */}
+            <HallPlacard
+                category={category}
+                position={[Math.min(5.6, width / 2 - 1.2), 3.3, depth / 2 - 0.075]}
+                rotation={[0, Math.PI, 0]}
+                pieceCount={availableArtCount || undefined}
+            />
+
             {layout.dividers.map((divider) => (
                 <RigidBody key={divider.id} type="fixed" colliders="cuboid">
                     <mesh position={new THREE.Vector3(...divider.position)}>

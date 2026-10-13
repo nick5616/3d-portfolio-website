@@ -1,13 +1,17 @@
 // src/configs/rooms.ts
-import { RoomConfig, InteractiveElement } from "../types/scene.types";
+import { RoomConfig } from "../types/scene.types";
 
-const ATRIUM_CEILING_HEIGHT = 7.5;
+// The atrium is a three-tier rotunda; this is the drum's height, where the
+// glass dome springs (see components/rooms/atrium/atriumLayout.ts).
+const ATRIUM_CEILING_HEIGHT = 19.5;
+const ATRIUM_DOOR_RADIUS = 11.9; // doors sit just inside the 12 m wall
 const PROJECTS_CEILING_HEIGHT = 6;
 const ABOUT_CEILING_HEIGHT = 8;
 const RELAXATION_CEILING_HEIGHT = 6;
 const GALLERY_ATRIUM_CEILING_HEIGHT = 7.5;
 const GALLERY_HALL_CEILING_HEIGHT = 7.5;
 const GALLERY_SECRET_ROOM_CEILING_HEIGHT = 6;
+const SKETCHBOOK_WALL_HEIGHT = 5.5;
 const ACHIEVEMENTS_CEILING_HEIGHT = 7;
 
 // Simple, mostly-neutral light preset shared by the gallery wing's plain
@@ -46,7 +50,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         id: "atrium",
         name: "Atrium",
         position: [0, 0, 0] as [number, number, number],
-        dimensions: [20, ATRIUM_CEILING_HEIGHT, 20], // width, height, depth (reduced height by 25%)
+        dimensions: [24, ATRIUM_CEILING_HEIGHT, 24], // circular: width is the diameter
         lightPreset: {
             ambient: { intensity: 0.1, color: "#ffff00" }, // Reduced from 0.5
             directional: {
@@ -64,34 +68,18 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             ],
         },
         defaultEntrance: {
-            position: [0, 1.5, 12] as [number, number, number],
-            rotation: [0, Math.PI, 0] as [number, number, number],
+            // Inside the colonnade on the south side, facing the pool.
+            position: [0, 1.5, 8] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
         },
-        interactiveElements: [
-            // Circular arrangement of pillars
-            ...Array(8)
-                .fill(0)
-                .map((_, i): InteractiveElement => {
-                    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8; // Offset to avoid blocking archways
-                    const radius = 8;
-                    return {
-                        id: `pillar-${i}`,
-                        type: "model",
-                        position: [
-                            Math.cos(angle) * radius,
-                            0,
-                            Math.sin(angle) * radius,
-                        ] as [number, number, number],
-                        scale: [0.5, 4, 0.5] as [number, number, number],
-                        content: "greek-pillar",
-                    };
-                }),
-        ],
+        // The greek pillars are now the rotunda's two colonnades, built by
+        // AtriumRoom itself.
+        interactiveElements: [],
         archways: [
             {
                 id: "to-gallery",
                 targetRoomId: "gallery",
-                position: [-9.77, 0, 0] as [number, number, number],
+                position: [-ATRIUM_DOOR_RADIUS, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 width: 3,
                 height: 4,
@@ -105,7 +93,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-projects",
                 targetRoomId: "projects",
-                position: [0, 0, -9.7] as [number, number, number],
+                position: [0, 0, -ATRIUM_DOOR_RADIUS] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,
@@ -117,7 +105,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-about",
                 targetRoomId: "about",
-                position: [9.77, 0, 0] as [number, number, number],
+                position: [ATRIUM_DOOR_RADIUS, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 width: 2,
                 height: 3,
@@ -143,7 +131,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 // plaques celebrating everything there is to find/do here.
                 id: "to-achievements",
                 targetRoomId: "achievements",
-                position: [0, 0, 9.77] as [number, number, number],
+                position: [0, 0, ATRIUM_DOOR_RADIUS] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
                 width: 3,
                 height: 4,
@@ -224,9 +212,12 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 1.5, 7] as [number, number, number],
+                    position: [0, 1.5, 3.6] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
                 },
+                // The sketchbook rotunda (and everything past it) costs
+                // 5 rupees to open, once.
+                lock: { id: "sketchbook", cost: 5 },
             },
         ],
     },
@@ -280,7 +271,8 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 1.5, -9.9 + 2] as [number, number, number],
+                    // Just inside the gallery's paintings door (south, +z)
+                    position: [0, 1.5, 9.9 - 2] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
                 },
             },
@@ -299,15 +291,26 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         ],
     },
 
+    // Not a hall: a small domed marble rotunda holding one sketchbook on a
+    // lectern under a shaft of light from the oculus. Keeps its old id so
+    // routes, achievements and saved progress still line up.
     "gallery-hall-sketches": {
         id: "gallery-hall-sketches",
-        name: "Sketches Hall",
+        name: "Sketchbook Rotunda",
         position: [-20, 0, 25] as [number, number, number],
-        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
-        galleryRoomKind: { kind: "hall", category: "sketches" },
-        lightPreset: galleryHallLightPreset("#e0e8ff"),
+        dimensions: [12, SKETCHBOOK_WALL_HEIGHT, 12], // circular, width = diameter
+        galleryRoomKind: { kind: "sketchbook", category: "sketches" },
+        // SketchbookRotunda lights itself; this only satisfies the type.
+        lightPreset: {
+            ambient: { intensity: 0.2, color: "#fff1dc" },
+            directional: {
+                position: [0, 8, 0] as [number, number, number],
+                intensity: 0,
+                color: "#fff1dc",
+            },
+        },
         defaultEntrance: {
-            position: [0, 1.5, 7] as [number, number, number],
+            position: [0, 1.5, 3.6] as [number, number, number],
             rotation: [0, 0, 0] as [number, number, number],
         },
         interactiveElements: [],
@@ -315,22 +318,23 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-gallery-from-sketches",
                 targetRoomId: "gallery",
-                position: [0, 0, 9.7] as [number, number, number],
+                position: [0, 0, 5.85] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
-                width: 3,
-                height: 4,
+                width: 2.4,
+                height: 3.6,
                 entrancePoint: {
-                    position: [0, 1.5, 9.9 - 2] as [number, number, number],
+                    // Just inside the gallery's sketches door (north, -z)
+                    position: [0, 1.5, -9.9 + 2] as [number, number, number],
                     rotation: [0, Math.PI, 0] as [number, number, number],
                 },
             },
             {
                 id: "to-gallery-hall-miscellaneous",
                 targetRoomId: "gallery-hall-miscellaneous",
-                position: [0, 0, -9.7] as [number, number, number],
+                position: [0, 0, -5.85] as [number, number, number],
                 rotation: [0, Math.PI, 0] as [number, number, number],
-                width: 3,
-                height: 4,
+                width: 2.4,
+                height: 3.6,
                 entrancePoint: {
                     position: [0, 1.5, 7] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
@@ -388,7 +392,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 1.5, -7] as [number, number, number],
+                    position: [0, 1.5, -3.6] as [number, number, number],
                     rotation: [0, Math.PI, 0] as [number, number, number],
                 },
             },
@@ -443,21 +447,15 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         name: "Software Projects",
         position: [0, 0, -20] as [number, number, number],
         dimensions: [20, PROJECTS_CEILING_HEIGHT, 20],
+        // The lab lights itself (ProjectsRoom): low, cool fill so the
+        // glowing project strands carry the room.
         lightPreset: {
-            ambient: { intensity: 4.5, color: "#ffffff" },
+            ambient: { intensity: 0.5, color: "#c8d8ff" },
             directional: {
                 position: [0, 8, -5] as [number, number, number],
                 intensity: 0,
                 color: "#ffffff",
             },
-            spots: Array(3)
-                .fill(0)
-                .map((_, i) => ({
-                    position: [-5 + i * 5, 6, -5] as [number, number, number],
-                    target: [-5 + i * 5, 0, -5] as [number, number, number],
-                    intensity: 0.8,
-                    color: "#ffffff",
-                })),
         },
         defaultEntrance: {
             position: [0, 1.5, 7] as [number, number, number],

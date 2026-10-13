@@ -1,16 +1,18 @@
+import { useShallow } from "zustand/react/shallow";
 import { useState, useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { VirtualControls } from "./VirtualControls";
 import { PerformanceControls } from "./PerformanceControls";
-import { EducationalModal } from "./EducationalModal";
-import { MouseStateIndicator } from "./MouseStateIndicator";
+import { WorldGuide } from "./WorldGuide";
 import { Minimap } from "./Minimap";
 import { DebugInfo } from "./DebugInfo";
-import { MathGameOverlay } from "./MathGameOverlay";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
 import { ConsoleInputManager } from "./ConsoleInputManager";
+import { HudToasts } from "./HudToasts";
+import { useArtInspectStore } from "../../stores/artInspectStore";
+import { useSketchbookStore } from "../sketchbook/sketchbookStore";
 
 export default function Interface() {
     const { isMobile } = useDeviceDetection();
@@ -28,7 +30,12 @@ export default function Interface() {
         isInteracting,
         isEducationalModalOpen,
         showStartPrompt,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ console: s.console, isInteracting: s.isInteracting, isEducationalModalOpen: s.isEducationalModalOpen, showStartPrompt: s.showStartPrompt }))
+    );
+
+    const aimingAtArt = useArtInspectStore((s) => Boolean(s.aimed));
+    const aimingAtBook = useSketchbookStore((s) => s.aimed);
 
     // Listen for door hover events
     useEffect(() => {
@@ -94,57 +101,50 @@ export default function Interface() {
     }
 
     return (
-        <div className="fixed inset-0 pointer-events-none">
+        <div className="hud-layer fixed inset-0 pointer-events-none">
             {/* Manager for console keystrokes */}
             <ConsoleInputManager />
 
-            {/* Educational/Instructional Modal */}
-            <EducationalModal />
+            {/* Welcome / pause / cursor hints */}
+            <WorldGuide />
 
-            {/* Mouse state indicator for desktop users */}
-            <MouseStateIndicator />
-
-            {/* Crosshair - hide when interacting (console or other) or when start prompt is showing */}
+            {/* Crosshair - hidden while interacting or on the start prompt */}
             {!isInteracting && !showStartPrompt && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-                    <div className="w-2 h-2 bg-white rounded-full opacity-80 shadow-lg"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+                    <div
+                        className={`gem-crosshair ${
+                            isHoveringDoor || aimingAtArt || aimingAtBook
+                                ? "gem-crosshair--active"
+                                : ""
+                        }`}
+                    />
                 </div>
             )}
 
             {/* Console badge */}
             {consoleState.isActive && (
-                <div className="fixed top-4 left-4 z-50 pointer-events-none">
-                    <div
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 bg-blue-900/90 border-2 border-blue-400/80 text-blue-100`}
-                        style={{
-                            backdropFilter: "blur(16px)",
-                            boxShadow:
-                                "0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-                            textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
-                        }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="inline-block w-2 h-2 bg-blue-400 rounded-full" />
-                            <span>Press escape to leave</span>
-                        </div>
+                <div className="fixed top-3 left-3 z-50 pointer-events-none">
+                    <div className="gem gem--sm gem--blue px-3 py-1.5 text-[13px] font-semibold flex items-center gap-2">
+                        <span className="gem-kbd">Esc</span> leave the console
                     </div>
                 </div>
             )}
 
+            {/* Achievement + now-playing cards */}
+            <HudToasts />
+
             {/* Virtual controls (hide when educational modal is open on mobile) */}
             {isMobile && !isEducationalModalOpen && <VirtualControls />}
 
-            {/* Performance quality controls */}
-            <PerformanceControls />
+            {/* Settings live in the pause card on desktop; touch devices have
+                no pause screen, so they keep the gear button. */}
+            {isMobile && <PerformanceControls />}
 
             {/* Minimap */}
             <Minimap />
 
             {/* Debug info */}
             <DebugInfo />
-
-            {/* Math Game Overlay */}
-            <MathGameOverlay />
 
             {/* Temporary Position Debug */}
             {/* <PositionDebug /> */}

@@ -1,8 +1,8 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
+import React, { useMemo, useRef } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import * as THREE from "three";
-import { useThree } from "@react-three/fiber";
 import { InteractiveObject } from "../core/InteractiveObject";
 import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -28,6 +28,39 @@ const getRupeeCountForRoom = (roomId: string): number => {
     }
 };
 
+type SpotConfig = NonNullable<RoomConfig["lightPreset"]["spots"]>[number];
+
+// The spotlight owns its target as a child object. The previous version
+// created a target with useEffect inside a .map() (a hooks-rules violation)
+// and scene.add()-ed it without ever removing it, so every room visit left
+// orphaned objects behind in the scene graph for every frame to traverse.
+const ConfigSpotLight: React.FC<{ spot: SpotConfig; color: string }> = ({
+    spot,
+    color,
+}) => {
+    const target = useMemo(() => {
+        const object = new THREE.Object3D();
+        object.position.set(spot.target[0], spot.target[1], spot.target[2]);
+        return object;
+    }, [spot.target]);
+
+    return (
+        <>
+            <primitive object={target} />
+            <spotLight
+                position={spot.position}
+                target={target}
+                intensity={spot.intensity}
+                color={color}
+                distance={spot.distance}
+                decay={spot.decay}
+                angle={spot.angle ?? Math.PI / 4}
+                penumbra={spot.penumbra ?? 0.3}
+            />
+        </>
+    );
+};
+
 interface BaseRoomProps {
     config: RoomConfig;
     materials: any;
@@ -50,8 +83,9 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
     children,
 }) => {
     const directionalLightRef = useRef<THREE.DirectionalLight>(null);
-    const { scene } = useThree();
-    const { galleryWhiteLightMode } = useSceneStore();
+    const { galleryWhiteLightMode } = useSceneStore(
+        useShallow((s) => ({ galleryWhiteLightMode: s.galleryWhiteLightMode }))
+    );
 
     // Memoize wall configurations - skip shared walls to prevent z-fighting
     const wallConfigs = useMemo(() => {
@@ -103,48 +137,20 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 position={config.lightPreset.directional.position}
                 intensity={config.lightPreset.directional.intensity}
                 color={config.lightPreset.directional.color}
-                castShadow
-                shadow-mapSize={[1024, 1024]}
-                shadow-bias={-0.0001}
             />
 
             {/* Spot lights from configuration */}
-            {config.lightPreset.spots?.map((spot, index) => {
-                const spotLightRef = useRef<THREE.SpotLight>(null);
-
-                useEffect(() => {
-                    if (spotLightRef.current) {
-                        const target = new THREE.Object3D();
-                        target.position.set(
-                            spot.target[0],
-                            spot.target[1],
-                            spot.target[2]
-                        );
-                        spotLightRef.current.target = target;
-                        scene.add(target); // Add target to scene as required by Three.js
+            {config.lightPreset.spots?.map((spot, index) => (
+                <ConfigSpotLight
+                    key={`spot-${index}`}
+                    spot={spot}
+                    color={
+                        config.galleryRoomKind && galleryWhiteLightMode
+                            ? "#ffffff" // White light for gallery white mode
+                            : spot.color
                     }
-                }, [spot.target, scene]);
-
-                return (
-                    <spotLight
-                        ref={spotLightRef}
-                        key={`spot-${index}`}
-                        position={spot.position}
-                        intensity={spot.intensity}
-                        color={
-                            config.galleryRoomKind && galleryWhiteLightMode
-                                ? "#ffffff" // White light for gallery white mode
-                                : spot.color
-                        }
-                        shadow-mapSize={[512, 512]}
-                        shadow-bias={-0.0001}
-                        distance={spot.distance}
-                        decay={spot.decay}
-                        angle={spot.angle ?? Math.PI / 4}
-                        penumbra={spot.penumbra ?? 0.3}
-                    />
-                );
-            })}
+                />
+            ))}
 
             {/* Central point light for projects room */}
 

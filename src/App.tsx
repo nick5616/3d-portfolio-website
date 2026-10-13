@@ -1,27 +1,41 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { Suspense, useEffect, useState } from "react";
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
+import { ArtInspector } from "./components/ui/ArtInspector";
+import { SketchbookHUD } from "./components/sketchbook/SketchbookHUD";
+import { ProjectViewer } from "./components/projects/ProjectViewer";
+import { MeteorHUD } from "./components/rooms/holodeck/math/MeteorHUD";
+import { useRoomSoundscape } from "./audio/roomSoundscape";
 import { HolodeckLoadingScreen } from "./components/ui/HolodeckLoadingScreen";
 import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useSceneStore } from "./stores/sceneStore";
 import { useRoomInitialization } from "./hooks/useRoomInitialization";
-import { preloadAllRoomMaterials } from "./configs/enhancedMaterials";
+import {
+    preloadRoomMaterials,
+    preloadNeighborRoomMaterials,
+} from "./configs/enhancedMaterials";
 
 export default function App() {
     const { isMobile } = useDeviceDetection();
-    const { setPerformanceQuality } = useSceneStore();
+    const { setPerformanceQuality } = useSceneStore(
+        useShallow((s) => ({ setPerformanceQuality: s.setPerformanceQuality }))
+    );
     useRoomInitialization(); // Initialize room based on URL
+    useRoomSoundscape();
     const [hasInteracted, setHasInteracted] = useState(false);
 
+    const currentRoomId = useSceneStore((s) => s.currentRoom?.id);
     useEffect(() => {
-        // Kick off every room's wall/floor/ceiling textures immediately so
-        // the loading screen's progress genuinely reflects "the whole site
-        // is ready to walk around," not just the room you happen to spawn
-        // in. Painting art is intentionally excluded - it stays lazy.
-        preloadAllRoomMaterials();
-    }, []);
+        // Textures for the room you're standing in load right away; rooms
+        // one door away load in the background once the browser is idle.
+        // Painting art stays separately lazy (see artTextureLoader).
+        if (!currentRoomId) return;
+        preloadRoomMaterials(currentRoomId);
+        preloadNeighborRoomMaterials(currentRoomId);
+    }, [currentRoomId]);
 
     useEffect(() => {
         // Optimize performance for real mobile devices
@@ -203,6 +217,11 @@ export default function App() {
             </WebGLErrorBoundary>
             <Interface />
             <HolodeckLoadingScreen />
+            {/* Outside the HUD layer so hiding the HUD doesn't hide it */}
+            <ArtInspector />
+            <SketchbookHUD />
+            <ProjectViewer />
+            <MeteorHUD />
             {/*
                 Rendered unconditionally (not just as the Suspense fallback)
                 because Scene.tsx wraps its own suspending content (models,

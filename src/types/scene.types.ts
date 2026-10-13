@@ -3,7 +3,9 @@ import { ArtCategoryId } from "../configs/gcsConfig";
 
 export type GalleryRoomKind =
     | { kind: "atrium" }
-    | { kind: "hall"; category: ArtCategoryId };
+    | { kind: "hall"; category: ArtCategoryId }
+    // Small domed marble room with a single sketchbook on a lectern.
+    | { kind: "sketchbook"; category: ArtCategoryId };
 
 export interface RoomConfig {
     id: string;
@@ -66,4 +68,6 @@ export interface Archway {
         position: [number, number, number];
         rotation: [number, number, number];
     };
+    // A door that costs rupees to open the first time (stays open after).
+    lock?: { id: string; cost: number };
 }

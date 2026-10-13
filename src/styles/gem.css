@@ -1,0 +1,490 @@
+/*
+ * Rupee glass - the HUD design language.
+ *
+ * Liquid glass first: clear, lightly tinted panes over a deep blur with
+ * boosted saturation, soft continuous corners, a bright specular edge
+ * where light hits the top, and light pooling inside the glass.
+ * The rupee twist: each pane carries one gem color (green/blue/red/
+ * purple/gold/silver) that shows up only as a caustic - light refracted
+ * through the glass glowing along its lower edge - and a faint tint.
+ *
+ * Usage: class="gem" (+ "gem--green|blue|red|purple|gold|silver" for the
+ * accent, "gem--sm"/"gem--lg" for corner size). Controls: gem-btn
+ * (+ gem-btn--solid), gem-chip, gem-kbd. Type: gem-display, gem-label.
+ * "gem-shape" rounds an element with the same corners (no glass).
+ */
+
+:root {
+    --gem-ink: #ffffff;
+    --gem-ink-dim: rgba(255, 255, 255, 0.78);
+    --gem-ink-faint: rgba(255, 255, 255, 0.55);
+    --gem-green: #3ee58f;
+    --gem-blue: #59b4ff;
+    --gem-red: #ff5d73;
+    --gem-purple: #b07bff;
+    --gem-gold: #ffcc55;
+    --gem-silver: #dce6f2;
+    --gem-accent: var(--gem-green);
+    /* Breath of the Wild flavor: Sheikah-tech cyan for anything you can
+       interact with, warm parchment cream for headings and ornaments. */
+    --sheikah: #4fdcff;
+    --sheikah-glow: rgba(79, 220, 255, 0.55);
+    --botw-cream: #f3ead2;
+    --gem-radius: 22px;
+    --gem-font: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --gem-display: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+.gem--green { --gem-accent: var(--gem-green); }
+.gem--blue { --gem-accent: var(--gem-blue); }
+.gem--red { --gem-accent: var(--gem-red); }
+.gem--purple { --gem-accent: var(--gem-purple); }
+.gem--gold { --gem-accent: var(--gem-gold); }
+.gem--silver { --gem-accent: var(--gem-silver); }
+.gem--sheikah { --gem-accent: var(--sheikah); }
+.gem--sm { --gem-radius: 14px; }
+.gem--lg { --gem-radius: 32px; }
+
+.gem-shape {
+    border-radius: var(--gem-radius);
+    overflow: hidden;
+}
+
+/* ---- The glass ---------------------------------------------------------- */
+.gem,
+.gem-btn,
+.gem-chip {
+    position: relative;
+    isolation: isolate;
+    color: var(--gem-ink);
+    font-family: var(--gem-font);
+    border-radius: var(--gem-radius);
+    background:
+        /* light pooling in the upper half of the pane */
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.16) 0%,
+            rgba(255, 255, 255, 0.05) 42%,
+            rgba(255, 255, 255, 0.02) 60%,
+            rgba(255, 255, 255, 0.07) 100%
+        ),
+        /* the faintest tint of the gem color */
+        color-mix(in srgb, var(--gem-accent) 7%, rgba(20, 22, 34, 0.18));
+    -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(1.08);
+    backdrop-filter: blur(26px) saturate(190%) brightness(1.08);
+    box-shadow:
+        /* specular top edge */
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.75),
+        /* glass thickness: a lighter rim all the way round */
+        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+        /* lower edge catches refracted light */
+        inset 0 -1px 0.5px rgba(255, 255, 255, 0.28),
+        /* inner glow, like light bouncing inside */
+        inset 0 0 24px rgba(255, 255, 255, 0.06),
+        /* lift off the scene */
+        0 10px 36px rgba(0, 0, 0, 0.22),
+        0 1px 3px rgba(0, 0, 0, 0.18);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+/* Specular sheen: a soft highlight sweeping across the top-left */
+.gem::before,
+.gem-btn::before,
+.gem-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        radial-gradient(
+            120% 70% at 20% -10%,
+            rgba(255, 255, 255, 0.32),
+            rgba(255, 255, 255, 0) 55%
+        ),
+        radial-gradient(
+            60% 40% at 100% 0%,
+            rgba(255, 255, 255, 0.1),
+            rgba(255, 255, 255, 0) 70%
+        );
+}
+
+/* Rupee caustic: the gem color refracting along the bottom edge, plus a
+   thin prismatic rim that brightens where light enters and exits. */
+.gem::after,
+.gem-btn::after,
+.gem-chip::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        radial-gradient(
+            70% 45% at 80% 112%,
+            color-mix(in srgb, var(--gem-accent) 42%, transparent),
+            transparent 70%
+        ),
+        radial-gradient(
+            50% 35% at 10% 108%,
+            color-mix(in srgb, var(--gem-accent) 22%, transparent),
+            transparent 70%
+        );
+    mix-blend-mode: screen;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+.gem-btn {
+    --gem-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    padding: 0.62em 1.2em;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    border: 0;
+    text-decoration: none;
+    transition:
+        transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.3),
+        background-color 220ms ease,
+        box-shadow 220ms ease;
+    pointer-events: auto;
+}
+.gem-btn:hover {
+    transform: translateY(-1px) scale(1.03);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.9),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+        inset 0 -1px 0.5px rgba(255, 255, 255, 0.35),
+        inset 0 0 26px rgba(255, 255, 255, 0.1),
+        0 12px 32px rgba(0, 0, 0, 0.26),
+        0 0 22px color-mix(in srgb, var(--gem-accent) 30%, transparent);
+}
+.gem-btn:active {
+    transform: scale(0.97);
+}
+.gem-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--gem-accent) 70%, white);
+    outline-offset: 3px;
+}
+/* Primary: the glass fills with the gem's color, still see-through */
+.gem-btn--solid {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.38) 0%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.14) 100%
+        ),
+        color-mix(in srgb, var(--gem-accent) 62%, transparent);
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Hover glint: a band of light sliding through the glass */
+.gem-glint {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+        105deg,
+        transparent 35%,
+        rgba(255, 255, 255, 0.35) 48%,
+        transparent 62%
+    );
+    background-size: 250% 100%;
+    background-position: 130% 0;
+    transition: background-position 700ms ease;
+}
+.gem-btn:hover > .gem-glint,
+.gem-hoverable:hover .gem-glint {
+    background-position: -30% 0;
+}
+
+.gem-chip {
+    --gem-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.22em 0.7em;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Key cap: a round glowing glyph, like BotW's button icons - a glass
+   bead with a thin Sheikah-cyan ring. Wider labels become a capsule. */
+.gem-kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.75em;
+    height: 1.75em;
+    padding: 0 0.5em;
+    border-radius: 999px;
+    font-family: var(--gem-font);
+    font-size: 0.75em;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.06) 60%),
+        rgba(10, 22, 34, 0.55);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
+    box-shadow:
+        inset 0 0 0 1.5px rgba(150, 236, 255, 0.85),
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.9),
+        0 0 10px var(--sheikah-glow),
+        0 2px 6px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 0 6px rgba(79, 220, 255, 0.6), 0 1px 1px rgba(0, 0, 0, 0.5);
+    vertical-align: middle;
+}
+
+.gem-display {
+    font-family: var(--gem-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+}
+
+/* Small-caps parchment labels with a faint glow, BotW menu style */
+.gem-label {
+    font-family: var(--gem-display);
+    font-size: 0.74rem;
+    font-weight: 600;
+    font-variant: small-caps;
+    text-transform: lowercase;
+    letter-spacing: 0.18em;
+    color: color-mix(in srgb, var(--botw-cream) 80%, transparent);
+    text-shadow: 0 0 8px rgba(243, 234, 210, 0.25);
+}
+
+/* Ornamental rule: thin lines that fade out, a diamond in the middle and
+   a dot at each end - the BotW menu divider. <div class="botw-rule" /> */
+.botw-rule {
+    position: relative;
+    height: 11px;
+    margin: 10px auto;
+    max-width: 280px;
+    background:
+        linear-gradient(90deg, transparent, rgba(243, 234, 210, 0.7) 18%, rgba(243, 234, 210, 0.7) 42%, transparent 46%) left center / 100% 1px no-repeat,
+        linear-gradient(90deg, transparent 54%, rgba(243, 234, 210, 0.7) 58%, rgba(243, 234, 210, 0.7) 82%, transparent) left center / 100% 1px no-repeat;
+}
+.botw-rule::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border: 1px solid var(--botw-cream);
+    background: var(--sheikah);
+    box-shadow: 0 0 8px var(--sheikah-glow);
+}
+.botw-rule--left {
+    margin-left: 0;
+}
+
+/* Titles: serif small caps with a soft warm glow */
+.botw-title {
+    font-family: var(--gem-display);
+    font-variant: small-caps;
+    letter-spacing: 0.03em;
+    color: var(--botw-cream);
+    text-shadow: 0 0 18px rgba(243, 234, 210, 0.25), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* In-world prompt: glowing text straight on the scene (no box), on a soft
+   shadow pool for legibility - how BotW shows "(A) Open". */
+.botw-prompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-family: var(--gem-font);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    white-space: nowrap;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.9);
+    animation: botw-prompt-in 260ms ease-out both;
+}
+.botw-prompt--gold { color: #ffe7a6; }
+.botw-prompt--red { color: #ffb3bd; }
+@keyframes botw-prompt-in {
+    from { opacity: 0; transform: translateY(4px); }
+}
+
+/* "Item get" banner: a dark band that fades out at both ends, with
+   ornament rules above and below. */
+.botw-banner {
+    position: relative;
+    padding: 12px 64px;
+    text-align: center;
+    background: linear-gradient(90deg, rgba(4, 8, 14, 0) 0%, rgba(4, 8, 14, 0.78) 22%, rgba(4, 8, 14, 0.78) 78%, rgba(4, 8, 14, 0) 100%);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+.botw-banner::before,
+.botw-banner::after {
+    content: "";
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(243, 234, 210, 0.75), transparent);
+}
+.botw-banner::before { top: 3px; }
+.botw-banner::after { bottom: 3px; }
+
+/* No backdrop-filter: a darker tint keeps text readable */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .gem,
+    .gem-btn,
+    .gem-chip {
+        background-color: rgba(20, 22, 34, 0.82);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gem-btn,
+    .gem-glint {
+        transition: none;
+    }
+}
+
+/* Reduced transparency (macOS/iOS accessibility setting): frosted, not clear */
+@media (prefers-reduced-transparency: reduce) {
+    .gem,
+    .gem-btn,
+    .gem-chip {
+        background-color: rgba(22, 24, 36, 0.88);
+    }
+}
+
+/* Toasts slide in from above and settle */
+.hud-toast {
+    animation: hud-toast-in 420ms cubic-bezier(0.2, 0.9, 0.2, 1.2) both;
+}
+@keyframes hud-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.96);
+    }
+}
+
+/* Range input: a faceted track with a diamond thumb */
+.gem-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gem-green), var(--gem-blue));
+    border-radius: 0;
+    outline: none;
+    cursor: pointer;
+}
+.gem-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    transform: rotate(45deg);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+.gem-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    transform: rotate(45deg);
+}
+
+/* Crosshair: a tiny cut diamond that blooms over something usable */
+.gem-crosshair {
+    width: 7px;
+    height: 7px;
+    transform: rotate(45deg);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 6px rgba(255, 255, 255, 0.4);
+    transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+.gem-crosshair--active {
+    transform: rotate(45deg) scale(1.9);
+    background: rgba(62, 229, 143, 0.25);
+    box-shadow: 0 0 0 1.5px var(--gem-green), 0 0 12px rgba(62, 229, 143, 0.6);
+}
+
+/* ---- World guide (welcome + pause) ---------------------------------- */
+.guide-backdrop {
+    background: radial-gradient(120% 90% at 50% 40%, rgba(12, 10, 26, 0.55), rgba(4, 4, 10, 0.82));
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    animation: guide-fade 300ms ease both;
+}
+.guide-pause {
+    background: radial-gradient(90% 70% at 50% 50%, rgba(8, 7, 20, 0.12), rgba(8, 7, 20, 0.5));
+    cursor: pointer;
+    animation: guide-fade 250ms ease both;
+}
+.guide-card {
+    cursor: default;
+    animation: guide-rise 420ms cubic-bezier(0.2, 0.9, 0.2, 1.1) both;
+}
+@keyframes guide-fade {
+    from { opacity: 0; }
+}
+@keyframes guide-rise {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+.guide-mouse { color: var(--gem-ink); }
+.guide-mouse__left { opacity: 0; animation: guide-click 1.8s ease-in-out infinite; }
+@keyframes guide-click {
+    0%, 55%, 100% { opacity: 0; }
+    62%, 78% { opacity: 0.9; }
+}
+.guide-keys {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 4px;
+    font-size: 15px;
+}
+.guide-key { animation: guide-key 2.4s ease-in-out infinite; }
+@keyframes guide-key {
+    0%, 22%, 100% { transform: translateY(0); filter: none; }
+    6%, 14% { transform: translateY(2px); filter: brightness(0.75) sepia(1) hue-rotate(80deg) saturate(3); }
+}
+.guide-key--esc { font-size: 15px; animation-duration: 2.6s; }
+.guide-cursor { animation: guide-cursor 2.6s ease-in-out infinite; }
+@keyframes guide-cursor {
+    0%, 10% { opacity: 0; transform: translate(-6px, 4px); }
+    20%, 85% { opacity: 1; transform: none; }
+    100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .guide-key, .guide-cursor, .guide-mouse__left, .guide-card, .guide-backdrop, .guide-pause { animation: none; }
+    .guide-mouse__left, .guide-cursor { opacity: 1; }
+}
+
+/* Region reveal: fade in, hold, fade out (BotW area names) */
+.botw-region {
+    animation: botw-region 3.4s ease-in-out both;
+}
+@keyframes botw-region {
+    0% { opacity: 0; transform: translateY(6px); letter-spacing: 0.02em; }
+    18% { opacity: 1; transform: none; }
+    78% { opacity: 1; }
+    100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .botw-region, .botw-prompt { animation: none; }
+}

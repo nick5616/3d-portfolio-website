@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 // src/components/core/RouterIntegration.tsx
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -12,7 +13,9 @@ import { getPathFromRoomId, getExperienceFromPath } from "../../configs/routing"
 export const RouterIntegration: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentRoom } = useSceneStore();
+    const { currentRoom } = useSceneStore(
+        useShallow((s) => ({ currentRoom: s.currentRoom }))
+    );
     const isNavigatingFromDoor = useRef(false);
     const lastRoomId = useRef<string | null>(null);
 

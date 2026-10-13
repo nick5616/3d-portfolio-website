@@ -1,7 +1,7 @@
 {
-    "name": "3D Portfolio & Art Gallery",
-    "short_name": "Portfolio",
-    "description": "Interactive 3D portfolio showcasing software engineering projects and digital art",
+    "name": "Nicole Belovoskey",
+    "short_name": "Nicole B.",
+    "description": "Software engineer and artist. Choose your adventure.",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -9,13 +9,13 @@
             "type": "image/png"
         },
         {
-            "src": "/android-chrome-512x512.png",
+            "src": "/android-chrome512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
     ],
-    "theme_color": "#000000",
-    "background_color": "#000000",
+    "theme_color": "#0b0a14",
+    "background_color": "#0b0a14",
     "display": "standalone",
     "start_url": "/"
 }

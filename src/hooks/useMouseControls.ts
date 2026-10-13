@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { requestWorldPointerLock } from "../utils/mainCanvas";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSceneStore } from "../stores/sceneStore";
 import { useDeviceDetection } from "./useDeviceDetection";
 
@@ -7,76 +8,61 @@ interface MouseRotation {
     y: number;
 }
 
+const SENSITIVITY = 0.002;
+
+// Mouse-look deltas are accumulated in a ref and drained once per frame by
+// the camera (consumeRotation). They used to go through React state, which
+// re-rendered the camera controller on every mousemove event (up to 1000/s
+// on high-polling mice) and, because each setState replaced the previous
+// value, silently dropped every movement but the last one between frames.
 export const useMouseControls = () => {
-    const [rotation, setRotation] = useState<MouseRotation>({ x: 0, y: 0 });
+    const accumulated = useRef<MouseRotation>({ x: 0, y: 0 });
     const [isLocked, setIsLocked] = useState(false);
-    const { isInteracting } = useSceneStore();
+    const isInteracting = useSceneStore((s) => s.isInteracting);
     const { isMobile } = useDeviceDetection();
 
-    const handleMouseMove = useCallback(
-        (event: MouseEvent) => {
-            // On mobile, don't use mouse controls at all - virtual controls handle camera
-            if (isMobile) {
-                setRotation({ x: 0, y: 0 });
-                return;
-            }
+    const lookEnabled = useRef(false);
+    lookEnabled.current = !isMobile && isLocked && !isInteracting;
 
-            if (!isLocked || isInteracting) {
-                setRotation({ x: 0, y: 0 });
-                return;
-            }
+    const handleMouseMove = useCallback((event: MouseEvent) => {
+        if (!lookEnabled.current) return;
+        accumulated.current.x += event.movementX * SENSITIVITY;
+        accumulated.current.y += event.movementY * SENSITIVITY;
+    }, []);
 
-            const sensitivity = 0.002; // Reduced sensitivity for more precise control
-            setRotation({
-                x: event.movementX * sensitivity,
-                y: event.movementY * sensitivity,
-            });
-        },
-        [isLocked, isMobile, isInteracting]
-    );
-
-    // Reset rotation when mouse stops moving
-    useEffect(() => {
-        if (rotation.x !== 0 || rotation.y !== 0) {
-            const timer = requestAnimationFrame(() => {
-                setRotation({ x: 0, y: 0 });
-            });
-            return () => cancelAnimationFrame(timer);
-        }
-    }, [rotation]);
+    const consumeRotation = useCallback((): MouseRotation => {
+        const { x, y } = accumulated.current;
+        accumulated.current.x = 0;
+        accumulated.current.y = 0;
+        return lookEnabled.current ? { x, y } : { x: 0, y: 0 };
+    }, []);
 
     const requestPointerLock = useCallback(() => {
         // Never request pointer lock on mobile - let virtual controls handle everything
         if (isMobile) return;
 
         // Do not request lock while interacting with UI/console
-        if (isInteracting) return;
-        const canvas = document.querySelector("canvas");
-        if (canvas) {
-            canvas.requestPointerLock();
-        }
-    }, [isMobile, isInteracting]);
+        if (useSceneStore.getState().isInteracting) return;
+        requestWorldPointerLock();
+    }, [isMobile]);
 
     const handlePointerLockChange = useCallback(() => {
         // On mobile, always consider pointer "unlocked" for normal UI interaction
         if (isMobile) {
             setIsLocked(false);
-            setRotation({ x: 0, y: 0 });
             return;
         }
-
-        const canvas = document.querySelector("canvas");
-        setIsLocked(document.pointerLockElement === canvas);
-        if (!document.pointerLockElement) {
-            setRotation({ x: 0, y: 0 });
-        }
+        setIsLocked(
+            document.pointerLockElement instanceof HTMLCanvasElement
+        );
+        accumulated.current.x = 0;
+        accumulated.current.y = 0;
     }, [isMobile]);
 
     useEffect(() => {
         // On mobile, skip all pointer lock functionality
         if (isMobile) {
             setIsLocked(false);
-            setRotation({ x: 0, y: 0 });
             return;
         }
 
@@ -92,12 +78,7 @@ export const useMouseControls = () => {
                 handlePointerLockChange
             );
         };
-    }, [
-        handleMouseMove,
-        requestPointerLock,
-        handlePointerLockChange,
-        isMobile,
-    ]);
+    }, [handleMouseMove, requestPointerLock, handlePointerLockChange, isMobile]);
 
-    return { rotation, isLocked };
+    return { consumeRotation, isLocked };
 };

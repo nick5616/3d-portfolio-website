@@ -1,6 +1,7 @@
 // src/stores/achievementStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { playSound } from "../audio/soundManager";
 
 export interface AchievementDef {
     id: string;
@@ -33,7 +34,7 @@ const ROOM_NAMES: Record<string, string> = {
     gallery: "the Art Gallery",
     "gallery-hall-digitalart": "the Digital Art Hall",
     "gallery-hall-paintings": "the Paintings Hall",
-    "gallery-hall-sketches": "the Sketches Hall",
+    "gallery-hall-sketches": "the Sketchbook Rotunda",
     "gallery-hall-lefthanded": "the Left-Handed Hall",
     "gallery-hall-miscellaneous": "the Miscellaneous Hall",
     "gallery-hall-notesappart": "the Notes App Art room",
@@ -124,6 +125,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
         hint: "Keep collecting rupees.",
     },
     {
+        id: "art-inspector",
+        title: "Connoisseur",
+        description: "Took a closer look at a piece of art.",
+        hint: "Walk right up to a painting.",
+    },
+    {
+        id: "sketchbook-unlocked",
+        title: "Paid the Toll",
+        description: "Spent 5 rupees to open the sketchbook room.",
+        hint: "One door in the gallery wants payment.",
+    },
+    {
+        id: "sketchbook-finished",
+        title: "Cover to Cover",
+        description: "Turned every page of the sketchbook.",
+        hint: "Some books deserve to be read all the way through.",
+    },
+    {
+        id: "project-opened",
+        title: "Hands-On",
+        description: "Opened one of the software projects.",
+        hint: "Don't just look at the projects. Try one.",
+    },
+    {
         id: "black-rupee",
         title: "Ouch.",
         description: "Collected a Black Rupee.",
@@ -146,6 +171,7 @@ export const useAchievementStore = create<AchievementState>()(
 
             unlock: (id) => {
                 if (get().unlocked[id]) return;
+                playSound("achievement-unlock");
                 set((state) => ({
                     unlocked: { ...state.unlocked, [id]: Date.now() },
                 }));

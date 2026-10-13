@@ -1,5 +1,7 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { useRef, useState } from "react";
 import { CourageComputer } from "../../models/CourageComputer";
+import { GemPrompt } from "../../ui/GemPrompt";
 import { useSceneStore } from "../../../stores/sceneStore";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import {
@@ -9,7 +11,9 @@ import {
 import * as THREE from "three";
 
 export const CourageExperience: React.FC = () => {
-    const { setConsoleActive, console: consoleState } = useSceneStore();
+    const { setConsoleActive, console: consoleState } = useSceneStore(
+        useShallow((s) => ({ setConsoleActive: s.setConsoleActive, console: s.console }))
+    );
     const computerRef = useRef<THREE.Mesh>(null);
     const [isHoveringComputer, setIsHoveringComputer] = useState(false);
 
@@ -175,14 +179,16 @@ export const CourageExperience: React.FC = () => {
                     rotation={[0, 0, 0]}
                     scale={[0.6, 0.6, 0.6]}
                 />
-                {/* Interaction mesh positioned at the computer screen */}
-                <mesh ref={computerRef} position={[0, 1.5, -3]} visible={true}>
+                {/* Invisible hit box for aiming at the computer. It stays in
+                    the scene (so the raycast still finds it) but draws
+                    nothing - it used to render as a green wireframe. */}
+                <mesh ref={computerRef} position={[0, 1.5, -3]}>
                     <boxGeometry args={[1.5, 1.2, 0.5]} />
                     <meshBasicMaterial
                         transparent
-                        opacity={0.1}
-                        wireframe={true}
-                        color="#00ff00"
+                        opacity={0}
+                        colorWrite={false}
+                        depthWrite={false}
                     />
                 </mesh>
             </group>
@@ -285,38 +291,7 @@ export const CourageExperience: React.FC = () => {
                 }}
                 visual={{
                     prompt: {
-                        content: (
-                            <div
-                                style={{
-                                    background: "rgba(0, 0, 0, 0.9)",
-                                    color: "white",
-                                    padding: "10px 16px",
-                                    borderRadius: "6px",
-                                    fontSize: "16px",
-                                    fontFamily: "Arial, sans-serif",
-                                    whiteSpace: "nowrap",
-                                    border: "2px solid rgba(255, 255, 255, 0.3)",
-                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
-                                }}
-                            >
-                                Press{" "}
-                                <kbd
-                                    style={{
-                                        background: "#fff",
-                                        color: "#000",
-                                        padding: "3px 8px",
-                                        borderRadius: "4px",
-                                        fontSize: "14px",
-                                        fontWeight: "bold",
-                                        boxShadow:
-                                            "0 2px 4px rgba(0, 0, 0, 0.3)",
-                                    }}
-                                >
-                                    E
-                                </kbd>{" "}
-                                to interact
-                            </div>
-                        ),
+                        content: <GemPrompt action="Talk to the computer" />,
                         offset: [0, 0.6, 0],
                         visible: isHoveringComputer && !consoleState.isActive,
                         distanceScale: true,

@@ -31,7 +31,7 @@ export const RupeeCylinder: React.FC<RupeeCylinderProps> = ({
     position = [0, 0, 0],
     animationType = "floating",
 }) => {
-    const { rupees: collectedRupees } = useRupeeStore();
+    const collectedRupees = useRupeeStore((s) => s.rupees);
 
     // Generate rupees for the glass cylinder based on collected rupees
     const rupees = useMemo(() => {

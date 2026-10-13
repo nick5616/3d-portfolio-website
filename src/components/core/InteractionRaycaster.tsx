@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import { Text, Html } from "@react-three/drei";
 import * as THREE from "three";
+import { useSceneStore } from "../../stores/sceneStore";
+
+// Hover prompts hide while paused (cursor freed). isInteracting isn't
+// included: some interactables (the console) stay "hovered" while in use.
+const isWorldUnfocusedForHover = () => useSceneStore.getState().showStartPrompt;
 
 export interface TriggerAction {
     type: "click" | "keypress" | "hover";
@@ -243,6 +248,7 @@ export const InteractionRaycaster: React.FC<InteractionRaycasterProps> = ({
 
         const isHit =
             intersects.length > 0 &&
+            !isWorldUnfocusedForHover() &&
             (!config.maxDistance ||
                 intersects[0].distance <= config.maxDistance);
 

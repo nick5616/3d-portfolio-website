@@ -1,3 +1,4 @@
+import { GemPrompt } from "../../ui/GemPrompt";
 import React, { useState, useRef } from "react";
 import { RigidBody } from "@react-three/rapier";
 import { Text } from "@react-three/drei";
@@ -92,40 +93,11 @@ const ControlButton: React.FC<ButtonProps> = ({
                     cursorStyle: "pointer",
                     prompt: {
                         content: (
-                            <div
-                                style={{
-                                    background: "rgba(0, 0, 0, 0.8)",
-                                    color: "white",
-                                    padding: "8px 12px",
-                                    borderRadius: "4px",
-                                    fontSize: "14px",
-                                    fontFamily: "monospace",
-                                    whiteSpace: "nowrap",
-                                    textAlign: "center",
-                                    userSelect: "none",
-                                    transform: "translate(-50%, -100%)", // Center horizontally, place above
-                                    pointerEvents: "none", // Prevent interference with interactions
-                                }}
-                            >
+                            <div style={{ transform: "translate(-50%, -100%)" }}>
                                 {isActive ? (
-                                    <span>Currently Active</span>
+                                    <GemPrompt accent="blue" keyLabel={null} action="Running now" />
                                 ) : (
-                                    <>
-                                        Press{" "}
-                                        <kbd
-                                            style={{
-                                                background: "#fff",
-                                                color: "#000",
-                                                padding: "2px 6px",
-                                                borderRadius: "3px",
-                                                fontSize: "12px",
-                                                fontWeight: "bold",
-                                            }}
-                                        >
-                                            E
-                                        </kbd>{" "}
-                                        to activate {label}
-                                    </>
+                                    <GemPrompt accent="blue" action={`Start ${label}`} />
                                 )}
                             </div>
                         ),

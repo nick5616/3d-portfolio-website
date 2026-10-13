@@ -32,7 +32,7 @@ const AnimatedDigit: React.FC<{ char: string }> = ({ char }) => (
 );
 
 export const RupeeCounter: React.FC = () => {
-  const { totalValue } = useRupeeStore();
+  const totalValue = useRupeeStore((s) => s.totalValue);
   const [displayedValue, setDisplayedValue] = useState(totalValue);
   const displayedValueRef = useRef(displayedValue);
   displayedValueRef.current = displayedValue;
@@ -76,7 +76,7 @@ export const RupeeCounter: React.FC = () => {
   }, [totalValue]);
 
   return (
-    <div className="fixed right-0 top-10 z-30 flex items-center gap-2 bg-[linear-gradient(115deg,rgba(0,0,0,0.85),rgba(0,0,0,0))] backdrop-blur-md rounded-l-full pl-1.5 pr-16 py-[0.50] shadow-lg">
+    <div className="hud-layer fixed right-0 top-10 z-30 flex items-center gap-2 bg-[linear-gradient(115deg,rgba(0,0,0,0.85),rgba(0,0,0,0))] backdrop-blur-md rounded-l-full pl-1.5 pr-16 py-[0.50] shadow-lg">
       {/* Rupee Icon - protrudes above the top edge of the pill */}
       <div className="relative w-7 h-7 flex items-center justify-center">
         <img

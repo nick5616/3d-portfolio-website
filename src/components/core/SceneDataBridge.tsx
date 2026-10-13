@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -5,19 +6,30 @@ import { useSceneStore } from "../../stores/sceneStore";
 
 export const SceneDataBridge: React.FC = () => {
     const { camera, scene } = useThree();
-    const { updateCameraData, updateSceneData } = useSceneStore();
+    const { updateCameraData, updateSceneData } = useSceneStore(
+        useShallow((s) => ({ updateCameraData: s.updateCameraData, updateSceneData: s.updateSceneData }))
+    );
 
     // Throttling refs to reduce update frequency
     const lastCameraUpdate = useRef(0);
     const CAMERA_UPDATE_INTERVAL = 1000 / 30; // 30fps instead of 60fps
     const forwardVector = useRef(new THREE.Vector3());
+    const lastPosition = useRef(new THREE.Vector3(NaN, NaN, NaN));
+    const lastQuaternion = useRef(new THREE.Quaternion(NaN, NaN, NaN, NaN));
 
     // Use throttled camera updates instead of every frame
     useFrame(() => {
         const now = window.performance.now();
 
-        // Only update camera data at 30fps instead of 60fps
-        if (now - lastCameraUpdate.current >= CAMERA_UPDATE_INTERVAL) {
+        // Only update camera data at 30fps instead of 60fps, and only when the
+        // camera actually moved/turned - an idle player shouldn't wake up
+        // every store subscriber 30 times a second.
+        const moved =
+            !lastPosition.current.equals(camera.position) ||
+            !lastQuaternion.current.equals(camera.quaternion);
+        if (moved && now - lastCameraUpdate.current >= CAMERA_UPDATE_INTERVAL) {
+            lastPosition.current.copy(camera.position);
+            lastQuaternion.current.copy(camera.quaternion);
             // Derive facing direction from the quaternion rather than camera.rotation:
             // CameraController composes rotation in YXZ order, but camera.rotation
             // decodes in XYZ order by default, so rotation.y alone is not a reliable yaw.

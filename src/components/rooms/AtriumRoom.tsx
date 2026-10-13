@@ -1,5 +1,25 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { RoomConfig } from "../../types/scene.types";
+import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
+import { RoomRupeeSpawner } from "../models/RoomRupeeSpawner";
+import { getAtriumMaterials } from "./atrium/atriumMaterials";
+import { AtriumAtmosphere } from "./atrium/AtriumAtmosphere";
+import { RotundaShell } from "./atrium/RotundaShell";
+import { GlassDome } from "./atrium/GlassDome";
+import { SpiralStair } from "./atrium/SpiralStair";
+import { ReflectingPool } from "./atrium/ReflectingPool";
+import { AtriumGarden, URN_SPOTS } from "./atrium/AtriumGarden";
+import {
+    BALCONY_INNER,
+    COLUMN_COUNT,
+    COLUMN_OFFSET,
+    COLUMN_RADIUS,
+    LEVELS,
+    RADIUS,
+    STAIR_CENTER,
+    STAIR_OUTER,
+    polar,
+} from "./atrium/atriumLayout";
 
 interface AtriumRoomProps {
     config: RoomConfig;
@@ -10,79 +30,69 @@ interface AtriumRoomProps {
     depth: number;
 }
 
-export const AtriumRoom: React.FC<AtriumRoomProps> = ({ width, height }) => {
+// The hub. Original brief (rooms.ts): "greek pillars, fascinating and
+// inspiring rays of light, a major ethereal vibe... lush, deep greens of
+// plant life, and the intense blue of pristine waters, with light shining
+// through." So: a three-tier marble rotunda under a great glass dome, sun
+// falling through dusty air onto a reflecting pool and fountain, columns
+// carrying two balconies hung with ivy, and a spiral stair climbing to the
+// upper floors, where sealed doors wait for future rooms.
+//
+// The room builds its own walls, floors and lights (it bypasses BaseRoom),
+// and almost everything repeated is instanced or merged, so the whole
+// rotunda stays around a hundred draw calls.
+
+const columnSpots = COLUMN_RADIUS.flatMap((radius, tier) =>
+    Array.from({ length: COLUMN_COUNT }, (_, k) => ({
+        tier,
+        position: polar(radius, COLUMN_OFFSET + (k / COLUMN_COUNT) * Math.PI * 2),
+    }))
+);
+const urnSpots = URN_SPOTS.map(({ angle, level, radius }) => ({ level, position: polar(radius, angle) }));
+
+const clearOf = (x: number, z: number, level: number) => {
+    const near = ([px, pz]: [number, number], distance: number) => Math.hypot(x - px, z - pz) < distance;
+    if (level === 0 && near(STAIR_CENTER, STAIR_OUTER + 0.6)) return false;
+    if (columnSpots.some((c) => c.tier === level && near(c.position, 0.8))) return false;
+    if (urnSpots.some((u) => u.level === level && near(u.position, 0.9))) return false;
+    return true;
+};
+
+// The first rupee waits upstairs as a reward for the climb; the rest are
+// scattered around the ground floor.
+const pickRupeeSpot = (index: number): [number, number, number] => {
+    const level = index === 0 ? 1 + Math.floor(Math.random() * 2) : 0;
+    const [minR, maxR] = level === 0 ? [4.7, RADIUS - 0.8] : [BALCONY_INNER[level - 1] + 0.9, RADIUS - 0.5];
+    for (let attempt = 0; attempt < 40; attempt++) {
+        const r = minR + Math.random() * (maxR - minR);
+        const [x, z] = polar(r, Math.random() * Math.PI * 2);
+        if (clearOf(x, z, level)) return [x, LEVELS[level] + 0.5, z];
+    }
+    return [0, 0.5, 7];
+};
+
+export const AtriumRoom: React.FC<AtriumRoomProps> = ({ config }) => {
+    const materials = useMemo(() => getAtriumMaterials(), []);
+
     return (
         <>
-            <group>
-                {/* Central ambient light - reduced intensity */}
-                <pointLight
-                    position={[0, height * 0.9, 0]}
-                    intensity={0.4}
-                    distance={25}
-                    color="#FFFF99"
-                    decay={1.5}
-                />
-
-                {/* Subtle ceiling spotlight for wood coffers */}
-                <spotLight
-                    position={[0, height * 0.6, 0]}
-                    target-position={[0, height, 0]}
-                    intensity={0.6}
-                    distance={15}
-                    angle={Math.PI / 3}
-                    penumbra={0.3}
-                    color="#FFF8DC" // Warm white to enhance wood tones
-                />
-
-                {/* Reduced rim lighting */}
-                {Array.from({ length: 4 }, (_, i) => {
-                    const angle = (i / 4) * Math.PI * 2;
-                    const radius = 10;
-                    return (
-                        <pointLight
-                            key={i}
-                            position={[
-                                Math.cos(angle) * radius,
-                                height * 0.8,
-                                Math.sin(angle) * radius,
-                            ]}
-                            intensity={0.2}
-                            distance={15}
-                            color="#FFF8DC"
-                            decay={1.8}
-                        />
-                    );
-                })}
-
-                {/* Central ceiling lighting - reduced intensity */}
-                <pointLight
-                    position={[0, height * 0.85, 0]}
-                    intensity={8}
-                    distance={0}
-                    color="#FFFFaa"
-                    decay={0.4}
-                />
-
-                {/* Wall washing lights to make walls shine */}
-                {Array.from({ length: 4 }, (_, i) => {
-                    const angle = (i / 4) * Math.PI * 2;
-                    const radius = width * 0.4;
-                    const x = Math.cos(angle) * radius;
-                    const z = Math.sin(angle) * radius;
-                    return (
-                        <spotLight
-                            key={`wall-wash-${i}`}
-                            position={[x * 0.7, height * 0.8, z * 0.7]}
-                            target-position={[x, height * 0.5, z]}
-                            intensity={1.2}
-                            distance={20}
-                            angle={Math.PI / 4}
-                            penumbra={0.4}
-                            color="#FFFFFF"
-                        />
-                    );
-                })}
-            </group>
+            <RoomEnvironmentReady />
+            <AtriumAtmosphere />
+            <RotundaShell materials={materials} />
+            <GlassDome materials={materials} />
+            <SpiralStair materials={materials} />
+            <ReflectingPool materials={materials} />
+            <AtriumGarden materials={materials} />
+            <RoomRupeeSpawner
+                key={`rupee-spawner-${config.id}`}
+                roomId={config.id}
+                dimensions={config.dimensions}
+                position={config.position}
+                numRupees={3}
+                rupeeScale={0.3}
+                spawnDelay={500}
+                pickPosition={pickRupeeSpot}
+            />
         </>
     );
 };

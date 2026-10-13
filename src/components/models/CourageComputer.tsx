@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
@@ -21,7 +22,9 @@ export const CourageComputer: React.FC<CourageComputerProps> = ({
     const scanLineRef = useRef<THREE.Mesh>(null);
     const powerLEDRef = useRef<THREE.Mesh>(null);
 
-    const { console: consoleState } = useSceneStore();
+    const { console: consoleState } = useSceneStore(
+        useShallow((s) => ({ console: s.console }))
+    );
 
     // AI personality state
     const [currentText, setCurrentText] = useState("COMPUTER");

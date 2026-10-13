@@ -1,5 +1,6 @@
+import { useShallow } from "zustand/react/shallow";
 // src/components/core/PlayerBody.tsx
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
     RigidBody,
@@ -11,6 +12,9 @@ import type { RapierRigidBody } from "@react-three/rapier";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useKeyboardControls } from "../../hooks/useKeyboardControls";
 import * as THREE from "three";
+import { playSound } from "../../audio/soundManager";
+import { ROOM_SOUNDSCAPES } from "../../audio/soundManifest";
+import { soundscapeKeyForRoom } from "../../audio/roomSoundscape";
 
 const JUMP_FORCE = 4;
 const JUMP_COOLDOWN = 500; // milliseconds
@@ -27,18 +31,73 @@ const CROUCH_TRANSITION_SPEED = 10; // higher = snappier crouch/stand transition
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
     const { movement } = useKeyboardControls();
-    const { world } = useRapier();
+    const { world, rapier } = useRapier();
+    // Probe from the capsule's lower sphere center straight down.
+    const groundRay = useMemo(
+        () => new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 }),
+        [rapier]
+    );
+    // Only subscribe to values that change rarely. Position, velocity and
+    // grounded state are written FROM this component's useFrame, so reading
+    // them back through a subscription would re-render it every frame.
     const {
         flyMode,
         shouldTeleportPlayer,
-        playerPosition,
         clearTeleportFlag,
         updatePlayerVelocity,
         setPlayerGrounded,
         updatePlayerPosition,
         currentRoom,
         roomEnvironmentReady,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({
+            flyMode: s.flyMode,
+            shouldTeleportPlayer: s.shouldTeleportPlayer,
+            clearTeleportFlag: s.clearTeleportFlag,
+            updatePlayerVelocity: s.updatePlayerVelocity,
+            setPlayerGrounded: s.setPlayerGrounded,
+            updatePlayerPosition: s.updatePlayerPosition,
+            currentRoom: s.currentRoom,
+            roomEnvironmentReady: s.roomEnvironmentReady,
+        }))
+    );
+    // Spawn position only matters at mount (PlayerBody is keyed by room).
+    const [spawnPosition] = useState(
+        () => useSceneStore.getState().playerPosition
+    );
+
+    // Throttle store writes: every write notifies every subscriber, so
+    // writing position/velocity/grounded on every frame used to re-render
+    // the whole app at the display's refresh rate even while standing still.
+    const lastPublish = useRef({ time: 0, x: NaN, y: NaN, z: NaN });
+    const lastGrounded = useRef<boolean | null>(null);
+    const publishPlayerState = (
+        x: number,
+        y: number,
+        z: number,
+        vel: { x: number; y: number; z: number }
+    ) => {
+        const now = performance.now();
+        const last = lastPublish.current;
+        // (Written as "not within" so the NaN starting values count as moved.)
+        const moved = !(
+            Math.abs(x - last.x) <= 0.005 &&
+            Math.abs(y - last.y) <= 0.005 &&
+            Math.abs(z - last.z) <= 0.005
+        );
+        if (!moved || now - last.time < 1000 / 30) return;
+        lastPublish.current = { time: now, x, y, z };
+        updatePlayerPosition([x, y, z]);
+        updatePlayerVelocity([vel.x, vel.y, vel.z]);
+    };
+
+    // Footsteps: one step per ~1.9 m walked (shorter strides when running
+    // feel wrong at this scale, so it's distance-based, not time-based).
+    const stride = useRef(0);
+    const wasGrounded = useRef(true);
+    const footstepSound =
+        ROOM_SOUNDSCAPES[soundscapeKeyForRoom(currentRoom)]?.footsteps ??
+        "footstep-stone";
 
     const playerRef = useRef<RapierRigidBody>(null);
     const velocity = useRef(new THREE.Vector3());
@@ -47,13 +106,28 @@ export const PlayerBody: React.FC = () => {
     const lastJumpTime = useRef(0);
     const eyeHeight = useRef(STANDING_EYE_HEIGHT);
 
-    // Helper to check if player is grounded
-    const checkIfGrounded = () => {
-        if (!playerRef.current) return false;
-        const currentVel = playerRef.current.linvel();
-        // Consider player grounded if vertical velocity is very small
-        return Math.abs(currentVel.y) < 0.1;
+    // What's just below the feet, if anything. The capsule's lower sphere
+    // center is 0.5 above the body origin and 0.3 above its bottom, so a hit
+    // within 0.45 leaves 0.15 of slack.
+    const probeGround = () => {
+        const body = playerRef.current;
+        if (!body) return null;
+        const p = body.translation();
+        groundRay.origin = { x: p.x, y: p.y + 0.5, z: p.z };
+        return world.castRayAndGetNormal(
+            groundRay,
+            0.45,
+            true,
+            rapier.QueryFilterFlags.EXCLUDE_SENSORS,
+            undefined,
+            undefined,
+            body
+        );
     };
+    // Ramps (the atrium's spiral stair) are frictionless so the capsule's
+    // very high friction doesn't glue it to the slope; on those the player
+    // is held in place by hand when idle and kept on the surface going down.
+    const anchored = useRef(false);
 
     // Gravity only applies to the physics body outside of flight - while
     // flying the body is driven directly from the camera every frame below,
@@ -70,7 +144,7 @@ export const PlayerBody: React.FC = () => {
     // ever actually read it.
     useEffect(() => {
         playerRef.current?.setGravityScale(
-            flyMode || !roomEnvironmentReady ? 0 : 1,
+            flyMode || !roomEnvironmentReady || anchored.current ? 0 : 1,
             true
         );
     }, [flyMode, roomEnvironmentReady]);
@@ -91,6 +165,7 @@ export const PlayerBody: React.FC = () => {
         // Handle teleportation (process even before room is ready so player
         // is positioned correctly while waiting for floor colliders)
         if (shouldTeleportPlayer) {
+            const playerPosition = useSceneStore.getState().playerPosition;
             playerRef.current.setTranslation(
                 {
                     x: playerPosition[0],
@@ -119,17 +194,20 @@ export const PlayerBody: React.FC = () => {
             };
             playerRef.current.setTranslation(flightPosition, true);
             playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-            updatePlayerPosition([
+            publishPlayerState(
                 flightPosition.x,
                 flightPosition.y,
                 flightPosition.z,
-            ]);
+                { x: 0, y: 0, z: 0 }
+            );
             return;
         }
 
         // Always keep camera following the player
         const pos = playerRef.current.translation();
-        camera.position.set(pos.x, pos.y + eyeHeight.current, pos.z);
+        if (!useSceneStore.getState().cameraOverride) {
+            camera.position.set(pos.x, pos.y + eyeHeight.current, pos.z);
+        }
 
         // Underground safety net — if the player clips below the world, snap them back
         if (pos.y < UNDERGROUND_THRESHOLD) {
@@ -142,19 +220,48 @@ export const PlayerBody: React.FC = () => {
             playerRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
         }
 
-        // Update player position in store for collision detection
-        const currentPosition = playerRef.current.translation();
-        updatePlayerPosition([
-            currentPosition.x,
-            currentPosition.y,
-            currentPosition.z,
-        ]);
-
         const currentTime = Date.now();
-        const isGrounded = checkIfGrounded();
+        const ground = probeGround();
+        // Barely moving vertically, or (on ramps, where the body rises and
+        // falls as it walks) standing just above something solid.
+        const isGrounded =
+            Math.abs(playerRef.current.linvel().y) < 0.1 || ground !== null;
+        const slippery = ground !== null && ground.collider.friction() < 0.05;
+        const wantsToMove =
+            movement.forward || movement.backward || movement.left || movement.right;
+        const justJumped = currentTime - lastJumpTime.current < 300;
 
-        // Report ground contact state
-        setPlayerGrounded(isGrounded);
+        // Idle on a frictionless ramp: switch gravity off and hold still,
+        // or the player would slowly slide back down the stairs.
+        const anchor = slippery && !wantsToMove && !movement.jumping && !justJumped;
+        if (anchor !== anchored.current) {
+            anchored.current = anchor;
+            playerRef.current.setGravityScale(
+                anchor || flyMode || !roomEnvironmentReady ? 0 : 1,
+                true
+            );
+        }
+        if (anchor) playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+
+        // Report ground contact state (only when it actually changes)
+        if (lastGrounded.current !== isGrounded) {
+            lastGrounded.current = isGrounded;
+            setPlayerGrounded(isGrounded);
+        }
+        if (isGrounded && !wasGrounded.current && roomEnvironmentReady) {
+            playSound("land");
+        }
+        wasGrounded.current = isGrounded;
+        if (isGrounded) {
+            const v = playerRef.current.linvel();
+            stride.current += Math.hypot(v.x, v.z) * delta;
+            if (stride.current > 1.9) {
+                stride.current = 0;
+                playSound(footstepSound, {
+                    volume: movement.crouching ? 0.5 : 1,
+                });
+            }
+        }
 
         // Reset jump ability when grounded
         if (
@@ -178,6 +285,7 @@ export const PlayerBody: React.FC = () => {
             );
             setCanJump(false);
             lastJumpTime.current = currentTime;
+            playSound("jump");
         }
 
         // Calculate movement direction based on camera orientation
@@ -219,16 +327,33 @@ export const PlayerBody: React.FC = () => {
                 direction.current.z * speed * airMultiplier
             );
 
+            // Walking down a ramp, follow the surface instead of skipping
+            // off it into a hop every few steps: the vertical speed that
+            // keeps the velocity parallel to the slope, plus a little.
+            if (slippery && ground && !justJumped) {
+                // Triangle meshes are two-sided; make the normal point up.
+                const s = ground.normal.y < 0 ? -1 : 1;
+                const n = { x: ground.normal.x * s, y: ground.normal.y * s, z: ground.normal.z * s };
+                const alongSurface =
+                    -(velocity.current.x * n.x + velocity.current.z * n.z) /
+                    Math.max(n.y, 0.3);
+                if (alongSurface < 0) {
+                    velocity.current.y = Math.min(velocity.current.y, alongSurface - 0.2);
+                }
+            }
+
             // Apply the velocity
             playerRef.current.setLinvel(velocity.current, true);
         }
 
-        // Update player velocity in scene store
-        if (playerRef.current) {
-            const currentVel = playerRef.current.linvel();
-            updatePlayerVelocity([currentVel.x, currentVel.y, currentVel.z]);
-        }
-
+        // Publish position/velocity for rupees, doors and the minimap
+        const currentPosition = playerRef.current.translation();
+        publishPlayerState(
+            currentPosition.x,
+            currentPosition.y,
+            currentPosition.z,
+            playerRef.current.linvel()
+        );
     });
 
     return (
@@ -239,7 +364,7 @@ export const PlayerBody: React.FC = () => {
             gravityScale={flyMode || !roomEnvironmentReady ? 0 : 1}
             enabledRotations={[false, false, false]}
             lockRotations
-            position={playerPosition}
+            position={spawnPosition}
             friction={20}
             restitution={0}
             collisionGroups={interactionGroups(0, [0, 1])}

@@ -22,7 +22,22 @@ body,
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #000;
+}
+
+/* The 3D world owns the whole viewport; the landing and Basic pages scroll. */
+html.world-mode,
+html.world-mode body,
+html.world-mode #root {
     overflow: hidden;
+}
+
+/* Full-screen views (art inspector, sketchbook reader, project viewer)
+   hide every HUD element - including the FPS meter that drei appends
+   straight to <body> - by toggling this class on <body>. */
+body.hud-hidden .hud-layer,
+body.hud-hidden .fps-stats,
+body.hud-hidden [data-testid="stats-panel"] {
+    display: none !important;
 }
 
 /* Each rupee-counter digit slides down into place from above when it changes. */

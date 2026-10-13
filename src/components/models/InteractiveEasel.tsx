@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import React, {
     useRef,
     useState,
@@ -27,7 +28,9 @@ export const InteractiveEasel: React.FC<InteractiveEaselProps> = ({
     const easelRef = useRef<THREE.Group>(null);
     const canvasMeshRef = useRef<THREE.Mesh>(null);
     const { camera, raycaster, scene } = useThree();
-    const { setIsInteracting } = useSceneStore();
+    const { setIsInteracting } = useSceneStore(
+        useShallow((s) => ({ setIsInteracting: s.setIsInteracting }))
+    );
 
     // Drawing state
     const [isDrawing, setIsDrawing] = useState(false);

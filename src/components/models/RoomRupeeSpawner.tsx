@@ -20,6 +20,8 @@ interface RoomRupeeSpawnerProps {
     numRupees?: number;
     rupeeScale?: number;
     spawnDelay?: number; // Delay before spawning rupees (ms)
+    // Optional custom placement: returns [x, y, z] for the i-th rupee.
+    pickPosition?: (index: number) => [number, number, number];
 }
 
 export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
@@ -29,6 +31,7 @@ export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
     numRupees = 8,
     rupeeScale = 0.4,
     spawnDelay = 500,
+    pickPosition,
 }) => {
     const [shouldSpawn, setShouldSpawn] = useState(false);
     const [hasSpawned, setHasSpawned] = useState(false);
@@ -98,10 +101,16 @@ export const RoomRupeeSpawner: React.FC<RoomRupeeSpawnerProps> = ({
                 }
             }
 
-            // Random position within safe area - use local coordinates (room center at 0,0,0)
-            const x = minX + margin + Math.random() * safeWidth;
-            const z = minZ + margin + Math.random() * safeDepth;
-            const y = 0.5; // Above floor (local to room) - this is the low point of the bob
+            // Random position within safe area - use local coordinates (room
+            // center at 0,0,0), unless the room picks its own spots (round
+            // or multi-level rooms). y is the low point of the bob.
+            const [x, y, z] = pickPosition
+                ? pickPosition(i)
+                : [
+                      minX + margin + Math.random() * safeWidth,
+                      0.5,
+                      minZ + margin + Math.random() * safeDepth,
+                  ];
 
             // Random initial rotation
             const initialRotation = new THREE.Euler(

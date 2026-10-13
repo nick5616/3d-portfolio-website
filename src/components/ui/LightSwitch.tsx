@@ -1,37 +1,12 @@
+import { GemPrompt } from "./GemPrompt";
 import React, { useRef, useState } from "react";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 import { InteractionRaycaster } from "../core/InteractionRaycaster";
 import { Text } from "@react-three/drei";
 
-// Interaction prompt component - copied from Door.tsx
 const InteractionPrompt: React.FC<{ action: string }> = ({ action }) => (
-    <div
-        style={{
-            background: "rgba(0, 0, 0, 0.8)",
-            color: "white",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            fontSize: "14px",
-            fontFamily: "Arial, sans-serif",
-            whiteSpace: "nowrap",
-        }}
-    >
-        Press{" "}
-        <kbd
-            style={{
-                background: "#fff",
-                color: "#000",
-                padding: "2px 6px",
-                borderRadius: "3px",
-                fontSize: "12px",
-                fontWeight: "bold",
-            }}
-        >
-            E
-        </kbd>{" "}
-        {action}
-    </div>
+    <GemPrompt accent="gold" action={action} />
 );
 
 interface LightSwitchProps {

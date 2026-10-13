@@ -1,18 +1,59 @@
+import { useShallow } from "zustand/react/shallow";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { Environment } from "@react-three/drei";
+import { Environment, Lightformer } from "@react-three/drei";
 import { Room } from "./Room";
 import { CameraController } from "./CameraController";
 import { Door } from "./Door";
 import { RouterIntegration } from "./RouterIntegration";
+import { ArtAimController } from "./ArtAimController";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { updateAllShaders } from "../../configs/enhancedMaterials";
 import { roomConfigs } from "../../configs/rooms";
 
+// Reflections come from a tiny procedural environment built out of a few
+// glowing panels (Lightformers) instead of drei's HDR presets. The presets
+// downloaded a 1-2 MB HDR from a third-party CDN and re-ran PMREM every
+// time the room changed - even for rooms that then set its intensity to 0.
+interface EnvLook {
+    intensity: number;
+    sky: string; // big overhead panel
+    key: string; // warm/cool side panel
+    fill: string; // opposite side panel
+}
+
+const getEnvLook = (roomId: string | undefined, quality: string): EnvLook | null => {
+    const base = quality === "low" ? 0.3 : 0.6;
+    if (roomId && roomConfigs[roomId]?.galleryRoomKind) {
+        // The gallery wing's marble picks up soft, warm reflections.
+        return { intensity: base * 0.6, sky: "#fff4e0", key: "#ffe2b8", fill: "#cfe0ff" };
+    }
+    switch (roomId) {
+        case "projects":
+            return { intensity: base * 0.8, sky: "#9fd8ff", key: "#00e5ff", fill: "#b04dff" };
+        case "atrium":
+            return { intensity: base * 1.2, sky: "#fff7d6", key: "#ffe08a", fill: "#8fd3c7" };
+        case "about":
+            return { intensity: base * 0.7, sky: "#ffffff", key: "#ffe0b2", fill: "#b0c4ff" };
+        case "relaxation":
+            return { intensity: base * 1.5, sky: "#e6f3ff", key: "#b3d9ff", fill: "#d6ffe6" };
+        case "achievements":
+            return { intensity: base * 1.2, sky: "#fff1d6", key: "#ffc56b", fill: "#ffe9c7" };
+        default:
+            return { intensity: base, sky: "#ffffff", key: "#fff0dd", fill: "#dde8ff" };
+    }
+};
+
 export const SceneManager: React.FC = () => {
     const { scene, gl } = useThree();
-    const { currentRoom, performance } = useSceneStore();
+    const { currentRoom, performance, customEnvironment } = useSceneStore(
+        useShallow((s) => ({
+            currentRoom: s.currentRoom,
+            performance: s.performance,
+            customEnvironment: s.customEnvironment,
+        }))
+    );
     const fpsGraph = useRef<number[]>([]);
 
     // Throttling refs to reduce update frequency
@@ -30,16 +71,12 @@ export const SceneManager: React.FC = () => {
     const performanceUpdateInterval = 1000; // Only update performance stats once per second
 
     useEffect(() => {
-        // Initialize scene with enhanced settings
         scene.fog = new THREE.Fog("#000000", 20, 30);
-
-        // Enable shadows for enhanced lighting
-        gl.shadowMap.enabled = true;
-        gl.shadowMap.type = THREE.PCFSoftShadowMap;
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.2;
-
-        // Room loading is now handled by RouterIntegration
+        // Tone mapping itself is owned by <Canvas> (ACES normally, none in
+        // `flat` low-quality mode); this only sets how bright it is. Shadows
+        // are intentionally off renderer-wide - almost nothing in the scene
+        // received them, so the shadow passes were pure cost.
+        gl.toneMappingExposure = 1.0;
     }, [scene, gl]);
 
     useFrame(({ gl, clock }) => {
@@ -55,7 +92,7 @@ export const SceneManager: React.FC = () => {
             lastPerformanceUpdate.current = now;
         }
 
-        // Throttled shader updates - skip on low quality or when overheating
+        // Throttled shader updates - skip on low quality
         if (
             performance.quality !== "low" &&
             now - lastShaderUpdate.current >= shaderUpdateInterval
@@ -64,110 +101,72 @@ export const SceneManager: React.FC = () => {
                 updateAllShaders(clock.elapsedTime);
                 lastShaderUpdate.current = now;
             } catch (error) {
-                // Enhanced shaders not available, skip
                 console.warn("Shader update failed, skipping:", error);
             }
         }
     });
 
-    // Helper functions for room-specific environments
-    const getEnvironmentPreset = (
-        roomId: string | undefined
-    ):
-        | "studio"
-        | "apartment"
-        | "forest"
-        | "lobby"
-        | "city"
-        | "dawn"
-        | "night"
-        | "park"
-        | "sunset"
-        | "warehouse" => {
-        // Every room in the gallery wing (the atrium hub + every hall)
-        // shares the same warm indoor environment.
-        if (roomId && roomConfigs[roomId]?.galleryRoomKind) {
-            return "apartment";
-        }
-        switch (roomId) {
-            case "projects":
-                return "studio"; // Clean, neutral environment for sci-fi
-            case "atrium":
-                return "forest"; // Natural environment for atrium
-            case "about":
-                return "lobby"; // Neutral indoor environment
-            case "relaxation":
-                return "park"; // Peaceful outdoor environment for relaxation
-            case "achievements":
-                return "lobby"; // Warm, gallery-like environment for the plaque hall
-            default:
-                return "city"; // Default fallback
-        }
-    };
-
-    const getEnvironmentIntensity = (
-        roomId: string | undefined,
-        quality: string
-    ): number => {
-        const baseIntensity = quality === "low" ? 0.3 : 0.6;
-
-        if (roomId && roomConfigs[roomId]?.galleryRoomKind) {
-            return baseIntensity * 0; // Same low reflections as the old gallery, wing-wide
-        }
-
-        switch (roomId) {
-            case "projects":
-                return baseIntensity * 0; // Very low for sci-fi room to avoid unwanted reflections
-            case "atrium":
-                return baseIntensity * 1.2; // Enhanced for natural feel
-            case "about":
-                return baseIntensity * 0.7; // Reduced for about room
-            case "relaxation":
-                return baseIntensity * 1.5; // Enhanced for peaceful outdoor feel
-            case "achievements":
-                return baseIntensity * 1.2; // Bright enough to read the plaques
-            default:
-                return baseIntensity;
-        }
-    };
+    const envLook = customEnvironment
+        ? null
+        : getEnvLook(currentRoom?.id, performance.quality);
 
     return (
         <>
             <RouterIntegration />
 
-            {/* Enhanced lighting setup */}
-            <ambientLight intensity={0.3} color="#f0f8ff" />
+            {/* Global fill light; each room adds its own key lighting */}
+            <hemisphereLight
+                intensity={customEnvironment ? 0 : 0.35}
+                color="#f0f8ff"
+                groundColor="#3a3226"
+            />
             <directionalLight
                 position={[10, 10, 5]}
-                intensity={0.8}
-                castShadow={performance.quality !== "low"}
-                shadow-mapSize={
-                    performance.quality === "high" ? [2048, 2048] : [1024, 1024]
-                }
-                shadow-camera-far={50}
-                shadow-camera-left={-50}
-                shadow-camera-right={50}
-                shadow-camera-top={50}
-                shadow-camera-bottom={-50}
+                intensity={customEnvironment ? 0 : 0.6}
             />
 
-            {/* Room-specific environment */}
-            <Environment
-                preset={getEnvironmentPreset(currentRoom?.id)}
-                background={false}
-                environmentIntensity={getEnvironmentIntensity(
-                    currentRoom?.id,
-                    performance.quality
-                )}
-            />
+            {envLook && (
+                <Environment
+                    key={currentRoom?.id}
+                    frames={1}
+                    resolution={64}
+                    background={false}
+                    environmentIntensity={envLook.intensity}
+                >
+                    <Lightformer
+                        form="rect"
+                        intensity={2}
+                        color={envLook.sky}
+                        position={[0, 5, 0]}
+                        rotation-x={Math.PI / 2}
+                        scale={[10, 10, 1]}
+                    />
+                    <Lightformer
+                        form="rect"
+                        intensity={1.5}
+                        color={envLook.key}
+                        position={[-5, 1, -1]}
+                        rotation-y={Math.PI / 2}
+                        scale={[10, 3, 1]}
+                    />
+                    <Lightformer
+                        form="rect"
+                        intensity={1}
+                        color={envLook.fill}
+                        position={[5, 1, 1]}
+                        rotation-y={-Math.PI / 2}
+                        scale={[10, 3, 1]}
+                    />
+                </Environment>
+            )}
 
             <CameraController />
+            <ArtAimController />
 
             {/* Render only the current room */}
             {currentRoom && (
                 <>
                     <Room key={currentRoom.id} config={currentRoom} />
-                    {/* Render doors for the current room's archways */}
                     {currentRoom.archways.map((archway) => (
                         <Door key={archway.id} archway={archway} />
                     ))}

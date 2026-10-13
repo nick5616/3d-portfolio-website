@@ -1,0 +1,837 @@
+{
+  "syncedFrom": "nickel-tools/app/data/content.ts",
+  "version": "1.1.0",
+  "profile": {
+    "name": "Nicole Belovoskey",
+    "headline": "Software engineer",
+    "summary": "Software developer with experience across big tech at Microsoft and DoorDash, as well as several early-stage startups. Bachelor's degree in Computer Science from Texas A&M University.",
+    "links": {
+      "github": "https://github.com/nick5616",
+      "linkedin": "https://linkedin.com/in/nicolebelovoskey",
+      "email": "nicolebelovoskey@gmail.com"
+    }
+  },
+  "projects": [
+    {
+      "id": "chaos",
+      "title": "CHAOS",
+      "description": "Counter-Strike Highlight Analysis and Organization System. Point it at hours of gameplay footage and it finds the moments worth keeping (kills, funny voice chat, good conversations) and clips them for you. Runs entirely on your own machine.",
+      "why": "I have 700+ GB of my own Counter-Strike footage from 10+ years of playing and making videos, and scrubbing through it by hand was never going to happen. The rewrite made it a lot faster and more accurate. Classical computer vision does most of the work and OCR only runs on small crops. It samples every couple of seconds, then binary searches for the exact frame of a kill, which was the big speed win. An audio tagger catches laughter in voice chat, Whisper adds burned-in subtitles, and a resource planner sizes the workers from each model's measured memory so it doesn't eat my whole computer. It can resume where it left off, recompute only what changed, and throttle itself while I'm gaming. No LLMs, no cloud calls.",
+      "category": "Machine Learning",
+      "status": "operational",
+      "date": "2026-10",
+      "tech": [
+        "Python",
+        "PyQt6",
+        "OpenCV",
+        "PyTorch",
+        "Whisper",
+        "FFmpeg"
+      ],
+      "tags": [
+        "Machine Learning",
+        "Computer Vision",
+        "OCR",
+        "Speech-to-Text",
+        "Audio Processing",
+        "Video Processing",
+        "Batch Processing",
+        "Open Source"
+      ],
+      "url": "https://github.com/nick5616/CHAOS",
+      "source": "https://github.com/nick5616/CHAOS",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/chaos.png",
+      "preview": "none"
+    },
+    {
+      "id": "wizard-wars",
+      "title": "Wizard Wars",
+      "description": "A 3D multiplayer wizard first-person shooter that runs in your browser. Nothing to download, just open it and play.",
+      "why": null,
+      "category": "Games",
+      "status": "operational",
+      "date": "2026-05",
+      "tech": [
+        "WebRTC",
+        "Three.js",
+        "React",
+        "React-Three-Fiber"
+      ],
+      "tags": [
+        "Multiplayer",
+        "Real-time",
+        "3D Design",
+        "Physics",
+        "Open Source"
+      ],
+      "url": "https://wizardwars.saucedog.art",
+      "source": "https://github.com/nick5616/wizard-wars",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "plasma-sphere",
+      "title": "Plasma Sphere",
+      "description": "Like that one toy. Hold click and drag on the ball to attract the electricity! Desktop and mobile.",
+      "why": "I absolutely adore electricity and wanted to create a 3D environment that allows you to play with it. I've been fascinated with physical phenomena like electricity and magnetism, and how the basis of computers is manipulating an electron using a difference in electromagnetic force to make a transistor, which can be used to make logic gates, which can be used to make circuits, which can be used to make arithmetic logic units. With the inclusion of a clock and memory, you can create an entire computer architecture. On the newly formed computer, you can run programs directly on the hardware (baremetal) using binary instructions written for that computer architecture, or you could write a hardware abstraction layer that transpiles a common higher level language like assembly into the language the computer speaks. You can also write a language that's more readable to coders, that compiles into assembly, which is then translated into instructions for your computer! Using that higher level language, developers can move quickly and develop operating systems for a computer. Operating systems make it easier to write programs for the computer, because they handle the allocation of computer resources (they talk to the computer so your program doesn't have to worry about that). They also provide the illusion of isolation, meaning a software program written for an OS does not know other programs exist, and doesn't need to worry about playing nice with the hundreds of other applications running on the computer. The browser is a program on the OS. And this website is written for the browser! And it's all powered by 100 billion electrons jumping from one side of a microscopic germanium-doped silicon trough to the other.",
+      "category": "Experiments",
+      "status": "operational",
+      "date": "2026-04",
+      "tech": [
+        "JavaScript",
+        "Three.js",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Touch Interactions",
+        "Physics",
+        "Open Source"
+      ],
+      "url": "https://sphere.saucedog.art",
+      "source": "https://github.com/nick5616/plasma-sphere",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "the-circle",
+      "title": "The Circle",
+      "description": "One persistent global room where up to 8 people can be on camera and mic at once over a WebRTC mesh. Everyone else watches as the audience. No accounts, no room codes, no database.",
+      "why": "I wanted something that felt truly live. Not a chat box, but actual video with strangers. Wiring up WebRTC peer connections, Django Channels signaling, and Redis room state from scratch was the challenge. (Visit it directly. It won't work inside an iframe.)",
+      "category": "Social Tools",
+      "status": "operational",
+      "date": "2026-04",
+      "tech": [
+        "React",
+        "TypeScript",
+        "Django",
+        "WebSockets",
+        "WebRTC",
+        "Redis",
+        "Docker"
+      ],
+      "tags": [
+        "Real-time",
+        "Web Development",
+        "Open Source"
+      ],
+      "url": "https://live.saucedog.art/",
+      "source": "https://github.com/nick5616/the-circle",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": "none"
+    },
+    {
+      "id": "smart-midi-recorder",
+      "title": "Smart MIDI Recorder",
+      "description": "Records what you play on a MIDI keyboard and shows the key, the scale, and good next notes in real time to help you improvise.",
+      "why": "I play piano and wanted help improvising with more confidence. It surfaces the \"right\" notes for the key I'm in while still capturing everything I play.",
+      "category": "Music",
+      "status": "operational",
+      "date": "2026-04",
+      "tech": [
+        "JavaScript",
+        "Web Audio API",
+        "HTML",
+        "CSS"
+      ],
+      "tags": [
+        "Music Theory Algorithms",
+        "Interactive Design",
+        "Real-time",
+        "MIDI",
+        "Open Source"
+      ],
+      "url": "https://music.nickeltools.dev/smart-midi-recorder/",
+      "source": "https://github.com/nick5616/song-visualizer",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "pitch-hero",
+      "title": "Pitch Hero",
+      "description": "Sing or play a MIDI keyboard to hit scrolling notes as they cross the target line. Scores your pitch accuracy in real time from your mic or keyboard.",
+      "why": "I wanted pitch training to feel like a rhythm game instead of an exercise. I built the pitch detection and the scrolling note renderer from scratch on the Web Audio API.",
+      "category": "Music",
+      "status": "operational",
+      "date": "2026-04",
+      "tech": [
+        "JavaScript",
+        "Web Audio API",
+        "Canvas API",
+        "HTML",
+        "CSS"
+      ],
+      "tags": [
+        "Music Theory Algorithms",
+        "Interactive Design",
+        "Real-time",
+        "MIDI",
+        "Pitch Detection",
+        "Gamification",
+        "Open Source"
+      ],
+      "url": "https://music.nickeltools.dev/pitch-hero/",
+      "source": "https://github.com/nick5616/song-visualizer",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "song-visualizer",
+      "title": "Song Visualizer",
+      "description": "Turns music into animated particles, waveforms, geometry, and spectrum effects. Upload an MP3 or use your mic, then tweak the color, speed, and intensity.",
+      "why": "I wanted to see my music, not just hear it. Hooking the Web Audio API up to a canvas and watching a track turn into motion in real time never gets old.",
+      "category": "Music",
+      "status": "operational",
+      "date": "2026-04",
+      "tech": [
+        "JavaScript",
+        "Web Audio API",
+        "Canvas API",
+        "HTML",
+        "CSS"
+      ],
+      "tags": [
+        "Audio Processing",
+        "Interactive Design",
+        "Real-time",
+        "Animation",
+        "Open Source"
+      ],
+      "url": "https://music.nickeltools.dev/song-visualizer/",
+      "source": "https://github.com/nick5616/song-visualizer",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "life-graph",
+      "title": "Life Network",
+      "description": "Your life's goals as a 3D network: what depends on what, what to prioritize, and how it all connects.",
+      "why": "I wanted to see how my goals relate to each other and what has to happen first. It's generic so you can map your own. It's meant to include basic foundational behaviors like sleeping and eating well, since that's how you're at your best.",
+      "category": "Creative Productivity",
+      "status": "operational",
+      "date": "2026-03",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "WebGL"
+      ],
+      "tags": [
+        "AI Integration",
+        "3D Design",
+        "Interactive Design",
+        "Data Visualization",
+        "Open Source"
+      ],
+      "url": "https://yieldpassionfruit.netlify.app/life-graph",
+      "source": "https://github.com/nick5616/universe/blob/main/src/pages/LifeGraphPage.tsx",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "art-room",
+      "title": "Art Room",
+      "description": "A gallery room inside the holodeck where my paintings hang on the walls. Walk up close to look at the brushwork or step back to see the whole piece.",
+      "why": "Art looks different on a wall than in a grid of thumbnails. Being able to approach a piece and step away from it changes how you experience it, and I wanted that in the browser. The art is served from a small Go API backed by Cloud Storage.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2026-02",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL",
+        "Go",
+        "Google Cloud Storage",
+        "Docker"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com/holodeck/art",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": "https://github.com/nick5616/holodeck-art-api",
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "voice-lab",
+      "title": "VoiceLab",
+      "description": "A Python desktop app for singers that tracks vocal performance across takes. Measures pitch, resonance, weight, brightness, and consistency.",
+      "why": "I wanted objective feedback on my singing practice instead of relying only on my ear. Tracking the numbers across takes makes it easy to see what's actually improving.",
+      "category": "Machine Learning",
+      "status": "operational",
+      "date": "2025-12",
+      "tech": [
+        "Python"
+      ],
+      "tags": [
+        "Machine Learning",
+        "Audio Processing",
+        "Pitch Detection",
+        "Open Source"
+      ],
+      "url": "https://github.com/nick5616/VoiceLab",
+      "source": "https://github.com/nick5616/VoiceLab",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": "none"
+    },
+    {
+      "id": "batch-analyzer",
+      "title": "Batch Analyzer",
+      "description": "Ask the same questions (like 'How many books are in this image?') about a whole batch of product images at once. Bring your own LLM.",
+      "why": "While doing product image analysis work, I kept asking the same questions about image after image. This lets you write the questions once and run them across an entire batch, with whichever model you want.",
+      "category": "AI / Productivity",
+      "status": "operational",
+      "date": "2025-12",
+      "tech": [
+        "TypeScript",
+        "React",
+        "LLM APIs"
+      ],
+      "tags": [
+        "Image Processing",
+        "Batch Processing",
+        "AI Integration",
+        "Open Source"
+      ],
+      "url": "https://batch-analyzer.netlify.app/",
+      "source": "https://github.com/nick5616/batch-item-analyzer",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "courage-computer",
+      "title": "Courage Computer Room",
+      "description": "A retro computer lab inside the holodeck, starring the smug, all-knowing computer from Courage the Cowardly Dog.",
+      "why": "I wanted to capture the feeling of an old computer room as a space you can stand in. It's environmental storytelling with a lot of nostalgia, and a computer that's mean to you.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2025-11",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com/holodeck/courage-the-cowardly-dog",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "passionfruit",
+      "title": "Passionfruit",
+      "description": "Keep track of every project you're working on in one place, without it feeling like a work tracker.",
+      "why": "I have a lot of hobbies that I bounce between. I was getting overwhelmed by how many projects I had going, so I built Passionfruit to keep track of them in a way that wouldn't stifle my creativity.",
+      "category": "Creative Productivity",
+      "status": "operational",
+      "date": "2025-11",
+      "tech": [
+        "TypeScript",
+        "React"
+      ],
+      "tags": [
+        "Project Management",
+        "Productivity Tools",
+        "Open Source"
+      ],
+      "url": "https://yieldpassionfruit.netlify.app",
+      "source": "https://github.com/nick5616/universe",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/passionfruit.png",
+      "preview": null
+    },
+    {
+      "id": "nickel-tools",
+      "title": "Nickel Tools",
+      "description": "A desktop OS in your browser: app grid, app tray, draggable windows, and a swipeable mobile mode. Every little web thing I make lives here.",
+      "why": "I wanted a website that was \"a website of websites\" so I could/can give any little web thing I build a home 💖 I also wanted somewhere to put my art. A desktop OS seemed like the perfect container since pretty much everyone already knows how to get around one.",
+      "category": "Engineering",
+      "status": "operational",
+      "date": "2025-11",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Next.js"
+      ],
+      "tags": [
+        "Interactive Design",
+        "Responsive UI",
+        "Touch Interactions",
+        "Open Source"
+      ],
+      "url": "https://nickeltools.dev/desktop",
+      "source": "https://github.com/nick5616/nickel-tools",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "smart-piano",
+      "title": "Smart Piano",
+      "description": "An online piano that looks at the key you're in and what you just played, then suggests good next notes.",
+      "why": "I wanted a way to learn music theory by playing instead of memorizing scales. The suggestions help you make something that sounds nice even if you're not an expert yet.",
+      "category": "Music",
+      "status": "operational",
+      "date": "2025-11",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Web Audio API",
+        "Next.js"
+      ],
+      "tags": [
+        "Music Theory Algorithms",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nickeltools.dev/smart-piano",
+      "source": "https://github.com/nick5616/nickel-tools",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/smartpiano.png",
+      "preview": null
+    },
+    {
+      "id": "friendex",
+      "title": "Friendex",
+      "description": "A pokédex for your friends. A zany, mobile-first app for collecting and organizing what you know about the people in your life.",
+      "why": "I wanted a fun way to remember the details about my friends that felt like a game, not a contacts app. The pokédex idea makes filling it in feel like collecting, and I designed it phone-first because that's what you have on you when you're out with people.",
+      "category": "Social Tools",
+      "status": "operational",
+      "date": "2025-10",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Firebase Auth"
+      ],
+      "tags": [
+        "Mobile-First",
+        "Social App",
+        "Web Development",
+        "Responsive UI",
+        "Open Source"
+      ],
+      "url": "https://friendex.online",
+      "source": "https://github.com/nick5616/friendex",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/friendex.png",
+      "preview": {
+        "mobileScreens": [
+          "https://friendex.online/",
+          "https://friendex.online/demo"
+        ]
+      }
+    },
+    {
+      "id": "pokemon-or-technology",
+      "title": "Pokemon or Technology",
+      "description": "Test your knowledge! Can you tell a Pokémon name from a technology term?",
+      "why": "One day I noticed Pokémon and technology have similar sounding names, so I made this quiz game.",
+      "category": "Games",
+      "status": "operational",
+      "date": "Sometime in like Oct 2025",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Next.js"
+      ],
+      "tags": [
+        "Quiz"
+      ],
+      "url": "https://nickeltools.dev/pokemon-or-technology",
+      "source": null,
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "tierlistify",
+      "title": "tierlistify",
+      "description": "Rank anything, made for your phone. Drag items into tiers with your thumb and share the result.",
+      "why": "I thought the Tiermaker mobile site could use some improvement. Dragging things between tiers on a phone was frustrating, so I built one where touch is the main way you use it, not an afterthought, with a clean UI that stays out of the way of the ranking.",
+      "category": "Social App",
+      "status": "operational",
+      "date": "2025-09",
+      "tech": [
+        "TypeScript",
+        "React"
+      ],
+      "tags": [
+        "Mobile UX",
+        "Touch Interactions",
+        "Drag & Drop",
+        "Progressive Web App",
+        "Open Source"
+      ],
+      "url": "https://tierlistify.com",
+      "source": "https://github.com/nick5616/tierlistify",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/tierlistifytierlist.png",
+      "preview": {
+        "mobileScreens": [
+          "https://tierlistify.com/init",
+          "https://tierlistify.com/creation/1776295779582"
+        ]
+      }
+    },
+    {
+      "id": "sre-dashboard",
+      "title": "SRE Dashboard",
+      "description": "A dashboard for monitoring services, incidents, and logs. A Python/Flask backend serves hypermedia through HTMX, and the frontend is Lit web components.",
+      "why": "I wanted to try a stack that leans into the platform instead of abstracting it away. HTMX lets the server own state and send back HTML fragments, which cuts out a lot of client-side complexity. Lit is what web components always should have been: lightweight, declarative, and framework-agnostic. I don't think enough people know how powerful the native component model has gotten.",
+      "category": "Engineering",
+      "status": "operational",
+      "date": "2025-09",
+      "tech": [
+        "Python",
+        "Lit",
+        "HTMX",
+        "Flask"
+      ],
+      "tags": [
+        "SRE",
+        "Dashboard",
+        "Data Visualization",
+        "Developer Tools",
+        "Open Source"
+      ],
+      "url": "https://sre.nickeltools.dev",
+      "source": "https://github.com/nick5616/lit-htmxperiments",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "videogamequest",
+      "title": "RPG Quests",
+      "description": "Write a journal entry and get it back as video game quests, so you can live your life like an RPG.",
+      "why": "I wanted journaling and getting things done to feel more like playing a game. Turning what you write into quests gives you something to chase, and finishing one feels like leveling up instead of crossing off a chore.",
+      "category": "AI / Productivity",
+      "status": "operational",
+      "date": "2025-06",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Tailwind CSS",
+        "Framer Motion",
+        "Nest.js",
+        "Node.js",
+        "LLM APIs"
+      ],
+      "tags": [
+        "AI Integration",
+        "Productivity Tools",
+        "Gamification",
+        "Journaling"
+      ],
+      "url": "https://rpg-quests.netlify.app/",
+      "source": null,
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/videogamequest.png",
+      "preview": {
+        "mobileScreens": [
+          "https://videogamequest.me/",
+          "https://videogamequest.me/demo"
+        ]
+      }
+    },
+    {
+      "id": "portfolio",
+      "title": "Nicole's World",
+      "description": "A first-person 3D world on the web. You can walk, sprint, and jump around, collect gems, browse my art in a fancy digital museum, walk right up to my software projects, draw a picture and submit it (it might end up hanging on the wall), get roasted by the omnipotent computer from Courage the Cowardly Dog, chill in a quiet forest, or practice multiplication in a 3D take on Meteor Multiplication.",
+      "why": "I wanted this website to feel like a place you could inhabit rather than a page you scroll. Making a world you can actually walk around in meant working through graphics programming, spatial UX, and keeping it all running smoothly in a browser. It was fun. Also I wanted it to exist. Isn't that reason enough?",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2025-01",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": null,
+      "thumbnail": "https://nickeltools.dev/project-screenshots/3dportfolio.png",
+      "preview": null
+    },
+    {
+      "id": "art-museum",
+      "title": "Art Museum",
+      "description": "A multi-room virtual museum inside the holodeck that holds my art collection. Wander through it at your own pace.",
+      "why": "Going from one room to a whole museum meant thinking like an architect: how people find their way around, how pacing works from room to room, and what story the layout tells. All inside a browser tab.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2025-01",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com/art-gallery",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "software-showroom",
+      "title": "Software Showroom",
+      "description": "Walk up to screens in a 3D room and use my projects right there on them. Press escape to get your cursor back.",
+      "why": "It seemed like a really sci-fi way to showcase my projects.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2025-01",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com/software",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "math-room",
+      "title": "Math Room",
+      "description": "A 3D room inside the holodeck where equations, shapes, and math concepts are objects you can walk around and explore.",
+      "why": "Math is spatial. I wanted to see what it looks like when a math idea is an environment instead of notation on a page.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2025-01",
+      "tech": [
+        "TypeScript",
+        "React",
+        "Three.js",
+        "React-Three-Fiber",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://nicolebelovoskey.com/holodeck/math",
+      "source": "https://github.com/nick5616/3d-portfolio-website",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "sphere-website",
+      "title": "Sphere Website",
+      "description": "A vanilla Three.js site built around a spinning 3D sphere. The hello world of 3D on the web.",
+      "why": "I wanted to get my hands dirty with Three.js and WebGL for the first time. A sphere is the hello world of 3D.",
+      "category": "Immersive Web",
+      "status": "operational",
+      "date": "2023-11",
+      "tech": [
+        "JavaScript",
+        "Three.js",
+        "WebGL"
+      ],
+      "tags": [
+        "3D Design",
+        "Interactive Design",
+        "Open Source"
+      ],
+      "url": "https://tiny-sorbet-aefcf4.netlify.app/",
+      "source": "https://github.com/nick5616/sphere-website",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "sw-viz",
+      "title": "Star Wars Ship Costs Visualizer",
+      "description": "An interactive chart of what Star Wars starships cost, from X-wings to Star Destroyers, using the SWAPI dataset.",
+      "why": "A fun excuse to mix Star Wars with data viz. I pulled the ship data from the Star Wars API, cleaned it up on a Nest backend, and charted it so you can compare ships side by side.",
+      "category": "Experiments",
+      "status": "operational",
+      "date": "2023-11",
+      "tech": [
+        "React",
+        "TypeScript",
+        "Nivo",
+        "Nest.js",
+        "Node.js"
+      ],
+      "tags": [
+        "Data Visualization",
+        "Web Development",
+        "Open Source"
+      ],
+      "url": "https://star-wars-spending-viz.netlify.app",
+      "source": "https://github.com/nick5616/sw-viz-fe",
+      "backendSource": "https://github.com/nick5616/sw-viz-be",
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "routine",
+      "title": "Routine",
+      "description": "A daily routine page that generates analogous color schemes on the fly, every one of them WCAG AAA compliant.",
+      "why": "I wanted to play with algorithmic color theory while making something I'd actually use. Getting palettes to stay harmonious and still pass the strictest contrast level was the fun constraint.",
+      "category": "Design System",
+      "status": "operational",
+      "date": "2020-03",
+      "tech": [
+        "JavaScript"
+      ],
+      "tags": [
+        "Design System",
+        "Accessibility",
+        "Color Theory Algorithms",
+        "Open Source"
+      ],
+      "url": "https://nick5616.github.io/routine/",
+      "source": "https://github.com/nick5616/routine",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "new-media-website",
+      "title": "New Media Class Website",
+      "description": "My first real website, from a 2019 college class. It explores the media I consume and polls my classmates on theirs.",
+      "why": "It was a class assignment, but it was also genuinely my first real website. Everyone starts somewhere.",
+      "category": "Experiments",
+      "status": "operational",
+      "date": "2019-10",
+      "tech": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "tags": [
+        "Open Source"
+      ],
+      "url": "https://new-media-college-class.netlify.app/",
+      "source": "https://github.com/nick5616/newMediaWebsite",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": null
+    },
+    {
+      "id": "factory-orchestrator",
+      "title": "Factory Orchestrator",
+      "description": "A test harness device makers use on the factory floor to flash and test Windows on their hardware. I helped build it at Microsoft and helped open-source it.",
+      "why": "This was my Microsoft internship. Besides the app itself, I worked with Ted, a tech writer, on the product docs and the open-source announcement. It's still my go-to story for working with someone outside engineering.",
+      "category": "Engineering",
+      "status": "operational",
+      "date": null,
+      "tech": [
+        "C#",
+        "UWP",
+        "XAML"
+      ],
+      "tags": [
+        "Open Source",
+        "Developer Tools"
+      ],
+      "url": "https://github.com/microsoft/FactoryOrchestrator",
+      "source": "https://github.com/microsoft/FactoryOrchestrator",
+      "backendSource": null,
+      "thumbnail": null,
+      "preview": "none"
+    }
+  ],
+  "artCollections": {
+    "digitalart": {
+      "title": "Digital Art Gallery",
+      "description": "Digital illustrations and paintings, mostly made in Procreate and Photoshop.",
+      "why": "Digital is where I experiment the most with color, composition, and style, since trying something and undoing it costs nothing.",
+      "mediums": [
+        "Digital Illustration",
+        "Procreate",
+        "Photoshop",
+        "Digital Painting"
+      ]
+    },
+    "paintings": {
+      "title": "Paintings",
+      "description": "Paintings in acrylic, watercolor, and other physical media.",
+      "why": "Real paint is slower and more physical than digital, and these are me experimenting with color and texture that way.",
+      "mediums": [
+        "Acrylic Paint",
+        "Watercolor",
+        "Traditional Media",
+        "Canvas"
+      ]
+    },
+    "sketches": {
+      "title": "Sketches",
+      "description": "Sketches, studies, figure drawing, and quick drawings. The raw material behind everything else.",
+      "why": "Sketches are where ideas start. I keep the loose, unfinished stuff around because it shows how I actually work.",
+      "mediums": [
+        "Pencil",
+        "Pen & Ink",
+        "Charcoal",
+        "Sketching",
+        "Figure Drawing"
+      ]
+    },
+    "lefthanded": {
+      "title": "Left-Handed Art",
+      "description": "Art made using only my left hand.",
+      "why": "I'm working on becoming ambidextrous, and drawing is a good way to practice.",
+      "mediums": []
+    },
+    "miscellaneous": {
+      "title": "Miscellaneous",
+      "description": "Art that doesn't fit anywhere else: experiments, one-offs, and whatever I felt like making.",
+      "why": null,
+      "mediums": []
+    },
+    "notesappart": {
+      "title": "Notes App Art",
+      "description": "Drawings made in notes apps and other tools that were never meant for art. Working inside their limits is half the fun.",
+      "why": null,
+      "mediums": []
+    }
+  }
+}

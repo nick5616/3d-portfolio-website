@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { RoomConfig } from "../../types/scene.types";
 import { AchievementPlaque } from "../models/AchievementPlaque";
+import { TrophyCenterpiece } from "./achievements/TrophyCenterpiece";
 import { useRupeeStore, RUPEE_TYPES } from "../../stores/rupeeStore";
 import { useAchievementStore, ACHIEVEMENTS } from "../../stores/achievementStore";
 import { buildPlaqueLayout } from "../../utils/plaqueWallLayout";
@@ -33,6 +34,8 @@ export const AchievementsRoom: React.FC<AchievementsRoomProps> = ({
 }) => {
     const rupees = useRupeeStore((state) => state.rupees);
     const unlocked = useAchievementStore((state) => state.unlocked);
+    const wallet = useRupeeStore((state) => state.totalValue);
+    const unlockedCount = ACHIEVEMENTS.filter((a) => unlocked[a.id]).length;
 
     // Never hang a plaque on the wall that has the doorway back to the atrium.
     const doorWalls = useMemo(() => {
@@ -87,30 +90,37 @@ export const AchievementsRoom: React.FC<AchievementsRoomProps> = ({
 
     return (
         <group>
-            {/* Warm gallery-style lighting so the gold plaque borders read well */}
-            <ambientLight intensity={0.5} color="#fff5e6" />
+            {/* Warm, low lighting: a chandelier over the dais does most of it */}
+            <hemisphereLight intensity={0.3} color="#ffe9c7" groundColor="#2a1a10" />
             <pointLight
-                position={[0, height * 0.85, 0]}
-                intensity={1.5}
-                distance={width * 1.5}
-                color="#ffe9c7"
-                decay={1.3}
+                position={[0, height - 1.6, 0]}
+                intensity={9}
+                distance={18}
+                decay={1.6}
+                color="#ffd9a0"
             />
             {Array.from({ length: 4 }, (_, i) => {
                 const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
-                const x = Math.cos(angle) * width * 0.3;
-                const z = Math.sin(angle) * depth * 0.3;
                 return (
                     <pointLight
                         key={i}
-                        position={[x, height * 0.6, z]}
-                        intensity={0.6}
-                        distance={15}
-                        color="#fff2d9"
-                        decay={1.6}
+                        position={[Math.cos(angle) * width * 0.32, height * 0.55, Math.sin(angle) * depth * 0.32]}
+                        intensity={1.6}
+                        distance={9}
+                        decay={1.8}
+                        color="#fff0d6"
                     />
                 );
             })}
+
+            <TrophyCenterpiece
+                height={height}
+                depth={depth}
+                unlockedCount={unlockedCount}
+                totalCount={ACHIEVEMENTS.length}
+                rupees={rupees}
+                wallet={wallet}
+            />
 
             {entries.map((entry, index) => {
                 const slot = layout[index];

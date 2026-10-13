@@ -1,9 +1,12 @@
+import { useShallow } from "zustand/react/shallow";
 // src/components/ui/PositionDebug.tsx
 import React from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
 export const PositionDebug: React.FC = () => {
-    const { currentRoom, cameraData, playerPosition } = useSceneStore();
+    const { currentRoom, cameraData, playerPosition } = useSceneStore(
+        useShallow((s) => ({ currentRoom: s.currentRoom, cameraData: s.cameraData, playerPosition: s.playerPosition }))
+    );
 
     return (
         <div className="fixed top-4 left-4 z-50 bg-black/80 text-white p-4 rounded text-sm font-mono">

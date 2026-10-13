@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 // src/components/core/RoomEnvironmentReady.tsx
 import { useEffect } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -8,7 +9,9 @@ import { useSceneStore } from "../../stores/sceneStore";
  * This prevents players from falling through floors during initialization.
  */
 export const RoomEnvironmentReady: React.FC = () => {
-    const { setRoomEnvironmentReady } = useSceneStore();
+    const { setRoomEnvironmentReady } = useSceneStore(
+        useShallow((s) => ({ setRoomEnvironmentReady: s.setRoomEnvironmentReady }))
+    );
 
     useEffect(() => {
         // Set environment ready after a short delay to ensure all physics bodies are created

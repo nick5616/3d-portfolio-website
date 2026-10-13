@@ -1,11 +1,13 @@
+import { useShallow } from "zustand/react/shallow";
 // src/components/ui/PerformanceOverlay.tsx
 import React, { useRef, useEffect, useState } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 
 export const PerformanceOverlay: React.FC = () => {
-    const { performance: performanceSettings, setPerformanceQuality } =
-        useSceneStore();
+    const { performance: performanceSettings, setPerformanceQuality } = useSceneStore(
+        useShallow((s) => ({ performance: s.performance, setPerformanceQuality: s.setPerformanceQuality }))
+    );
     const { isMobile } = useDeviceDetection();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const lastTimeRef = useRef<number>(window.performance.now());

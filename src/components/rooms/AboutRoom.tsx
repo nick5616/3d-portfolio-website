@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
+import React, { Suspense, lazy } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
 import { HolodeckControlPanel } from "./holodeck/HolodeckControlPanel";
 import { HolodeckGrid } from "./holodeck/HolodeckGrid";
-import { CourageExperience } from "./holodeck/CourageExperience";
-import { FitnessExperience } from "./holodeck/FitnessExperience";
-import { ArtExperience } from "./holodeck/ArtExperience";
-import { MathExperience } from "./holodeck/MathExperience";
-import { ForestExperience } from "./holodeck/ForestExperience";
 import { RoomConfig } from "../../types/scene.types";
 import { useSceneStore } from "../../stores/sceneStore";
 import { getPathFromExperience } from "../../configs/routing";
@@ -22,6 +19,24 @@ interface AboutRoomProps {
     height: number;
     depth: number;
 }
+
+// Each holodeck experience is its own chunk, downloaded the first time
+// someone starts it rather than with the rest of the world.
+const CourageExperience = lazy(() =>
+    import("./holodeck/CourageExperience").then((m) => ({ default: m.CourageExperience }))
+);
+const FitnessExperience = lazy(() =>
+    import("./holodeck/FitnessExperience").then((m) => ({ default: m.FitnessExperience }))
+);
+const ArtExperience = lazy(() =>
+    import("./holodeck/ArtExperience").then((m) => ({ default: m.ArtExperience }))
+);
+const MathExperience = lazy(() =>
+    import("./holodeck/MathExperience").then((m) => ({ default: m.MathExperience }))
+);
+const ForestExperience = lazy(() =>
+    import("./holodeck/ForestExperience").then((m) => ({ default: m.ForestExperience }))
+);
 
 // Holodeck Experience Types
 type HolodeckExperience =
@@ -58,7 +73,15 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
         setHolodeckLoading,
         pendingHolodeckExperience,
         setPendingHolodeckExperience,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ rotateUser: s.rotateUser, getExperienceRotationAngle: s.getExperienceRotationAngle, teleportToRoom: s.teleportToRoom, setHolodeckLoading: s.setHolodeckLoading, pendingHolodeckExperience: s.pendingHolodeckExperience, setPendingHolodeckExperience: s.setPendingHolodeckExperience }))
+    );
+
+    // Leaving the holodeck ends whatever program was running.
+    useEffect(
+        () => () => useSceneStore.getState().setHolodeckExperience("off"),
+        []
+    );
 
     // Auto-launch experience from deep-link URL.
     // This is reactive (not mount-only) because the router's effect that sets
@@ -134,6 +157,7 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
         setTimeout(() => {
             console.log(`✅ ${experience} experience loaded, updating scene`);
             setCurrentExperience(experience);
+            useSceneStore.getState().setHolodeckExperience(experience);
 
             // Handle rotation and position for experiences (but not for "off")
             if (experience !== "off") {
@@ -196,7 +220,10 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
 
     return (
         <>
-            {/* Centralized collision walls - work for all experiences */}
+            {/* Collision walls - every experience except the forest, which
+                opens the holodeck up into a whole world with its own bounds */}
+            {currentExperience !== "forest" && (
+                <>
             {[
                 // Back wall (north) - full width
                 {
@@ -241,6 +268,9 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
                 </RigidBody>
             ))}
 
+                </>
+            )}
+
             {/* Control panel (always visible) */}
             <HolodeckControlPanel
                 currentExperience={currentExperience}
@@ -263,10 +293,14 @@ export const AboutRoom: React.FC<AboutRoomProps> = ({}) => {
             )}
 
             {/* Current experience */}
-            {!isTransitioning && renderCurrentExperience()}
+            {!isTransitioning && (
+                <Suspense fallback={null}>{renderCurrentExperience()}</Suspense>
+            )}
 
             {/* Ambient holodeck lighting */}
-            <ambientLight intensity={0.4} color="#f0f0f0" />
+            {currentExperience !== "forest" && (
+                <ambientLight intensity={0.4} color="#f0f0f0" />
+            )}
         </>
     );
 };

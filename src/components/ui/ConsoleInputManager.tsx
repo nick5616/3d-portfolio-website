@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { useEffect, useCallback } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
@@ -17,7 +18,9 @@ export const ConsoleInputManager: React.FC = () => {
         scrollConsoleDown,
         resetConsoleScroll,
         toggleRainbowMode,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ console: s.console, setConsoleActive: s.setConsoleActive, setConsoleInput: s.setConsoleInput, appendConsoleInput: s.appendConsoleInput, backspaceConsoleInput: s.backspaceConsoleInput, pushConsoleHistory: s.pushConsoleHistory, replaceLastConsoleHistory: s.replaceLastConsoleHistory, setConsoleProcessing: s.setConsoleProcessing, setIsInteracting: s.setIsInteracting, clearConsole: s.clearConsole, scrollConsoleUp: s.scrollConsoleUp, scrollConsoleDown: s.scrollConsoleDown, resetConsoleScroll: s.resetConsoleScroll, toggleRainbowMode: s.toggleRainbowMode }))
+    );
 
     // When console activates, exit pointer lock and mark interacting
     useEffect(() => {

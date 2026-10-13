@@ -1,10 +1,22 @@
-import { ArtCategoryId, artCategories, gcsStorageConfig } from "./gcsConfig";
+import {
+    ArtCategoryId,
+    artCategories,
+    gcsStorageConfig,
+    getArtPieceUrl,
+} from "./gcsConfig";
 
 export interface ArtPiece {
     name: string;
     description: string;
     date: string;
     fileName: string; // File name in GCS storage (e.g., "marvin-martian.jpg")
+    // True when the piece has a real curated title (`art-name` metadata)
+    // rather than falling back to its file name. Plaques only show for
+    // titled pieces, in any category - so curating a hall is just a matter
+    // of setting metadata on its objects (see scripts/curate-art.md).
+    titled: boolean;
+    category: ArtCategoryId;
+    url: string; // full-resolution original
 }
 
 interface GcsObjectMetadata {
@@ -77,6 +89,9 @@ const fetchArtPieces = async (
                     description: item.metadata?.["art-description"] || "",
                     date: item.metadata?.["art-date"] || "",
                     fileName,
+                    titled: Boolean(item.metadata?.["art-name"]),
+                    category,
+                    url: getArtPieceUrl(category, fileName),
                 } satisfies ArtPiece,
             };
         })

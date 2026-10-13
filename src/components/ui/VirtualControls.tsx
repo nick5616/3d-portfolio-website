@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import React, { useRef, useEffect, useState, useCallback, memo } from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 import { MdGamepad, MdHideSource } from "react-icons/md";
@@ -34,7 +35,9 @@ export const VirtualControls: React.FC<VirtualControlsProps> = memo(
             setMovementJoystickIntensity,
             setCameraJoystickIntensity,
             performance,
-        } = useSceneStore();
+        } = useSceneStore(
+        useShallow((s) => ({ setVirtualMovement: s.setVirtualMovement, setVirtualRotation: s.setVirtualRotation, setMovementJoystickIntensity: s.setMovementJoystickIntensity, setCameraJoystickIntensity: s.setCameraJoystickIntensity, performance: s.performance }))
+    );
 
         const { isMobile } = useDeviceDetection();
         const isMobileLocal = mobileOverride ?? isMobile;

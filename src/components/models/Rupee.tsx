@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { useRupeeStore } from "../../stores/rupeeStore";
 import { useSceneStore } from "../../stores/sceneStore";
 import { createRupeeGeometry } from "../../utils/rupeeGeometry";
+import { playSound } from "../../audio/soundManager";
+import { RUPEE_TYPES } from "../../stores/rupeeStore";
 
 export interface RupeeData {
     position: THREE.Vector3;
@@ -29,6 +31,8 @@ interface RupeeProps {
     };
 }
 
+const POP_DURATION = 0.45; // seconds
+
 const RupeeGeometry = () => {
     const geometry = useMemo(() => createRupeeGeometry(), []);
     return geometry;
@@ -44,8 +48,14 @@ export const Rupee: React.FC<RupeeProps> = ({
         new THREE.Euler().copy(rupee.initialRotation)
     );
     const [isCollected, setIsCollected] = useState(false);
-    const { addRupee } = useRupeeStore();
-    const { playerPosition } = useSceneStore();
+    // Set when picked up; the pop animation plays before the rupee hides.
+    const collectedAt = useRef<number | null>(null);
+    const popStartY = useRef(0);
+    const addRupee = useRupeeStore((s) => s.addRupee);
+    // Read the player position imperatively inside useFrame instead of
+    // subscribing - a subscription re-rendered every rupee whenever the
+    // player moved.
+    const playerVec = useRef(new THREE.Vector3());
 
     // Default rotation speeds if not provided
     const defaultRotationSpeed = useMemo(
@@ -64,9 +74,24 @@ export const Rupee: React.FC<RupeeProps> = ({
 
         const time = state.clock.getElapsedTime();
 
+        // Pickup "pop": rise, spin up, flare bright and shrink away, then hide.
+        if (collectedAt.current !== null) {
+            const t = Math.min(1, (time - collectedAt.current) / POP_DURATION);
+            const ease = 1 - Math.pow(1 - t, 3);
+            meshRef.current.position.y = popStartY.current + ease * 0.9;
+            meshRef.current.rotation.y += delta * (14 + 20 * t);
+            const s = rupee.scale * (1 + Math.sin(t * Math.PI) * 0.5) * (1 - t * t);
+            meshRef.current.scale.setScalar(Math.max(s, 0.0001));
+            const material = meshRef.current.material as THREE.MeshPhysicalMaterial;
+            material.emissiveIntensity = 0.2 + Math.sin(t * Math.PI) * 3;
+            if (t >= 1) setIsCollected(true);
+            return;
+        }
+
         // Check for player collision
+        const playerPosition = useSceneStore.getState().playerPosition;
         const distance = meshRef.current.position.distanceTo(
-            new THREE.Vector3(
+            playerVec.current.set(
                 playerPosition[0],
                 playerPosition[1],
                 playerPosition[2]
@@ -75,8 +100,18 @@ export const Rupee: React.FC<RupeeProps> = ({
 
         if (distance < 1.5) {
             // Collection radius
-            setIsCollected(true);
+            collectedAt.current = time;
+            popStartY.current = meshRef.current.position.y;
             addRupee(rupee.type);
+            const value =
+                RUPEE_TYPES.find((type) => type.name === rupee.type)?.value ?? 1;
+            playSound(
+                value < 0
+                    ? "rupee-collect-bad"
+                    : value >= 20
+                    ? "rupee-collect-big"
+                    : "rupee-collect-small"
+            );
             return; // Don't animate collected rupees
         }
 

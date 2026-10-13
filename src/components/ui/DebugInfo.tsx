@@ -1,8 +1,11 @@
+import { useShallow } from "zustand/react/shallow";
 import React from "react";
 import { useSceneStore } from "../../stores/sceneStore";
 
 export const DebugInfo: React.FC = () => {
-    const { currentRoom, performance, cameraData, sceneData } = useSceneStore();
+    const { currentRoom, performance, cameraData, sceneData } = useSceneStore(
+        useShallow((s) => ({ currentRoom: s.currentRoom, performance: s.performance, cameraData: s.cameraData, sceneData: s.sceneData }))
+    );
 
     if (!performance.showStats) return null;
 

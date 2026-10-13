@@ -1,0 +1,117 @@
+/* Basic portfolio: black on white, nothing else. */
+.basic {
+    --fg: #000;
+    --bg: #fff;
+    --muted: #444;
+    --rule: #000;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100%;
+}
+/* Still black and white - just flipped - for people with a dark system theme */
+@media (prefers-color-scheme: dark) {
+    .basic {
+        --fg: #fff;
+        --bg: #000;
+        --muted: #bbb;
+        --rule: #fff;
+    }
+}
+body:has(.basic) {
+    background: #fff;
+}
+@media (prefers-color-scheme: dark) {
+    body:has(.basic) {
+        background: #000;
+    }
+}
+.basic a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.basic h1 {
+    font-size: 28px;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+.basic__headline {
+    margin: 2px 0 6px;
+}
+.basic__links {
+    margin: 0;
+}
+.basic h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 36px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--rule);
+}
+.basic p {
+    margin: 0 0 6px;
+}
+.basic__list {
+    margin: 0;
+    padding-left: 18px;
+}
+.basic__list li {
+    margin-bottom: 4px;
+}
+.basic__projects {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.basic__projects li {
+    margin-bottom: 18px;
+}
+.basic__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+.basic h3 {
+    font-size: 16px;
+    margin: 0;
+}
+.basic__date {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.basic__meta {
+    font-size: 14px;
+    color: var(--muted);
+}
+.basic footer {
+    margin-top: 40px;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+}
+
+@media print {
+    .basic {
+        --fg: #000;
+        --bg: #fff;
+        --muted: #333;
+        --rule: #000;
+        padding: 0;
+        font-size: 11pt;
+    }
+    .basic footer {
+        display: none;
+    }
+    .basic__projects li {
+        break-inside: avoid;
+    }
+}

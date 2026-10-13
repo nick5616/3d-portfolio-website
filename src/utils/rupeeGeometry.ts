@@ -51,6 +51,9 @@ export const createRupeeGeometry = (): THREE.BufferGeometry => {
     // facet edges, which smooths the gem into a rounded blob instead of
     // showing distinct, light-catching facets.
     const flatGeometry = geometry.toNonIndexed();
+    // The vertices above run from z = 0 (front) to z = -0.5 (back). Center
+    // the gem on its own axes so it spins in place instead of orbiting.
+    flatGeometry.translate(0, 0, 0.25);
     flatGeometry.computeVertexNormals();
 
     return flatGeometry;

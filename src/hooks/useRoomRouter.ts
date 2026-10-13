@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 // src/hooks/useRoomRouter.ts
 import { useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,7 +30,9 @@ const getExperienceSpawn = (
 export const useRoomRouter = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentRoom, teleportToRoom } = useSceneStore();
+    const { currentRoom, teleportToRoom } = useSceneStore(
+        useShallow((s) => ({ currentRoom: s.currentRoom, teleportToRoom: s.teleportToRoom }))
+    );
     const isHandlingUrlChange = useRef(false);
 
     // Navigate to a room by updating both URL and scene

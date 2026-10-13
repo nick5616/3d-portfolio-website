@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 // src/hooks/useRoomInitialization.ts
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -12,7 +13,9 @@ export const useRoomInitialization = () => {
         teleportToRoom,
         setPendingHolodeckExperience,
         getExperienceRotationAngle,
-    } = useSceneStore();
+    } = useSceneStore(
+        useShallow((s) => ({ loadRoom: s.loadRoom, teleportToRoom: s.teleportToRoom, setPendingHolodeckExperience: s.setPendingHolodeckExperience, getExperienceRotationAngle: s.getExperienceRotationAngle }))
+    );
 
     useEffect(() => {
         // Get room ID from current path or default to atrium

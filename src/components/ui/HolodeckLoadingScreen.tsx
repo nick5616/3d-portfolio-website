@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useState } from "react";
 import { LoadingEffectsRenderer } from "./LoadingEffectsRenderer";
@@ -20,8 +21,9 @@ const EXPERIENCE_TO_EFFECT_MAP: Record<string, LoadingEffectType> = {
  * Shows experience-specific themed loading effects during holodeck transitions
  */
 export const HolodeckLoadingScreen: React.FC = () => {
-    const { holodeckLoading, holodeckLoadingExperience, setHolodeckLoading } =
-        useSceneStore();
+    const { holodeckLoading, holodeckLoadingExperience, setHolodeckLoading } = useSceneStore(
+        useShallow((s) => ({ holodeckLoading: s.holodeckLoading, holodeckLoadingExperience: s.holodeckLoadingExperience, setHolodeckLoading: s.setHolodeckLoading }))
+    );
     const [fadeOut, setFadeOut] = useState(false);
     const [visible, setVisible] = useState(false);
 

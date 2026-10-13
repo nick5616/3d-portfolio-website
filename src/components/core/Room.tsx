@@ -10,6 +10,7 @@ import { AboutRoom } from "../rooms/AboutRoom";
 import { RelaxationRoom } from "../rooms/RelaxationRoom";
 import { GalleryAtriumRoom } from "../rooms/GalleryAtriumRoom";
 import { GalleryHallRoom } from "../rooms/GalleryHallRoom";
+import { SketchbookRotunda } from "../rooms/SketchbookRotunda";
 import { AchievementsRoom } from "../rooms/AchievementsRoom";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
@@ -75,6 +76,14 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                             width={width}
                             height={height}
                             depth={depth}
+                        />
+                    );
+                case "sketchbook":
+                    return (
+                        <SketchbookRotunda
+                            config={config}
+                            width={width}
+                            height={height}
                         />
                     );
                 case "hall":
@@ -186,6 +195,12 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                     </RigidBody>
                     {renderRoomComponent()}
                 </>
+            ) : config.galleryRoomKind?.kind === "sketchbook" ||
+              config.id === "atrium" ? (
+                // The sketchbook rotunda and the atrium build their own
+                // walls, floors, domes and lights (and signal readiness
+                // themselves).
+                renderRoomComponent()
             ) : config.id === "relaxation" ||
               config.galleryRoomKind?.kind === "atrium" ? (
                 // Relaxation room and the gallery atrium hub handle their own
