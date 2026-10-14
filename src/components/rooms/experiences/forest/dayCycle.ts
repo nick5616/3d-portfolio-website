@@ -114,3 +114,7 @@ export const sampleSky = (p: number, out: SkyState) => {
     out.lightDir.normalize();
     return out;
 };
+
+// The forest's one live sky, sampled each frame by ForestExperience and read
+// by anything else in the forest that should follow the time of day.
+export const forestSky = createSkyState();

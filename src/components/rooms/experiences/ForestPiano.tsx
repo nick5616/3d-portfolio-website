@@ -5,7 +5,9 @@ import * as THREE from "three";
 import { GemPrompt } from "../../ui/GemPrompt";
 import { useAimTargets } from "../../core/useAimTargets";
 import { useAchievementStore } from "../../../stores/achievementStore";
-import { CHILDYLLIC, closeStudioMusic, openStudioMusic, playTrack, togglePlayback, useStudioMusic } from "../studio/soundcloud";
+import { CHILDYLLIC, closeStudioMusic, currentPositionMs, openStudioMusic, playTrack, togglePlayback, useStudioMusic } from "../studio/soundcloud";
+import { ButterflyFairy, butterflyAssets } from "./forest/butterfly";
+import noteMap from "../../../data/songOfTheForestNotes.json";
 
 // A little keyboard lying on a mossy stump in the glade beside the fairy
 // stone - knee height, so you look down at it - with a butterfly-winged
@@ -22,75 +24,23 @@ const STUMP_TOP = 0.42;
 const KEYS = 13;
 const KEY_WIDTH = 0.05;
 const KEYS_Y = STUMP_TOP + 0.045;
-const BEAT = 2; // seconds: 30 BPM
+const BEAT = 2; // seconds: 30 BPM, the fallback if there's no note map
 const NOTES = 24;
 
-const glowTexture = () => {
-    const size = 64;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, "rgba(255,255,255,1)");
-    g.addColorStop(0.3, "rgba(255,255,255,0.45)");
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    return new THREE.CanvasTexture(canvas);
-};
-
-// Butterfly wings: a big rounded forewing and a smaller hindwing per side,
-// drawn as shapes with a soft colour gradient and dark veined edges.
-const wingTexture = () => {
-    const size = 128;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    const g = ctx.createRadialGradient(0, size / 2, 4, 0, size / 2, size);
-    g.addColorStop(0, "#fff6c8");
-    g.addColorStop(0.45, "#ffc2e8");
-    g.addColorStop(0.8, "#9fd8ff");
-    g.addColorStop(1, "#6a4aa8");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    ctx.strokeStyle = "rgba(60, 30, 90, 0.35)";
-    ctx.lineWidth = 2;
-    for (let k = 0; k < 5; k++) {
-        ctx.beginPath();
-        ctx.moveTo(0, size / 2);
-        ctx.quadraticCurveTo(size * 0.5, size * (0.15 + k * 0.18), size, size * (0.05 + k * 0.22));
-        ctx.stroke();
+// The song's note map (scripts/analyze-pitch.mjs, run on the recording):
+// when each note starts and its pitch. The fairy skips the quickest runs -
+// it's a fairy, not a pianist - and maps the song's range onto its keys.
+const FAIRY_NOTES = (() => {
+    const kept: { t: number; midi: number }[] = [];
+    for (const note of noteMap.notes) {
+        const last = kept[kept.length - 1];
+        if (!last || note.t - last.t >= 0.22 || note.v >= 0.55) kept.push(note);
     }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-};
-
-const wingShapes = () => {
-    // Built in the +X half; the body runs along Z.
-    const fore = new THREE.Shape();
-    fore.moveTo(0, 0.01);
-    fore.bezierCurveTo(0.04, 0.09, 0.13, 0.11, 0.14, 0.06);
-    fore.bezierCurveTo(0.15, 0.02, 0.09, -0.01, 0, -0.005);
-    const hind = new THREE.Shape();
-    hind.moveTo(0, -0.005);
-    hind.bezierCurveTo(0.07, -0.01, 0.1, -0.05, 0.08, -0.08);
-    hind.bezierCurveTo(0.06, -0.1, 0.02, -0.06, 0, -0.02);
-    const toGeometry = (shape: THREE.Shape) => {
-        const g = new THREE.ShapeGeometry(shape, 12);
-        g.rotateX(-Math.PI / 2); // lie flat; the shape's +Y becomes forward (-Z)
-        // UVs from position so the gradient spreads out from the body.
-        const pos = g.attributes.position as THREE.BufferAttribute;
-        const uv = new Float32Array(pos.count * 2);
-        for (let i = 0; i < pos.count; i++) {
-            uv[i * 2] = pos.getX(i) / 0.15;
-            uv[i * 2 + 1] = 0.5 - pos.getZ(i) / 0.25;
-        }
-        g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-        return g;
-    };
-    return { fore: toGeometry(fore), hind: toGeometry(hind) };
-};
+    return kept;
+})();
+const [LOW, HIGH] = noteMap.range;
+const keyForMidi = (midi: number) =>
+    Math.round(Math.max(0, Math.min(1, (midi - LOW) / Math.max(1, HIGH - LOW))) * (KEYS - 1));
 
 export const ForestPiano: React.FC = () => {
     const playing = useStudioMusic((s) => s.playing);
@@ -111,40 +61,21 @@ export const ForestPiano: React.FC = () => {
     }, [playing]);
 
     const resources = useMemo(() => {
-        const glow = glowTexture();
-        const wingMap = wingTexture();
-        const wings = wingShapes();
-        const wingMaterial = new THREE.MeshBasicMaterial({
-            map: wingMap,
-            transparent: true,
-            opacity: 0.88,
-            side: THREE.DoubleSide,
-            depthWrite: false,
-            toneMapped: false,
-        });
         const positions = new Float32Array(NOTES * 3).fill(-100);
         const notes = new THREE.BufferGeometry();
         notes.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        return { glow, wingMap, wings, wingMaterial, notes, positions, life: new Float32Array(NOTES), next: 0, lastSpawn: 0 };
+        return { glow: butterflyAssets().glow, notes, positions, life: new Float32Array(NOTES), next: 0, lastSpawn: 0 };
     }, []);
-    useEffect(
-        () => () => {
-            resources.glow.dispose();
-            resources.wingMap.dispose();
-            resources.wings.fore.dispose();
-            resources.wings.hind.dispose();
-            resources.wingMaterial.dispose();
-            resources.notes.dispose();
-        },
-        [resources]
-    );
+    useEffect(() => () => resources.notes.dispose(), [resources]);
 
     const keys = useRef<(THREE.Mesh | null)[]>([]);
     const pressed = useRef(new Float32Array(KEYS));
     const fairy = useRef<THREE.Group>(null);
-    const wingSides = useRef<(THREE.Group | null)[]>([]);
     const fairyLight = useRef<THREE.PointLight>(null);
+    const flap = useRef(3.2);
     const route = useRef({ from: 6, to: 6, beat: -1 });
+    // Where we are in the note map: the next note the fairy is heading for.
+    const cursor = useRef({ next: 0, key: 6, lastSong: -1 });
 
     useFrame(({ clock }, delta) => {
         const t = clock.elapsedTime;
@@ -152,8 +83,47 @@ export const ForestPiano: React.FC = () => {
         const keyX = (i: number) => (i - (KEYS - 1) / 2) * KEY_WIDTH;
 
         if (fairy.current) {
-            if (isPlaying) {
-                // One move per beat: lift off, drift over, settle down.
+            const song = currentPositionMs() / 1000;
+            if (isPlaying && FAIRY_NOTES.length) {
+                // Read ahead: rest on the key of the note just played; when
+                // the next note is close enough, glide over so as to land on
+                // its key exactly as it sounds.
+                const c = cursor.current;
+                if (song < c.lastSong - 0.5 || c.lastSong < 0) {
+                    // Started, or someone seeked: find our place again.
+                    c.next = FAIRY_NOTES.findIndex((n) => n.t > song);
+                    if (c.next < 0) c.next = FAIRY_NOTES.length;
+                    c.key = c.next > 0 ? keyForMidi(FAIRY_NOTES[c.next - 1].midi) : c.key;
+                }
+                c.lastSong = song;
+                while (c.next < FAIRY_NOTES.length && FAIRY_NOTES[c.next].t <= song) {
+                    // Landed: the key goes down and a note floats up.
+                    c.key = keyForMidi(FAIRY_NOTES[c.next].midi);
+                    pressed.current[c.key] = 1;
+                    const i = resources.next;
+                    resources.next = (resources.next + 1) % NOTES;
+                    resources.positions.set([keyX(c.key), KEYS_Y + 0.08, 0], i * 3);
+                    resources.life[i] = 1;
+                    c.next++;
+                }
+                const upcoming = FAIRY_NOTES[c.next];
+                let x = keyX(c.key);
+                let lift = 0;
+                if (upcoming) {
+                    const target = keyForMidi(upcoming.midi);
+                    const previous = c.next > 0 ? FAIRY_NOTES[c.next - 1].t : 0;
+                    const travel = Math.min(upcoming.t - previous, Math.max(0.16, Math.min(0.55, 0.12 + Math.abs(target - c.key) * 0.06)));
+                    const k = Math.max(0, Math.min(1, 1 - (upcoming.t - song) / travel));
+                    const ease = k * k * (3 - 2 * k);
+                    x = keyX(c.key) + (keyX(target) - keyX(c.key)) * ease;
+                    lift = Math.sin(k * Math.PI) * (0.03 + Math.abs(target - c.key) * 0.012);
+                    fairy.current.rotation.y = (target - c.key) * 0.12 * Math.sin(k * Math.PI);
+                }
+                const breathe = Math.sin(t * 2.2) * 0.006;
+                fairy.current.position.set(x, KEYS_Y + 0.05 + lift + breathe, 0.02);
+                flap.current = lift > 0.005 ? 7 : 4;
+            } else if (isPlaying) {
+                // No note map: one gentle move per beat (30 BPM).
                 const beat = Math.floor(t / BEAT);
                 const phase = (t % BEAT) / BEAT;
                 const r = route.current;
@@ -176,22 +146,20 @@ export const ForestPiano: React.FC = () => {
                 // Resting: hovering slowly over the keys.
                 fairy.current.position.set(Math.sin(t * 0.4) * 0.1, KEYS_Y + 0.22 + Math.sin(t * 0.9) * 0.03, 0.02);
                 fairy.current.rotation.y = Math.sin(t * 0.3) * 0.4;
+                cursor.current.lastSong = -1;
+                flap.current = 3.2;
             }
         }
-        // Slow, soft wingbeats - a butterfly, not a bee.
-        const flap = Math.sin(t * (isPlaying ? 5 : 3.2)) * 0.55 + 0.35;
-        wingSides.current.forEach((side, i) => {
-            if (side) side.rotation.z = (i === 0 ? 1 : -1) * flap;
-        });
         if (fairyLight.current) fairyLight.current.intensity = isPlaying ? 0.9 + Math.sin((t / BEAT) * Math.PI * 2) * 0.3 : 0.6;
 
         keys.current.forEach((key, i) => {
-            if (i !== route.current.to || !isPlaying) pressed.current[i] = Math.max(0, pressed.current[i] - delta * 3);
+            const held = isPlaying && (FAIRY_NOTES.length ? i === cursor.current.key : i === route.current.to);
+            if (!held) pressed.current[i] = Math.max(0, pressed.current[i] - delta * 3);
             if (key) key.position.y = KEYS_Y - pressed.current[i] * 0.008;
         });
 
-        // A note floats up off the keys on each beat.
-        if (isPlaying && t - resources.lastSpawn > BEAT) {
+        // Without a note map, a note floats up on each beat.
+        if (isPlaying && !FAIRY_NOTES.length && t - resources.lastSpawn > BEAT) {
             resources.lastSpawn = t;
             const i = resources.next;
             resources.next = (resources.next + 1) % NOTES;
@@ -326,25 +294,7 @@ export const ForestPiano: React.FC = () => {
 
                 {/* The fairy: a speck of light with butterfly wings */}
                 <group ref={fairy} position={[0, KEYS_Y + 0.22, 0.02]}>
-                    <mesh raycast={() => null}>
-                        <capsuleGeometry args={[0.007, 0.03, 4, 8]} />
-                        <meshBasicMaterial color="#fff6e0" toneMapped={false} />
-                    </mesh>
-                    <sprite scale={[0.16, 0.16, 1]} raycast={() => null}>
-                        <spriteMaterial map={resources.glow} color="#ffe58a" transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-                    </sprite>
-                    {[1, -1].map((side, i) => (
-                        <group
-                            key={side}
-                            ref={(g) => {
-                                wingSides.current[i] = g;
-                            }}
-                            scale={[side, 1, 1]}
-                        >
-                            <mesh geometry={resources.wings.fore} material={resources.wingMaterial} raycast={() => null} />
-                            <mesh geometry={resources.wings.hind} material={resources.wingMaterial} raycast={() => null} />
-                        </group>
-                    ))}
+                    <ButterflyFairy kind={0} flap={flap} />
                     <pointLight ref={fairyLight} intensity={0.6} distance={2} decay={2} color="#ffe58a" />
                 </group>
 

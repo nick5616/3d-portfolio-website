@@ -239,6 +239,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
         hint: "Somebody in the woods plays piano.",
     },
     {
+        id: "fairy-catch",
+        title: "Fairy Catcher",
+        description: "Caught a Royal Fairy in the forest.",
+        hint: "The fairies by the water spook easily. Go gently.",
+    },
+    {
+        id: "fairy-collection",
+        title: "Royal Collection",
+        description: "Caught a Rose, Seafoam, Ember and Lilac Royal Fairy.",
+        hint: "Royal Fairies come in four colours.",
+    },
+    {
+        id: "fairy-queen",
+        title: "Her Majesty",
+        description: "Caught the Fairy Queen.",
+        hint: "On rare visits, someone regal holds court over a pond.",
+    },
+    {
+        id: "fairy-king",
+        title: "His Majesty",
+        description: "Caught the Fairy King.",
+        hint: "On rare visits, someone crowned wanders the deep woods.",
+    },
+    {
         id: "black-rupee",
         title: "Ouch.",
         description: "Collected a Black Rupee.",

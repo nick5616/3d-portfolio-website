@@ -86,6 +86,8 @@ export const SOUNDS = {
     "light-switch": { channel: "sfx", volume: 0.7 },
     "lift-rise": { channel: "sfx", volume: 0.55 },
     "lift-chime": { channel: "sfx", volume: 0.5 },
+    "fairy-catch": { channel: "sfx", volume: 0.6 },
+    "fairy-catch-regal": { channel: "sfx", volume: 0.75 },
 
     // Cosmic Connect Four
     "c4-drop": { channel: "sfx", volume: 0.55 },

@@ -115,6 +115,8 @@ Footsteps play every ~1.9 m walked, chosen by the floor surface of the room you'
 | `light-switch` | 0.2 s | Gallery light switch | Chunky switch click. |
 | `lift-rise` | 1.5–2.5 s | The fairy lift lifting off from a floor | A rising swirl of air with fairy chimes woven in, like being picked up by a breeze. |
 | `lift-chime` | 0.5–0.8 s | The lift arriving at a floor (also the Sky Course start/checkpoints) | One soft, bright chime. |
+| `fairy-catch` | 0.6–1 s | Catching a Royal Fairy in the forest (E) | A cupped-hands "whff" and a quick sparkle of glass chimes, rising. |
+| `fairy-catch-regal` | 1.5–2.5 s | Catching the Fairy Queen or Fairy King | The same idea, grander: a shimmering harp/celesta flourish ending on a bright major chord. |
 | `c4-drop` | 0.2–0.3 s | Letting go of your chip over a column | A small glassy release; the clacks that follow carry the weight. |
 | `c4-chip-clack` | 0.1–0.25 s, **4 takes** | Your gem chip hitting the slot floor or the chip below (fires on every bounce; volume follows impact speed) | Hard gemstone on gemstone: crisp, bright, a little ring. Should sound good stacked 3–4 times in quick succession as it bounces. |
 | `c4-chip-clack-gold` | 0.1–0.25 s, **3 takes** | Nothing's chip landing | Same impact, but it's made of light: a struck crystal bowl tick with a soft shimmer tail. |

@@ -40,9 +40,18 @@ export interface Clearing {
     r: number;
 }
 
+export interface Pond {
+    x: number;
+    z: number;
+    r: number;
+    wobble: number[]; // radius multipliers round the edge, for an irregular shore
+}
+
 export interface ForestLayout {
     paths: [number, number][][]; // polylines
     clearings: Clearing[];
+    ponds: Pond[];
+    creeks: [number, number][][]; // polylines; shallow, you can wade them
     trees: { x: number; z: number; height: number; radius: number; ancient: boolean }[];
     bushes: { x: number; z: number; s: number }[];
     rocks: { x: number; z: number; s: number; rot: number }[];
@@ -51,6 +60,13 @@ export interface ForestLayout {
     shafts: { x: number; z: number; r: number }[];
     fogBanks: { x: number; z: number; s: number }[];
 }
+
+// How far a point is from open water (negative inside a pond or creek).
+export const distanceToWater = (x: number, z: number, layout: Pick<ForestLayout, "ponds" | "creeks">) => {
+    let best = distanceToPaths(x, z, layout.creeks) - 0.9;
+    for (const p of layout.ponds) best = Math.min(best, Math.hypot(x - p.x, z - p.z) - p.r);
+    return best;
+};
 
 // Distance from a point to the nearest path segment.
 export const distanceToPaths = (x: number, z: number, paths: [number, number][][]) => {
@@ -61,7 +77,7 @@ export const distanceToPaths = (x: number, z: number, paths: [number, number][][
             const [bx, bz] = path[i];
             const dx = bx - ax;
             const dz = bz - az;
-            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
             const px = ax + dx * t - x;
             const pz = az + dz * t - z;
             best = Math.min(best, px * px + pz * pz);
@@ -111,6 +127,32 @@ export const generateForest = (seed: number): ForestLayout => {
         if (rand() < 0.65) paths.push(wander(c.x, c.z, next.x, next.z));
     });
 
+    // Water: a few ponds tucked off the paths, and a couple of creeks
+    // wandering out of them toward the edge of the woods.
+    const ponds: Pond[] = [];
+    for (let attempt = 0; attempt < 200 && ponds.length < 5; attempt++) {
+        const angle = rand() * Math.PI * 2;
+        const dist = range(SPAWN_CLEARING + 7, FOREST_RADIUS - 9);
+        const pond: Pond = {
+            x: Math.cos(angle) * dist,
+            z: Math.sin(angle) * dist,
+            r: range(2.6, 5),
+            wobble: Array.from({ length: 12 }, () => range(0.8, 1.15)),
+        };
+        if (distanceToPaths(pond.x, pond.z, paths) < pond.r + 1.2) continue;
+        if (ponds.some((o) => Math.hypot(o.x - pond.x, o.z - pond.z) < o.r + pond.r + 6)) continue;
+        if (clearings.some((c) => Math.hypot(c.x - pond.x, c.z - pond.z) < c.r * 0.6 + pond.r)) continue;
+        ponds.push(pond);
+    }
+    const creeks: [number, number][][] = [];
+    ponds.slice(0, 2).forEach((pond) => {
+        const out = Math.atan2(pond.z, pond.x) + range(-0.5, 0.5);
+        const start: [number, number] = [pond.x + Math.cos(out) * pond.r * 0.8, pond.z + Math.sin(out) * pond.r * 0.8];
+        creeks.push(wander(start[0], start[1], Math.cos(out) * (FOREST_RADIUS + 4), Math.sin(out) * (FOREST_RADIUS + 4)));
+    });
+    const inWater = (x: number, z: number, pad = 0) =>
+        ponds.some((p) => Math.hypot(x - p.x, z - p.z) < p.r * 1.15 + pad) || distanceToPaths(x, z, creeks) < 0.9 + pad;
+
     const inClearing = (x: number, z: number, pad = 0) =>
         Math.hypot(x, z) < SPAWN_CLEARING + pad ||
         clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + pad);
@@ -127,6 +169,7 @@ export const generateForest = (seed: number): ForestLayout => {
             if (r > FOREST_RADIUS + 6) continue;
             if (inClearing(x, z, 1.2)) continue;
             if (distanceToPaths(x, z, paths) < 2.0) continue;
+            if (inWater(x, z, 1.0)) continue;
             // Edge of the world: always dense, so the boundary reads as forest.
             const density = r > FOREST_RADIUS - 3 ? 1 : 0.35 + noise2(x * 0.07, z * 0.07) * 0.6;
             if (rand() > density) continue;
@@ -163,6 +206,7 @@ export const generateForest = (seed: number): ForestLayout => {
     for (let i = 0; i < 90; i++) {
         const a = rand() * Math.PI * 2;
         const d = range(SPAWN_CLEARING, FOREST_RADIUS);
+        if (inWater(Math.cos(a) * d, Math.sin(a) * d)) continue;
         rocks.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, s: range(0.25, 0.9), rot: rand() * Math.PI });
     }
     // Fairy rings in every clearing
@@ -205,5 +249,7 @@ export const generateForest = (seed: number): ForestLayout => {
         fogBanks.push({ x, z, s: range(7, 13) });
     }
 
-    return { paths, clearings, trees, bushes, rocks, mushrooms, rupees, shafts, fogBanks };
+    // (Bushes and mushrooms beside trees near the water stay on dry land.)
+    const dry = <T extends { x: number; z: number }>(items: T[]) => items.filter((i) => !inWater(i.x, i.z));
+    return { paths, clearings, ponds, creeks, trees, bushes: dry(bushes), rocks, mushrooms: dry(mushrooms), rupees: dry(rupees), shafts, fogBanks };
 };

@@ -9,6 +9,7 @@ import {
     FOREST_RADIUS,
     ForestLayout,
     distanceToPaths,
+    distanceToWater,
     generateForest,
     mulberry32,
     noise2,
@@ -17,9 +18,11 @@ import {
     CYCLE_SECONDS,
     START_PHASE,
     SkyState,
-    createSkyState,
+    forestSky,
     sampleSky,
 } from "./forest/dayCycle";
+import { ForestWater } from "./forest/ForestWater";
+import { ForestFairies } from "./forest/ForestFairies";
 
 // The forest: a procedurally generated Lost-Woods-style forest you can run
 // through, with fog banks, light shafts through the canopy, glowing
@@ -30,7 +33,7 @@ import {
 // every per-frame value lives in refs/uniforms - nothing re-renders React
 // while you're walking around.
 
-const sky = createSkyState();
+const sky = forestSky;
 
 // ---------------------------------------------------------------- shaders
 const skyVertex = /* glsl */ `
@@ -357,6 +360,7 @@ const Ground: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
         const lush = new THREE.Color("#4c7a34");
         const dirt = new THREE.Color("#6b5235");
         const glade = new THREE.Color("#6a9a3e");
+        const bank = new THREE.Color("#3a3324");
         const c = new THREE.Color();
         for (let i = 0; i < position.count; i++) {
             const x = position.getX(i);
@@ -366,6 +370,8 @@ const Ground: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
             if (inGlade || Math.hypot(x, z) < 7) c.lerp(glade, 0.55);
             const d = distanceToPaths(x, z, layout.paths);
             if (d < 1.4) c.lerp(dirt, (1 - d / 1.4) * 0.85);
+            const w = distanceToWater(x, z, layout);
+            if (w < 1.6) c.lerp(bank, Math.min(1, (1.6 - w) / 1.6) * 0.9);
             c.toArray(colors, i * 3);
         }
         g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -414,6 +420,7 @@ const Grass: React.FC<{ layout: ForestLayout; time: { value: number }; uniforms:
             const inGlade = Math.hypot(x, z) < 7 || layout.clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.r);
             if (!inGlade && rand() > patchiness * 0.9) continue;
             if (distanceToPaths(x, z, layout.paths) < 0.9) continue;
+            if (distanceToWater(x, z, layout) < 0.3) continue;
             placements.push({ x, z, h: 0.25 + rand() * (inGlade ? 0.45 : 0.3), r: rand() * Math.PI, shade: rand() });
         }
 
@@ -767,6 +774,8 @@ export const ForestExperience: React.FC = () => {
             <Fairies layout={layout} time={time} bright={fairyBright} />
             <Companions bright={fairyBright} />
             <ForestRupees layout={layout} />
+            <ForestWater layout={layout} time={time} />
+            <ForestFairies layout={layout} />
         </group>
     );
 };
