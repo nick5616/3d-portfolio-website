@@ -1,4 +1,5 @@
 import { useRef, useMemo, useState } from "react";
+import { useUnlockStore } from "../../stores/unlockStore";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useRupeeStore } from "../../stores/rupeeStore";
@@ -97,6 +98,22 @@ export const Rupee: React.FC<RupeeProps> = ({
                 playerPosition[2]
             )
         );
+
+        // The shop's Rupee Magnet pulls good rupees in from a few metres.
+        if (
+            distance < 5 &&
+            distance >= 1.5 &&
+            rupee.value > 0 &&
+            useUnlockStore.getState().unlocked["shop-magnet"]
+        ) {
+            const pull = Math.min(1, delta * (3 + (5 - distance) * 2));
+            meshRef.current.position.lerp(
+                playerVec.current.set(playerPosition[0], playerPosition[1] + 1, playerPosition[2]),
+                pull
+            );
+            meshRef.current.rotation.y += delta * 10;
+            return;
+        }
 
         if (distance < 1.5) {
             // Collection radius

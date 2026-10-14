@@ -42,7 +42,7 @@ const ADVENTURES: Adventure[] = [
         key: "world",
         index: "01",
         title: "Walk through it",
-        desc: "A 3D world: an art museum, a software lab, a holodeck, rupees to collect and a few secrets.",
+        desc: "A 3D world: an art museum, a software lab, games, music rooms, rupees to collect and a few secrets.",
         time: "Explore · 10+ min",
         accent: "green",
         href: "/atrium",

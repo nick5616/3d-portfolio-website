@@ -2,14 +2,14 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { GodRays, DustMotes } from "../../effects/GodRays";
-import { LEVELS, SUN_DIRECTION, SUN_LEAN } from "./atriumLayout";
+import { LEVELS, SUN_DIRECTION, SUN_LEAN, WALL_HEIGHT } from "./atriumLayout";
 
 // Light and air: the sun leaning in through the glass, shafts of it
 // falling through dusty air onto the pool, the stair and the balcony, and a
 // warm haze that gives the height its depth. No shadows or post-processing:
 // the shafts are additive cones and the haze is scene fog.
 
-const GLASS_Y = 27.5; // roughly where the shafts pass through the skylight
+const GLASS_Y = WALL_HEIGHT + 8; // roughly where the shafts pass through the skylight
 
 const shaftRotation = (() => {
     const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), SUN_DIRECTION);
@@ -78,7 +78,7 @@ export const AtriumAtmosphere: React.FC = () => {
             />
             <pointLight position={[0, 0.9, 0]} intensity={3} distance={7} decay={2} color="#4fc3e6" />
             {/* Warm fill up the core so every tier reads */}
-            {[4, 10, 16.5].map((y) => (
+            {LEVELS.map((level) => level + 4).map((y) => (
                 <pointLight key={y} position={[0, y, 0]} intensity={14} distance={20} decay={1.6} color="#ffe2b8" />
             ))}
 
@@ -108,7 +108,7 @@ export const AtriumAtmosphere: React.FC = () => {
                 />
             ))}
             {/* Fainter dust everywhere else */}
-            <DustMotes radius={10} height={25} count={700} color="#f3e6c8" />
+            <DustMotes radius={10} height={WALL_HEIGHT + 5} count={800} color="#f3e6c8" />
         </>
     );
 };

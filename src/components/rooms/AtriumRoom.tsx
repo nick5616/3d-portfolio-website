@@ -9,12 +9,16 @@ import { GlassDome } from "./atrium/GlassDome";
 import { SpiralStair } from "./atrium/SpiralStair";
 import { ReflectingPool } from "./atrium/ReflectingPool";
 import { AtriumGarden, URN_SPOTS } from "./atrium/AtriumGarden";
+import { FairyLift } from "./atrium/FairyLift";
+import { DiscoBall } from "./atrium/DiscoBall";
 import {
     BALCONY_INNER,
     COLUMN_COUNT,
     COLUMN_OFFSET,
     COLUMN_RADIUS,
     LEVELS,
+    LIFT_CENTER,
+    LIFT_PAD_RADIUS,
     RADIUS,
     STAIR_CENTER,
     STAIR_OUTER,
@@ -35,8 +39,8 @@ interface AtriumRoomProps {
 // plant life, and the intense blue of pristine waters, with light shining
 // through." So: a three-tier marble rotunda under a great glass dome, sun
 // falling through dusty air onto a reflecting pool and fountain, columns
-// carrying two balconies hung with ivy, and a spiral stair climbing to the
-// upper floors, where sealed doors wait for future rooms.
+// carrying three balconies hung with ivy, a spiral stair and a fairy lift
+// climbing to the upper floors, and a door to a different world on every side.
 //
 // The room builds its own walls, floors and lights (it bypasses BaseRoom),
 // and almost everything repeated is instanced or merged, so the whole
@@ -53,6 +57,7 @@ const urnSpots = URN_SPOTS.map(({ angle, level, radius }) => ({ level, position:
 const clearOf = (x: number, z: number, level: number) => {
     const near = ([px, pz]: [number, number], distance: number) => Math.hypot(x - px, z - pz) < distance;
     if (level === 0 && near(STAIR_CENTER, STAIR_OUTER + 0.6)) return false;
+    if (near(LIFT_CENTER, LIFT_PAD_RADIUS + 0.6)) return false;
     if (columnSpots.some((c) => c.tier === level && near(c.position, 0.8))) return false;
     if (urnSpots.some((u) => u.level === level && near(u.position, 0.9))) return false;
     return true;
@@ -61,7 +66,7 @@ const clearOf = (x: number, z: number, level: number) => {
 // The first rupee waits upstairs as a reward for the climb; the rest are
 // scattered around the ground floor.
 const pickRupeeSpot = (index: number): [number, number, number] => {
-    const level = index === 0 ? 1 + Math.floor(Math.random() * 2) : 0;
+    const level = index === 0 ? 1 + Math.floor(Math.random() * (LEVELS.length - 1)) : 0;
     const [minR, maxR] = level === 0 ? [4.7, RADIUS - 0.8] : [BALCONY_INNER[level - 1] + 0.9, RADIUS - 0.5];
     for (let attempt = 0; attempt < 40; attempt++) {
         const r = minR + Math.random() * (maxR - minR);
@@ -81,6 +86,8 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({ config }) => {
             <RotundaShell materials={materials} />
             <GlassDome materials={materials} />
             <SpiralStair materials={materials} />
+            <FairyLift materials={materials} />
+            <DiscoBall />
             <ReflectingPool materials={materials} />
             <AtriumGarden materials={materials} />
             <RoomRupeeSpawner

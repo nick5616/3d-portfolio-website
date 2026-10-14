@@ -3,8 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Html, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useSceneStore } from "../../../stores/sceneStore";
-import { playSound, setSoundscape } from "../../../audio/soundManager";
-import { ROOM_SOUNDSCAPES } from "../../../audio/soundManifest";
+import { playSound } from "../../../audio/soundManager";
 import { requestWorldPointerLock } from "../../../utils/mainCanvas";
 import { GemPrompt } from "../../ui/GemPrompt";
 import { useMeteorGame } from "./math/meteorStore";
@@ -427,13 +426,10 @@ export const MathExperience: React.FC = () => {
         const previousFog = scene.fog;
         scene.fog = null;
         useSceneStore.getState().setCustomEnvironment(true);
-        setSoundscape("music-math", undefined);
         useMeteorGame.getState().set({ phase: "title", score: 0, level: 1, shields: 3, input: "", destroyed: 0 });
         return () => {
             scene.fog = previousFog;
             useSceneStore.getState().setCustomEnvironment(false);
-            const holodeck = ROOM_SOUNDSCAPES.about;
-            setSoundscape(holodeck.music, holodeck.ambience);
             const s = useSceneStore.getState();
             if (useMeteorGame.getState().seated) {
                 s.setCameraOverride(false);
@@ -465,12 +461,6 @@ export const MathExperience: React.FC = () => {
             useMeteorGame.getState().set({ phase: "title" });
         }
     };
-    // Sit down right away when the program starts.
-    useEffect(() => {
-        const timer = setTimeout(sit, 350);
-        return () => clearTimeout(timer);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
     // ---- game actions
     const startGame = () => {
         live.current = [];

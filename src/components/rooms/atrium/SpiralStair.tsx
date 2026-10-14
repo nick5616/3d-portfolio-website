@@ -22,6 +22,7 @@ import {
     STAIR_START,
     STEP_ANGLE,
     STEP_COUNT,
+    TOP,
     polar,
     radialX,
 } from "./atriumLayout";
@@ -34,9 +35,9 @@ import {
     wedgeGeometry,
 } from "./atriumParts";
 
-// A freestanding marble spiral: 80 cantilevered treads around a fluted
+// A freestanding marble spiral: 120 cantilevered treads around a fluted
 // newel, two full turns per storey, with a brass handrail on turned
-// balusters. Marble bridges at 6.5 m and 13 m cross to the balconies.
+// balusters. Marble bridges at 6.5, 13 and 19.5 m cross to the balconies.
 //
 // Physics walks on a smooth helical ramp (a trimesh ribbon through the
 // tread centers) rather than the visual steps: the player is a dynamic
@@ -50,10 +51,10 @@ const TREAD_DEPTH = 0.42;
 const RAIL_HEIGHT = 0.95;
 
 const stepCenter = (i: number) => STAIR_START + (i + 0.5) * STEP_ANGLE;
-const stepTop = (i: number) => Math.min(LEVELS[2], (i + 1) * RISER);
+const stepTop = (i: number) => Math.min(LEVELS[TOP], (i + 1) * RISER);
 // Walking surface: passes through every tread's top at its center.
 const rampY = (phi: number) =>
-    Math.min(LEVELS[2], Math.max(0, RISER * ((phi - STAIR_START) / STEP_ANGLE + 0.5)));
+    Math.min(LEVELS[TOP], Math.max(0, RISER * ((phi - STAIR_START) / STEP_ANGLE + 0.5)));
 const handrailY = (phi: number) => rampY(phi) + RISER * 0.5 + RAIL_HEIGHT;
 const soffitY = (phi: number) => RISER * ((phi - STAIR_START) / STEP_ANGLE) - TREAD_DEPTH - 0.01;
 const around = (radius: number, phi: number): [number, number] => [
@@ -62,11 +63,8 @@ const around = (radius: number, phi: number): [number, number] => [
 ];
 
 // Outer rail runs (inclusive step indices). Open: step 0 (the way in), and
-// the steps meeting each bridge (38-40 at L2, 78-79 at L3).
-const RAIL_RUNS: [number, number][] = [
-    [1, 37],
-    [41, 77],
-];
+// the steps meeting each bridge (38-40 at L2, 78-80 at L3, 118-119 at L4).
+const RAIL_RUNS: [number, number][] = Array.from({ length: TOP }, (_, k) => [k === 0 ? 1 : 40 * k + 1, 40 * k + 37]);
 const hasRail = (i: number) => RAIL_RUNS.some(([a, b]) => i >= a && i <= b);
 // The first turn's rail reaches the floor so nobody wanders in under the
 // treads; the entrance gap (steps 18, 19, 0) stays open at head height.
@@ -88,7 +86,8 @@ class HelixCurve extends THREE.Curve<THREE.Vector3> {
     }
 }
 
-const bridges = [1, 2].map((level) => {
+const bridges = LEVELS.slice(1).map((_, k) => {
+    const level = k + 1;
     const y = LEVELS[level];
     const start = STAIR_DISTANCE + STAIR_OUTER;
     const end = Math.max(BALCONY_INNER[level - 1], BALUSTRADE_RADIUS) + 0.2;
@@ -172,8 +171,8 @@ export const SpiralStair: React.FC<{ materials: AtriumMaterials }> = ({ material
                 brassParts.push(ball);
             });
         });
-        const newelTop = LEVELS[2] + 1.4;
-        [0.42, LEVELS[1] + 1.1, LEVELS[2] + 1.1, newelTop].forEach((y) => {
+        const newelTop = LEVELS[TOP] + 1.4;
+        [0.42, ...LEVELS.slice(1).map((level) => level + 1.1), newelTop].forEach((y) => {
             const ring = new THREE.TorusGeometry(STAIR_NEWEL + 0.01, 0.035, 8, 32);
             ring.rotateX(Math.PI / 2);
             ring.translate(CX, y, CZ);
@@ -301,7 +300,7 @@ export const SpiralStair: React.FC<{ materials: AtriumMaterials }> = ({ material
         // Wall across the very top so nobody walks off the end of the spiral.
         const [ex, ez] = around((STAIR_NEWEL + STAIR_OUTER) / 2, STAIR_END);
         rails.push({
-            position: [ex, LEVELS[2] + 0.9, ez],
+            position: [ex, LEVELS[TOP] + 0.9, ez],
             rotationY: radialX(STAIR_END),
             half: [(STAIR_OUTER - STAIR_NEWEL) / 2, 0.9, 0.06],
         });
@@ -333,7 +332,7 @@ export const SpiralStair: React.FC<{ materials: AtriumMaterials }> = ({ material
         return { vertices, indices: new Uint32Array(indices), boxes: rails };
     }, []);
 
-    const newelHalf = (LEVELS[2] + 1.6) / 2;
+    const newelHalf = (LEVELS[TOP] + 1.6) / 2;
     // Frictionless (and Min wins over the player's Average rule), so the
     // capsule's high friction can't pin it to the slope; PlayerBody holds
     // the player still on slippery ground when idle.

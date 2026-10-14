@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { Preload } from "@react-three/drei";
 import { RoomConfig } from "../../types/scene.types";
 import { RigidBody, interactionGroups } from "@react-three/rapier";
@@ -6,12 +6,12 @@ import { getEnhancedRoomMaterials } from "../../configs/enhancedMaterials";
 import { BaseRoom } from "../rooms/BaseRoom";
 import { AtriumRoom } from "../rooms/AtriumRoom";
 import { ProjectsRoom } from "../rooms/ProjectsRoom";
-import { AboutRoom } from "../rooms/AboutRoom";
 import { RelaxationRoom } from "../rooms/RelaxationRoom";
 import { GalleryAtriumRoom } from "../rooms/GalleryAtriumRoom";
 import { GalleryHallRoom } from "../rooms/GalleryHallRoom";
 import { SketchbookRotunda } from "../rooms/SketchbookRotunda";
 import { AchievementsRoom } from "../rooms/AchievementsRoom";
+import { CUSTOM_ROOMS } from "../rooms/customRooms";
 import { RoomEnvironmentReady } from "./RoomEnvironmentReady";
 
 interface RoomProps {
@@ -59,6 +59,8 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
         },
         [width, height, depth, wallThickness, materials.walls]
     );
+
+    const CustomRoom = CUSTOM_ROOMS[config.id];
 
     // Determine which room component to render based on room type
     const renderRoomComponent = () => {
@@ -123,17 +125,6 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
                         depth={depth}
                     />
                 );
-            case "about":
-                return (
-                    <AboutRoom
-                        config={config}
-                        materials={materials}
-                        wallThickness={wallThickness}
-                        width={8}
-                        height={height}
-                        depth={depth}
-                    />
-                );
             case "relaxation":
                 return (
                     <RelaxationRoom
@@ -174,27 +165,12 @@ export const Room: React.FC<RoomProps> = ({ config }) => {
     // Render room based on room type - always at origin since we only render current room
     return (
         <group position={[0, 0, 0]}>
-            {config.id === "about" ? (
-                // About room (holodeck) handles its own walls and environment
-                <>
-                    <RoomEnvironmentReady />
-
-                    {/* Floor collision for about room - covers entire 8x8 room */}
-                    <RigidBody
-                        type="fixed"
-                        colliders="cuboid"
-                        collisionGroups={interactionGroups(0, [0])}
-                    >
-                        <mesh position={[0, -0.25, 0]}>
-                            <boxGeometry args={[8, 0.5, 8]} />
-                            <primitive
-                                object={materials.floor}
-                                attach="material"
-                            />
-                        </mesh>
-                    </RigidBody>
-                    {renderRoomComponent()}
-                </>
+            {CustomRoom ? (
+                // Rooms that build their own floors, walls and lights (and
+                // signal readiness themselves), loaded on first visit.
+                <Suspense fallback={null}>
+                    <CustomRoom />
+                </Suspense>
             ) : config.galleryRoomKind?.kind === "sketchbook" ||
               config.id === "atrium" ? (
                 // The sketchbook rotunda and the atrium build their own

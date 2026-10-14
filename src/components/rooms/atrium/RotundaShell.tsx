@@ -7,15 +7,19 @@ import { AtriumMaterials } from "./atriumMaterials";
 import {
     BALCONY_INNER,
     BALUSTRADE_RADIUS,
-    BRIDGE_WIDTH,
     COLUMN_COUNT,
     COLUMN_HEIGHT,
     COLUMN_OFFSET,
     COLUMN_RADIUS,
+    DOOR_ANGLES,
+    DOOR_HALF_WIDTH,
+    DOOR_JAMB_HEIGHT,
     LEVELS,
+    OPEN_DOORS,
     RADIUS,
     SLAB,
-    STAIR_ANGLE,
+    TOP,
+    balustradeArcs,
     WALL_HEIGHT,
     faceCenter,
     polar,
@@ -25,19 +29,12 @@ import { getBalusterGeometry, makeInstanced, mergeGeometries, place } from "./at
 
 // Everything structural: floors, the three wall tiers, both balconies
 // (coffered soffits, dentilled fascias, balustrades), the two colonnades,
-// sconces, and the sealed doors upstairs waiting for future rooms.
+// sconces, and the doors upstairs - sealed until a room is wired to them.
 
 const DISPLAY_FONT = "/fonts/Fraunces.ttf";
 const TAU = Math.PI * 2;
-const DOOR_ANGLES = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
 const SCONCE_ANGLES = Array.from({ length: 8 }, (_, i) => Math.PI / 8 + (i * Math.PI) / 4);
 const RAIL_HEIGHT = 0.95;
-
-// Angles covered by a balustrade that is broken where the bridge lands.
-const balustradeArc = (radius: number) => {
-    const gap = (BRIDGE_WIDTH / 2) / radius;
-    return { start: STAIR_ANGLE + gap, length: TAU - 2 * gap };
-};
 
 // A torus lying in the floor plane, covering floor angles [start, start+arc].
 const ringArc = (radius: number, tube: number, start: number, arc: number, y: number) => {
@@ -93,8 +90,8 @@ const columnParts = () => {
 
 // A sealed arched door, built facing local +Z, threshold at y = 0.
 const sealedDoorParts = () => {
-    const half = 0.95;
-    const jambHeight = 2.3;
+    const half = DOOR_HALF_WIDTH;
+    const jambHeight = DOOR_JAMB_HEIGHT;
     const frame: THREE.BufferGeometry[] = [];
     [-1, 1].forEach((side) => {
         const jamb = new THREE.BoxGeometry(0.22, jambHeight, 0.16);
@@ -182,7 +179,7 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
         floor.translate(0, 0.002, 0);
         const ambulatory = own(flatRing(COLUMN_RADIUS[0] + 0.42, RADIUS, 0.004));
         const kintsugiBand = own(flatRing(5.0, 5.7, 0.004));
-        const inlayParts = [
+        const inlayParts: THREE.BufferGeometry[] = [
             ringArc(5.0, 0.03, 0, TAU, 0.0),
             ringArc(5.7, 0.03, 0, TAU, 0.0),
             ringArc(COLUMN_RADIUS[0] + 0.42, 0.035, 0, TAU, 0.0),
@@ -198,18 +195,17 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
         const floorBrass = mergeOwn(inlayParts);
 
         // --- Walls --------------------------------------------------------
-        const wallBands = [
-            own(openCylinder(RADIUS, RADIUS, LEVELS[1], 0)),
-            own(openCylinder(RADIUS, RADIUS, LEVELS[2] - LEVELS[1], LEVELS[1])),
-            own(openCylinder(RADIUS, RADIUS, WALL_HEIGHT - LEVELS[2], LEVELS[2])),
-        ];
+        // One band per storey; the top one runs on up to the dome.
+        const wallBands = LEVELS.map((level, i) =>
+            own(openCylinder(RADIUS, RADIUS, (i < TOP ? LEVELS[i + 1] : WALL_HEIGHT) - level, level))
+        );
         const trimParts: THREE.BufferGeometry[] = [];
         LEVELS.forEach((level) => {
             trimParts.push(openCylinder(RADIUS - 0.03, RADIUS - 0.03, 0.32, level)); // skirting
             trimParts.push(openCylinder(RADIUS - 0.02, RADIUS - 0.02, 0.07, level + 1.05)); // dado rail
         });
         // Coves where each tier meets the slab above, and the big drum cornice
-        [LEVELS[1] - SLAB, LEVELS[2] - SLAB].forEach((y) =>
+        LEVELS.slice(1).map((level) => level - SLAB).forEach((y) =>
             trimParts.push(openCylinder(RADIUS - 0.28, RADIUS - 0.02, 0.28, y - 0.28))
         );
         trimParts.push(openCylinder(RADIUS - 0.7, RADIUS - 0.02, 0.7, WALL_HEIGHT - 0.7));
@@ -236,23 +232,25 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
                 const [x, z] = polar(inner - 0.04, a);
                 dentilMatrices.push(place(x, level - SLAB + 0.11, z, radialX(a)));
             }
-            // Balustrade broken where the bridge lands. On the first balcony
-            // it runs between the upper columns, so no baluster inside one.
+            // Balustrade broken where the stair's and the lift's bridges land.
+            // Where the next tier of columns stands on this balcony, it runs
+            // between them, so no baluster inside one.
             const rb = BALUSTRADE_RADIUS;
-            const { start, length } = balustradeArc(rb);
-            trimParts.push(ringArc(rb, 0.085, start, length, level + 0.07));
-            trimParts.push(ringArc(rb, 0.075, start, length, level + RAIL_HEIGHT + 0.04));
-            const count = Math.floor((length * rb) / 0.3);
-            const hasColumns = i === 0;
-            for (let k = 0; k <= count; k++) {
-                const a = start + (length * k) / count;
-                const nearColumn = (a - COLUMN_OFFSET) * COLUMN_COUNT / TAU;
-                if (hasColumns && Math.abs(nearColumn - Math.round(nearColumn)) * (TAU / COLUMN_COUNT) * rb < 0.42) {
-                    continue;
+            const hasColumns = i + 1 < COLUMN_RADIUS.length;
+            balustradeArcs(rb).forEach(({ start, length }) => {
+                trimParts.push(ringArc(rb, 0.085, start, length, level + 0.07));
+                trimParts.push(ringArc(rb, 0.075, start, length, level + RAIL_HEIGHT + 0.04));
+                const count = Math.floor((length * rb) / 0.3);
+                for (let k = 0; k <= count; k++) {
+                    const a = start + (length * k) / count;
+                    const nearColumn = (a - COLUMN_OFFSET) * COLUMN_COUNT / TAU;
+                    if (hasColumns && Math.abs(nearColumn - Math.round(nearColumn)) * (TAU / COLUMN_COUNT) * rb < 0.42) {
+                        continue;
+                    }
+                    const [x, z] = polar(rb, a);
+                    balusterMatrices.push(place(x, level + 0.1, z, 0, [1, RAIL_HEIGHT - 0.1, 1]));
                 }
-                const [x, z] = polar(rb, a);
-                balusterMatrices.push(place(x, level + 0.1, z, 0, [1, RAIL_HEIGHT - 0.1, 1]));
-            }
+            });
         });
         const dentilGeometry = own(new THREE.BoxGeometry(0.09, 0.1, 0.12));
 
@@ -289,23 +287,35 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
         const pool = own(new THREE.PlaneGeometry(1.9, 2.5));
         pool.translate(0, 0.35, 0.012);
 
-        // --- Sealed doors upstairs ----------------------------------------
+        // --- Doors upstairs ----------------------------------------------
+        // Every doorway gets the marble frame; only the sealed ones get
+        // bronze leaves. Open ones are filled by the Door's portal.
         const door = sealedDoorParts();
         const doorMatrices: THREE.Matrix4[] = [];
-        const plaques: { position: [number, number, number]; rotationY: number }[] = [];
-        [LEVELS[1], LEVELS[2]].forEach((level) =>
+        const leafMatrices: THREE.Matrix4[] = [];
+        const plaques: { position: [number, number, number]; rotationY: number; text: string }[] = [];
+        LEVELS.slice(1).forEach((_, k) => {
+            const tier = k + 1;
             DOOR_ANGLES.forEach((a) => {
+                const level = LEVELS[tier];
                 const [x, z] = polar(RADIUS - 0.04, a);
-                doorMatrices.push(place(x, level, z, faceCenter(a)));
+                const matrix = place(x, level, z, faceCenter(a));
+                doorMatrices.push(matrix);
+                const open = OPEN_DOORS.find((d) => d.level === tier && d.angle === a);
+                if (!open) leafMatrices.push(matrix);
                 const [px, pz] = polar(RADIUS - 0.2, a);
-                plaques.push({ position: [px, level + door.plaqueY, pz], rotationY: faceCenter(a) });
-            })
-        );
+                plaques.push({
+                    position: [px, level + door.plaqueY, pz],
+                    rotationY: faceCenter(a),
+                    text: open ? open.plaque : "COMING SOON",
+                });
+            });
+        });
         const doors = {
             frame: own(replicate(door.frame, doorMatrices)),
-            bronze: own(replicate(door.bronze, doorMatrices)),
-            trim: own(replicate(door.trim, doorMatrices)),
-            glow: own(replicate(door.glow, doorMatrices)),
+            bronze: own(replicate(door.bronze, leafMatrices)),
+            trim: own(replicate(door.trim, leafMatrices)),
+            glow: own(replicate(door.glow, leafMatrices)),
         };
         [door.frame, door.bronze, door.trim, door.glow].forEach((g) => g.dispose());
         const bulbMaterial = new THREE.MeshBasicMaterial({ color: "#ffe2b0", toneMapped: false });
@@ -367,18 +377,19 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
             }
             // Balustrade, tall enough that a jump can't clear it
             const rb = BALUSTRADE_RADIUS;
-            const { start, length } = balustradeArc(rb);
-            const segments = 44;
-            const step = length / segments;
-            for (let k = 0; k < segments; k++) {
-                const a = start + (k + 0.5) * step;
-                const [x, z] = polar(rb, a);
-                boxes.push({
-                    position: [x, level + 0.85, z],
-                    rotationY: radialX(a),
-                    half: [0.1, 0.85, rb * Math.sin(step / 2) * 1.04],
-                });
-            }
+            balustradeArcs(rb).forEach(({ start, length }) => {
+                const segments = Math.ceil(length / (TAU / 44));
+                const step = length / segments;
+                for (let k = 0; k < segments; k++) {
+                    const a = start + (k + 0.5) * step;
+                    const [x, z] = polar(rb, a);
+                    boxes.push({
+                        position: [x, level + 0.85, z],
+                        rotationY: radialX(a),
+                        half: [0.1, 0.85, rb * Math.sin(step / 2) * 1.04],
+                    });
+                }
+            });
         });
         const columns: [number, number, number][] = [];
         COLUMN_RADIUS.forEach((radius, tier) => {
@@ -407,9 +418,13 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
             <mesh geometry={shell.kintsugiBand} material={materials.kintsugi} />
             <mesh geometry={shell.floorBrass} material={materials.brass} />
 
-            <mesh geometry={shell.wallBands[0]} material={materials.wallStone} />
-            <mesh geometry={shell.wallBands[1]} material={materials.wallGreen} />
-            <mesh geometry={shell.wallBands[2]} material={materials.wallMarble} />
+            {shell.wallBands.map((band, i) => (
+                <mesh
+                    key={i}
+                    geometry={band}
+                    material={i === 0 ? materials.wallStone : i === TOP ? materials.wallMarble : materials.wallGreen}
+                />
+            ))}
             <mesh geometry={shell.trim} material={materials.trim} />
             <mesh geometry={shell.brass} material={materials.brass} />
 
@@ -438,7 +453,7 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
                     font={DISPLAY_FONT}
                     position={plaque.position}
                     rotation={[0, plaque.rotationY, 0]}
-                    fontSize={0.17}
+                    fontSize={plaque.text.length > 20 ? 0.088 : plaque.text.length > 12 ? 0.115 : 0.17}
                     letterSpacing={0.18}
                     color="#d8b46a"
                     outlineWidth={0.004}
@@ -446,7 +461,7 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
                     anchorX="center"
                     anchorY="middle"
                 >
-                    COMING SOON
+                    {plaque.text}
                 </Text>
             ))}
         </>

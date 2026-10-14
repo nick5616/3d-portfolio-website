@@ -5,8 +5,6 @@ import * as THREE from "three";
 import { useSceneStore } from "../../../stores/sceneStore";
 import { RUPEE_TYPES } from "../../../stores/rupeeStore";
 import { Rupee, RupeeData } from "../../models/Rupee";
-import { setSoundscape } from "../../../audio/soundManager";
-import { ROOM_SOUNDSCAPES } from "../../../audio/soundManifest";
 import {
     FOREST_RADIUS,
     ForestLayout,
@@ -23,10 +21,10 @@ import {
     sampleSky,
 } from "./forest/dayCycle";
 
-// The holodeck forest: a procedurally generated Lost-Woods-style forest you
-// can run through, with fog banks, light shafts through the canopy, glowing
+// The forest: a procedurally generated Lost-Woods-style forest you can run
+// through, with fog banks, light shafts through the canopy, glowing
 // mushrooms, fairies, rupees on the paths, and a short dawn/day/dusk/night
-// cycle. A new forest is grown every time the program starts.
+// cycle. A new forest is grown every visit.
 //
 // Everything repeated is instanced (one draw call per kind of thing), and
 // every per-frame value lives in refs/uniforms - nothing re-renders React
@@ -687,13 +685,10 @@ export const ForestExperience: React.FC = () => {
         scene.background = null;
         const store = useSceneStore.getState();
         store.setCustomEnvironment(true);
-        setSoundscape("music-forest", "amb-forest");
         return () => {
             scene.fog = previousFog;
             scene.background = previousBackground;
             useSceneStore.getState().setCustomEnvironment(false);
-            const holodeck = ROOM_SOUNDSCAPES.about;
-            setSoundscape(holodeck.music, holodeck.ambience);
         };
     }, [scene]);
 

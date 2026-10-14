@@ -1,12 +1,72 @@
 // src/configs/rooms.ts
-import { RoomConfig } from "../types/scene.types";
+import { Archway, RoomConfig } from "../types/scene.types";
 
 // The atrium is a three-tier rotunda; this is the drum's height, where the
 // glass dome springs (see components/rooms/atrium/atriumLayout.ts).
-const ATRIUM_CEILING_HEIGHT = 19.5;
+const ATRIUM_CEILING_HEIGHT = 26;
 const ATRIUM_DOOR_RADIUS = 11.9; // doors sit just inside the 12 m wall
+// Mirrors LEVELS / STAIR_CENTER in atriumLayout.ts (kept as plain numbers
+// so this config doesn't pull three.js in).
+const ATRIUM_LEVELS = [0, 6.5, 13, 19.5] as const;
+const ATRIUM_STAIR: [number, number] = [4.596, 4.596];
+const ATRIUM_LIFT: [number, number] = [-4.596, -4.596];
+// Upstairs portals sit in the arched frames RotundaShell builds 4 cm
+// inside the 12 m wall; just in front of the frame's back plane.
+const RADIUS_AT_UPPER_DOORS = 11.93;
+const ATRIUM_BALCONY_ARRIVAL = 10.6; // where you land coming back out
+
+// Door angles in the rotunda (see atriumLayout.ts): +X, +Z, -X, -Z.
+const EAST = 0;
+const SOUTH = Math.PI / 2;
+const WEST = Math.PI;
+const NORTH = Math.PI * 1.5;
+
+type Vec3 = [number, number, number];
+const facing = (angle: number): Vec3 => [0, Math.atan2(Math.cos(angle), Math.sin(angle)), 0];
+
+// An upstairs portal in the atrium leading to `roomId`.
+const upstairsDoor = (roomId: string, level: number, angle: number, arriveAt: Vec3): Archway => ({
+    id: `to-${roomId}`,
+    targetRoomId: roomId,
+    position: [Math.cos(angle) * RADIUS_AT_UPPER_DOORS, ATRIUM_LEVELS[level], Math.sin(angle) * RADIUS_AT_UPPER_DOORS],
+    rotation: facing(angle),
+    width: 1.9,
+    height: 3.25,
+    appearance: "portal",
+    entrancePoint: { position: arriveAt, rotation: [0, 0, 0] },
+});
+
+// A room's way back, landing on the balcony in front of its portal.
+const backToAtrium = (
+    roomId: string,
+    level: number,
+    angle: number,
+    position: Vec3,
+    look: Partial<Archway> = {}
+): Archway => ({
+    id: `to-atrium-from-${roomId}`,
+    targetRoomId: "atrium",
+    position,
+    rotation: [0, 0, 0],
+    width: 1.9,
+    height: 3.25,
+    ...look,
+    entrancePoint: {
+        position: [
+            Math.cos(angle) * ATRIUM_BALCONY_ARRIVAL,
+            ATRIUM_LEVELS[level] + 1.5,
+            Math.sin(angle) * ATRIUM_BALCONY_ARRIVAL,
+        ],
+        rotation: [0, 0, 0],
+    },
+});
+
+// Rooms that light themselves only need a placeholder preset for the type.
+const selfLit = (color: string) => ({
+    ambient: { intensity: 0.2, color },
+    directional: { position: [0, 8, 0] as Vec3, intensity: 0, color },
+});
 const PROJECTS_CEILING_HEIGHT = 6;
-const ABOUT_CEILING_HEIGHT = 8;
 const RELAXATION_CEILING_HEIGHT = 6;
 const GALLERY_ATRIUM_CEILING_HEIGHT = 7.5;
 const GALLERY_HALL_CEILING_HEIGHT = 7.5;
@@ -51,6 +111,18 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         name: "Atrium",
         position: [0, 0, 0] as [number, number, number],
         dimensions: [24, ATRIUM_CEILING_HEIGHT, 24], // circular: width is the diameter
+        circular: true,
+        floors: [
+            { y: 0, label: "Ground Floor" },
+            { y: ATRIUM_LEVELS[1], label: "Second Floor", innerRadius: 9.3 },
+            { y: ATRIUM_LEVELS[2], label: "Third Floor", innerRadius: 9.3 },
+            { y: ATRIUM_LEVELS[3], label: "Fourth Floor", innerRadius: 9.3 },
+        ],
+        mapFeatures: [
+            { kind: "pool", position: [0, 0], radius: 3.35, floors: [0] },
+            { kind: "stair", position: ATRIUM_STAIR, radius: 1.95 },
+            { kind: "lift", position: ATRIUM_LIFT, radius: 1.95 },
+        ],
         lightPreset: {
             ambient: { intensity: 0.1, color: "#ffff00" }, // Reduced from 0.5
             directional: {
@@ -103,14 +175,15 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 },
             },
             {
-                id: "to-about",
-                targetRoomId: "about",
+                // Where the holodeck's door used to be.
+                id: "to-rupee-shop",
+                targetRoomId: "rupee-shop",
                 position: [ATRIUM_DOOR_RADIUS, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
-                width: 2,
-                height: 3,
+                width: 3,
+                height: 4,
                 entrancePoint: {
-                    position: [-2.5, 1.5, 0] as [number, number, number],
+                    position: [-3.8, 1.5, 0] as [number, number, number],
                     rotation: [0, Math.PI / 2, 0] as [number, number, number],
                 },
             },
@@ -140,8 +213,183 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                     rotation: [0, 0, 0] as [number, number, number],
                 },
             },
+            // Upstairs portals (OPEN_DOORS in atriumLayout.ts swaps each
+            // one's sealed bronze leaves for the portal).
+            upstairsDoor("cosmic-connect-four", 1, EAST, [0, 1.5, 6.2]),
+            upstairsDoor("meteor-math", 1, SOUTH, [0, 1.5, 6]),
+            upstairsDoor("courage", 1, WEST, [-0.5, 1.5, 2.6]),
+            upstairsDoor("sky-course", 1, NORTH, [0, 1.5, 2.5]),
+            upstairsDoor("art-studio", 2, EAST, [-0.5, 1.5, 2.6]),
+            upstairsDoor("jam-room", 2, SOUTH, [0, 1.5, 5.2]),
+            upstairsDoor("bird-dog-studio", 2, WEST, [0, 1.5, 5.2]),
+            upstairsDoor("marble-machine", 2, NORTH, [0, 1.5, 5.2]),
+            upstairsDoor("forest", 3, EAST, [0, 1.5, 3.5]),
+            upstairsDoor("observatory", 3, SOUTH, [0, 1.5, 8.2]),
         ],
     },
+
+    // A floating platform in deep space: a table, a board, and across it,
+    // Nothing. Builds its own everything (CosmicConnectFourRoom).
+    "cosmic-connect-four": {
+        id: "cosmic-connect-four",
+        name: "Cosmic Connect Four",
+        position: [12, ATRIUM_LEVELS[1], 0] as [number, number, number],
+        dimensions: [16, 12, 16], // circular platform, width = diameter
+        circular: true,
+        mapFeatures: [{ kind: "table", position: [0, 0], radius: 1.4 }],
+        // The room lights itself; this only satisfies the type.
+        lightPreset: {
+            ambient: { intensity: 0.1, color: "#6b4cff" },
+            directional: {
+                position: [0, 8, 0] as [number, number, number],
+                intensity: 0,
+                color: "#ffffff",
+            },
+        },
+        defaultEntrance: {
+            position: [0, 1.5, 6.2] as [number, number, number],
+            rotation: [0, 0, 0] as [number, number, number],
+        },
+        interactiveElements: [],
+        archways: [backToAtrium("cosmic", 1, EAST, [0, 0, 7.6], { appearance: "portal" })],
+    },
+
+    // Second floor, south: the old holodeck's Meteor Multiplication, now
+    // its own moon outpost.
+    "meteor-math": {
+        id: "meteor-math",
+        name: "Meteor Math",
+        position: [0, ATRIUM_LEVELS[1], 20] as Vec3,
+        dimensions: [16, 12, 16],
+        circular: true,
+        lightPreset: selfLit("#9fb4ff"),
+        defaultEntrance: { position: [0, 1.5, 6], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("meteor-math", 1, SOUTH, [0, 0, 7.6], { appearance: "portal", frame: true })],
+    },
+
+    // Second floor, west: Muriel and Eustace's computer room.
+    courage: {
+        id: "courage",
+        name: "Courage's Farmhouse Attic",
+        position: [-20, ATRIUM_LEVELS[1], 0] as Vec3,
+        dimensions: [8, 5, 8],
+        lightPreset: selfLit("#ffe4b5"),
+        defaultEntrance: { position: [-0.5, 1.5, 2.6], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("courage", 1, WEST, [-0.5, 0, 3.95], { width: 1.2, height: 2.4, appearance: "wood" })],
+    },
+
+    // Second floor, north: the gym, rebuilt as a timed parkour run.
+    "sky-course": {
+        id: "sky-course",
+        name: "Sky Course",
+        position: [0, ATRIUM_LEVELS[1], -20] as Vec3,
+        dimensions: [60, 40, 60],
+        circular: true,
+        lightPreset: selfLit("#cfe6ff"),
+        defaultEntrance: { position: [0, 1.5, 2.5], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("sky-course", 1, NORTH, [0, 0, 4.4], { appearance: "portal", frame: true })],
+    },
+
+    // Third floor, east: the old holodeck classroom easel.
+    "art-studio": {
+        id: "art-studio",
+        name: "Art Studio",
+        position: [20, ATRIUM_LEVELS[2], 0] as Vec3,
+        dimensions: [8, 5, 8],
+        lightPreset: selfLit("#fffaf0"),
+        defaultEntrance: { position: [-0.5, 1.5, 2.6], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("art-studio", 2, EAST, [-0.5, 0, 3.95], { width: 1.2, height: 2.4, appearance: "wood" })],
+    },
+
+    // Third floor, south: make music by walking around.
+    "jam-room": {
+        id: "jam-room",
+        name: "Jam Room",
+        position: [0, ATRIUM_LEVELS[2], 20] as Vec3,
+        dimensions: [14, 7, 14],
+        lightPreset: selfLit("#ffd6f5"),
+        defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("jam-room", 2, SOUTH, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+    },
+
+    // Third floor, west: Bird Dog's studio and DJ booth.
+    "bird-dog-studio": {
+        id: "bird-dog-studio",
+        name: "Bird Dog Studio",
+        position: [-20, ATRIUM_LEVELS[2], 0] as Vec3,
+        dimensions: [16, 7, 14],
+        lightPreset: selfLit("#b48cff"),
+        defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("bird-dog-studio", 2, WEST, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+    },
+
+    // Third floor, north: a marble run you build yourself.
+    "marble-machine": {
+        id: "marble-machine",
+        name: "Marble Machine",
+        position: [0, ATRIUM_LEVELS[2], -20] as Vec3,
+        dimensions: [14, 8, 14],
+        lightPreset: selfLit("#fff1d6"),
+        defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("marble-machine", 2, NORTH, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+    },
+
+    // Fourth floor, east: the holodeck's Lost-Woods forest, a new one each
+    // visit. The way home is a fairy stone.
+    forest: {
+        id: "forest",
+        name: "The Forest",
+        position: [20, ATRIUM_LEVELS[3], 0] as Vec3,
+        dimensions: [80, 20, 80],
+        circular: true,
+        lightPreset: selfLit("#cfe6c0"),
+        defaultEntrance: { position: [0, 1.5, 3.5], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("forest", 3, EAST, [0, 0, 6], { appearance: "fairyStone", width: 2, height: 3 })],
+    },
+
+    // Fourth floor, south: a rooftop terrace under the night sky.
+    observatory: {
+        id: "observatory",
+        name: "Observatory",
+        position: [0, ATRIUM_LEVELS[3], 20] as Vec3,
+        dimensions: [24, 20, 24],
+        circular: true,
+        lightPreset: selfLit("#8fa8ff"),
+        defaultEntrance: { position: [0, 1.5, 8.2], rotation: [0, 0, 0] },
+        interactiveElements: [],
+        archways: [backToAtrium("observatory", 3, SOUTH, [0, 0, 9.8], { appearance: "portal", frame: true })],
+    },
+
+    // Ground floor, east, where the holodeck used to be.
+    "rupee-shop": {
+        id: "rupee-shop",
+        name: "Rupee Shop",
+        position: [20, 0, 0] as Vec3,
+        dimensions: [12, 6, 10],
+        lightPreset: selfLit("#ffd9a0"),
+        defaultEntrance: { position: [-3.8, 1.5, 0], rotation: [0, Math.PI / 2, 0] },
+        interactiveElements: [],
+        archways: [
+            {
+                id: "to-atrium-from-rupee-shop",
+                targetRoomId: "atrium",
+                position: [-5.9, 0, 0],
+                rotation: [0, Math.PI / 2, 0],
+                width: 3,
+                height: 4,
+                entrancePoint: { position: [9.2, 1.5, 0], rotation: [0, -Math.PI / 2, 0] },
+            },
+        ],
+    },
+
 
     // The circular hub of the gallery wing. Keeps the id "gallery" (no
     // separate lobby room anymore) so routing/theming/quick-access that
@@ -152,6 +400,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [-20, 0, 0] as [number, number, number],
         dimensions: [20, GALLERY_ATRIUM_CEILING_HEIGHT, 20], // circular room, width is the diameter
         galleryRoomKind: { kind: "atrium" },
+        circular: true,
         // GalleryAtriumRoom bypasses BaseRoom and lights itself directly, so
         // this preset only exists to satisfy the RoomConfig type.
         lightPreset: {
@@ -300,6 +549,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         position: [-20, 0, 25] as [number, number, number],
         dimensions: [12, SKETCHBOOK_WALL_HEIGHT, 12], // circular, width = diameter
         galleryRoomKind: { kind: "sketchbook", category: "sketches" },
+        circular: true,
         // SketchbookRotunda lights itself; this only satisfies the type.
         lightPreset: {
             ambient: { intensity: 0.2, color: "#fff1dc" },
@@ -473,72 +723,6 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 entrancePoint: {
                     position: [0, 1.5, -7] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
-                },
-            },
-        ],
-    },
-
-    about: {
-        id: "about",
-        name: "Play Place",
-        position: [20, 0, 0] as [number, number, number],
-        dimensions: [8, ABOUT_CEILING_HEIGHT, 8],
-        lightPreset: {
-            ambient: { intensity: 0.4, color: "#FFF5E1" },
-            directional: {
-                position: [0, 8, 0] as [number, number, number],
-                intensity: 0.6,
-                color: "#FFE0B2",
-            },
-            spots: [
-                {
-                    position: [-3, 6, -3] as [number, number, number],
-                    target: [-3, 0, -3] as [number, number, number],
-                    intensity: 0.7,
-                    color: "#FFA07A",
-                },
-                {
-                    position: [-3.5, 5, 0] as [number, number, number],
-                    target: [-3.5, 2, 0] as [number, number, number],
-                    intensity: 0.8,
-                    color: "#F9EAD0",
-                },
-                {
-                    position: [0, 5, 3.5] as [number, number, number],
-                    target: [0, 1, 3.5] as [number, number, number],
-                    intensity: 0.6,
-                    color: "#6A5ACD",
-                },
-                {
-                    position: [3.5, 5, 0] as [number, number, number],
-                    target: [3.5, 2, 0] as [number, number, number],
-                    intensity: 0.7,
-                    color: "#48D1CC",
-                },
-                {
-                    position: [3, 5, -3] as [number, number, number],
-                    target: [3, 0, -3] as [number, number, number],
-                    intensity: 0.6,
-                    color: "#F0FFFF",
-                },
-            ],
-        },
-        defaultEntrance: {
-            position: [-2.5, 1.6, 0] as [number, number, number],
-            rotation: [0, Math.PI / 2, 0] as [number, number, number],
-        },
-        interactiveElements: [],
-        archways: [
-            {
-                id: "to-atrium-from-about",
-                targetRoomId: "atrium",
-                position: [-4.4, 0, 0] as [number, number, number],
-                rotation: [0, Math.PI / 2, 0] as [number, number, number],
-                width: 2,
-                height: 3,
-                entrancePoint: {
-                    position: [7, 1.5, 0] as [number, number, number],
-                    rotation: [0, -Math.PI / 2, 0] as [number, number, number],
                 },
             },
         ],

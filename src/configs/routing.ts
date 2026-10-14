@@ -6,156 +6,75 @@ export interface RoomRoute {
     description?: string;
 }
 
-export interface ExperienceRoute {
-    path: string;
-    experienceId: string;
-    title: string;
-}
-
+// Every room's canonical path comes first; later entries for the same room
+// are aliases (old holodeck links, short names) that land in the same place.
 export const roomRoutes: RoomRoute[] = [
-    {
-        path: "/",
-        roomId: "atrium",
-        title: "Portfolio Atrium",
-        description: "Welcome to the central hub",
-    },
-    {
-        path: "/atrium",
-        roomId: "atrium",
-        title: "Portfolio Atrium",
-        description: "Welcome to the central hub",
-    },
-    {
-        path: "/art-gallery",
-        roomId: "gallery",
-        title: "Art Gallery",
-        description: "Digital art collection and creative works",
-    },
-    {
-        path: "/gallery",
-        roomId: "gallery",
-        title: "Art Gallery",
-        description: "Digital art collection and creative works",
-    },
-    {
-        path: "/software",
-        roomId: "projects",
-        title: "Software Projects",
-        description: "Portfolio of development work and applications",
-    },
-    {
-        path: "/projects",
-        roomId: "projects",
-        title: "Software Projects",
-        description: "Portfolio of development work and applications",
-    },
-    {
-        path: "/holodeck",
-        roomId: "about",
-        title: "Interactive Holodeck",
-        description: "Interactive experiences and personal information",
-    },
-    {
-        path: "/about",
-        roomId: "about",
-        title: "Interactive Holodeck",
-        description: "Interactive experiences and personal information",
-    },
-    {
-        path: "/relaxation",
-        roomId: "relaxation",
-        title: "Relaxation Room",
-        description: "A peaceful space for meditation and relaxation",
-    },
+    { path: "/atrium", roomId: "atrium", title: "Portfolio Atrium", description: "Welcome to the central hub" },
+    { path: "/", roomId: "atrium", title: "Portfolio Atrium" },
+    { path: "/art-gallery", roomId: "gallery", title: "Art Gallery", description: "Digital art collection and creative works" },
+    { path: "/gallery", roomId: "gallery", title: "Art Gallery" },
+    { path: "/software", roomId: "projects", title: "Software Projects", description: "Portfolio of development work and applications" },
+    { path: "/projects", roomId: "projects", title: "Software Projects" },
+    { path: "/relaxation", roomId: "relaxation", title: "Relaxation Room" },
     {
         path: "/achievements",
         roomId: "achievements",
         title: "Hall of Achievements",
         description: "A wall of plaques celebrating everything there is to find and do",
     },
+    { path: "/rupee-shop", roomId: "rupee-shop", title: "Rupee Shop", description: "Spend what you've found" },
+    { path: "/shop", roomId: "rupee-shop", title: "Rupee Shop" },
+
+    // Second floor: games
+    {
+        path: "/cosmic-connect-four",
+        roomId: "cosmic-connect-four",
+        title: "Cosmic Connect Four",
+        description: "A game of Connect Four against Nothing, adrift in deep space",
+    },
+    { path: "/meteor-math", roomId: "meteor-math", title: "Meteor Math", description: "Times tables on the moon" },
+    { path: "/math", roomId: "meteor-math", title: "Meteor Math" },
+    { path: "/holodeck/math", roomId: "meteor-math", title: "Meteor Math" },
+    { path: "/courage", roomId: "courage", title: "Courage's Farmhouse Attic", description: "The computer has opinions" },
+    { path: "/courage-the-cowardly-dog", roomId: "courage", title: "Courage's Farmhouse Attic" },
+    { path: "/holodeck/courage", roomId: "courage", title: "Courage's Farmhouse Attic" },
+    { path: "/holodeck/courage-the-cowardly-dog", roomId: "courage", title: "Courage's Farmhouse Attic" },
+    { path: "/sky-course", roomId: "sky-course", title: "Sky Course", description: "A timed run across floating platforms" },
+    { path: "/gym", roomId: "sky-course", title: "Sky Course" },
+    { path: "/fitness", roomId: "sky-course", title: "Sky Course" },
+    { path: "/holodeck/gym", roomId: "sky-course", title: "Sky Course" },
+
+    // Third floor: making things
+    { path: "/art-studio", roomId: "art-studio", title: "Art Studio", description: "Paint something for the wall" },
+    { path: "/art", roomId: "art-studio", title: "Art Studio" },
+    { path: "/holodeck/art", roomId: "art-studio", title: "Art Studio" },
+    { path: "/jam-room", roomId: "jam-room", title: "Jam Room", description: "Make music without knowing how" },
+    { path: "/jam", roomId: "jam-room", title: "Jam Room" },
+    { path: "/bird-dog", roomId: "bird-dog-studio", title: "Bird Dog Studio", description: "Music by Bird Dog, with visuals" },
+    { path: "/studio", roomId: "bird-dog-studio", title: "Bird Dog Studio" },
+    { path: "/marble-machine", roomId: "marble-machine", title: "Marble Machine", description: "Build a run, drop a marble" },
+
+    // Fourth floor: wonder
+    { path: "/forest", roomId: "forest", title: "The Forest", description: "A Lost Woods that grows anew every visit" },
+    { path: "/holodeck/forest", roomId: "forest", title: "The Forest" },
+    { path: "/observatory", roomId: "observatory", title: "Observatory", description: "Constellations made of my work" },
+
+    // The holodeck is gone; its old links land in the atrium.
+    { path: "/holodeck", roomId: "atrium", title: "Portfolio Atrium" },
+    { path: "/about", roomId: "atrium", title: "Portfolio Atrium" },
 ];
 
-// Holodeck experience routes — each experience has a canonical path and short aliases
-export const experienceRoutes: ExperienceRoute[] = [
-    { path: "/holodeck/courage-the-cowardly-dog", experienceId: "computer", title: "Courage the Cowardly Dog" },
-    { path: "/holodeck/courage", experienceId: "computer", title: "Courage the Cowardly Dog" },
-    { path: "/courage", experienceId: "computer", title: "Courage the Cowardly Dog" },
-    { path: "/holodeck/gym", experienceId: "fitness", title: "Gym" },
-    { path: "/gym", experienceId: "fitness", title: "Gym" },
-    { path: "/fitness", experienceId: "fitness", title: "Gym" },
-    { path: "/holodeck/art", experienceId: "art", title: "Art Studio" },
-    { path: "/art", experienceId: "art", title: "Art Studio" },
-    { path: "/holodeck/math", experienceId: "math", title: "Math" },
-    { path: "/math", experienceId: "math", title: "Math" },
-    { path: "/holodeck/forest", experienceId: "forest", title: "Forest" },
-    { path: "/forest", experienceId: "forest", title: "Forest" },
-];
+export const pathToRoomId = new Map<string, string>(roomRoutes.map((route) => [route.path, route.roomId]));
 
-// Canonical path per experience (first /holodeck/* entry)
-const experienceIdToPath = new Map<string, string>([
-    ["computer", "/holodeck/courage-the-cowardly-dog"],
-    ["fitness", "/holodeck/gym"],
-    ["art", "/holodeck/art"],
-    ["math", "/holodeck/math"],
-    ["forest", "/holodeck/forest"],
-]);
+// The first route listed for each room is its canonical path.
+export const roomIdToPath = new Map<string, string>();
+roomRoutes.forEach((route) => {
+    if (!roomIdToPath.has(route.roomId)) roomIdToPath.set(route.roomId, route.path);
+});
 
-// Quick lookup maps
-const pathToExperienceId = new Map<string, string>(
-    experienceRoutes.map((route) => [route.path, route.experienceId])
-);
+export const getRoomIdFromPath = (path: string): string | null => pathToRoomId.get(path) || null;
 
-// Create a map for quick lookup
-export const pathToRoomId = new Map<string, string>(
-    roomRoutes.map((route) => [route.path, route.roomId])
-);
+export const getPathFromRoomId = (roomId: string): string | null => roomIdToPath.get(roomId) || null;
 
-// Create reverse map for room ID to path
-export const roomIdToPath = new Map<string, string>([
-    ["atrium", "/atrium"],
-    ["gallery", "/art-gallery"],
-    ["projects", "/software"],
-    ["about", "/holodeck"],
-    ["relaxation", "/relaxation"],
-    ["achievements", "/achievements"],
-]);
-
-// Helper function to get room ID from path (also matches experience routes → "about")
-export const getRoomIdFromPath = (path: string): string | null => {
-    return pathToRoomId.get(path) || (pathToExperienceId.has(path) ? "about" : null);
-};
-
-// Helper function to get path from room ID
-export const getPathFromRoomId = (roomId: string): string | null => {
-    return roomIdToPath.get(roomId) || null;
-};
-
-// Helper function to get route metadata
-export const getRouteByPath = (path: string): RoomRoute | null => {
-    return roomRoutes.find((route) => route.path === path) || null;
-};
-
-// Get the experience ID from a URL path (returns null if not an experience route)
-export const getExperienceFromPath = (path: string): string | null => {
-    return pathToExperienceId.get(path) || null;
-};
-
-// Get the canonical URL path for an experience ID
-export const getPathFromExperience = (experienceId: string): string | null => {
-    return experienceIdToPath.get(experienceId) || null;
-};
-
-// Helper function to extract holodeck experience from URL (legacy query param support)
-export const getHolodeckExperienceFromURL = (): string | null => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("experience");
-};
-
-// Helper function to build holodeck URL with experience (legacy)
-export const buildHolodeckURL = (experience?: string): string => {
-    const basePath = "/holodeck";
-    if (experience && experience !== "off") {
-        return `${basePath}?experience=${experience}`;
-    }
-    return basePath;
-};
+export const getRouteByPath = (path: string): RoomRoute | null =>
+    roomRoutes.find((route) => route.path === path) || null;

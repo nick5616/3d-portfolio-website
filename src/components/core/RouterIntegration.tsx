@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSceneStore } from "../../stores/sceneStore";
-import { getPathFromRoomId, getExperienceFromPath } from "../../configs/routing";
+import { getPathFromRoomId, getRoomIdFromPath } from "../../configs/routing";
 
 /**
  * RouterIntegration component handles the integration between URL routing and the 3D scene.
@@ -27,16 +27,10 @@ export const RouterIntegration: React.FC = () => {
             );
 
             // Only update URL if this room change came from a door (not from URL navigation)
-            // Don't override experience deep-link URLs (e.g. /courage → /holodeck)
+            // An alias of the same room (e.g. /gym for /sky-course) is left alone.
             const expectedPath = getPathFromRoomId(currentRoom.id);
-            const isExperienceUrl =
-                currentRoom.id === "about" &&
-                getExperienceFromPath(location.pathname) !== null;
-            if (
-                expectedPath &&
-                location.pathname !== expectedPath &&
-                !isExperienceUrl
-            ) {
+            const onAlias = getRoomIdFromPath(location.pathname) === currentRoom.id;
+            if (expectedPath && location.pathname !== expectedPath && !onAlias) {
                 console.log(
                     `🔗 RouterIntegration: Updating URL from ${location.pathname} to ${expectedPath}`
                 );

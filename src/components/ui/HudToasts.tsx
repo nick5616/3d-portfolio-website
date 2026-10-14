@@ -16,9 +16,19 @@ const REGION_SUBTITLES: Record<string, string> = {
     atrium: "The heart of it all",
     gallery: "Art Gallery",
     projects: "Software Lab",
-    about: "Holodeck",
     achievements: "Hall of Achievements",
     "gallery-hall-sketches": "Ideas start here",
+    "cosmic-connect-four": "Nothing is waiting",
+    "rupee-shop": "Spend what you've found",
+    "meteor-math": "Defend the city",
+    courage: "The computer has opinions",
+    "sky-course": "Beat your ghost",
+    "art-studio": "Teacher's favorites go on the wall",
+    "jam-room": "Everything here makes a sound",
+    "bird-dog-studio": "Music by Bird Dog",
+    "marble-machine": "Build it, then let go",
+    forest: "A new forest every visit",
+    observatory: "My work, written in the stars",
 };
 
 // Breath of the Wild-style announcements:

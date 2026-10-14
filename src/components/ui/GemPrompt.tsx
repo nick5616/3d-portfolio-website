@@ -1,7 +1,7 @@
 // The one in-world "press a key" prompt. Breath of the Wild style: a round
 // glowing button glyph and the action as bright text straight on the scene
 // (on a soft shadow pool for legibility), no box. Every interactable -
-// doors, art, the sketchbook, holodeck buttons, the Courage computer, the
+// doors, art, the sketchbook, jam room and shop, the Courage computer, the
 // light switch, the software lab - uses this so they all read the same.
 export const GemPrompt: React.FC<{
     action: React.ReactNode;

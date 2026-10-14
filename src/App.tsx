@@ -6,9 +6,8 @@ import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { ArtInspector } from "./components/ui/ArtInspector";
 import { SketchbookHUD } from "./components/sketchbook/SketchbookHUD";
 import { ProjectViewer } from "./components/projects/ProjectViewer";
-import { MeteorHUD } from "./components/rooms/holodeck/math/MeteorHUD";
+import { MeteorHUD } from "./components/rooms/experiences/math/MeteorHUD";
 import { useRoomSoundscape } from "./audio/roomSoundscape";
-import { HolodeckLoadingScreen } from "./components/ui/HolodeckLoadingScreen";
 import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
 import { useSceneStore } from "./stores/sceneStore";
@@ -216,7 +215,6 @@ export default function App() {
                 <Scene />
             </WebGLErrorBoundary>
             <Interface />
-            <HolodeckLoadingScreen />
             {/* Outside the HUD layer so hiding the HUD doesn't hide it */}
             <ArtInspector />
             <SketchbookHUD />

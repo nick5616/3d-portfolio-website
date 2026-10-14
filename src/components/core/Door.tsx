@@ -21,6 +21,8 @@ import { useAchievementStore } from "../../stores/achievementStore";
 import { RupeeIcon } from "../models/RupeeIcon";
 import { GemPrompt } from "../ui/GemPrompt";
 import { FairyStonePortal } from "./FairyStonePortal";
+import { CosmicPortal } from "./CosmicPortal";
+import { WoodenDoor } from "./WoodenDoor";
 
 interface DoorProps {
     archway: Archway;
@@ -48,10 +50,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             }))
         );
     const [isInTrigger, setIsInTrigger] = useState(false);
-    // In the holodeck forest, the exit door becomes a holed fairy stone.
-    const holodeckExperience = useSceneStore((s) => s.holodeckExperience);
-    const fairyStone =
-        currentRoom?.id === "about" && holodeckExperience === "forest";
+    // In the forest, the way home is a holed fairy stone.
+    const fairyStone = archway.appearance === "fairyStone";
     const lock = archway.lock;
     const isLocked = useUnlockStore(
         (s) => Boolean(lock) && !s.unlocked[lock!.id]
@@ -93,17 +93,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     isArched: false, // Sleek rectangular
                     roughness: 0.1,
                     metalness: 0.8,
-                    accent: undefined,
-                };
-            case "about":
-                return {
-                    color: "#FF6B6B", // Warm coral
-                    frameColor: "#FFB347", // Peach
-                    label: roomName,
-                    glowColor: "#FF69B4",
-                    isArched: false, // Keep it simple
-                    roughness: 0.6,
-                    metalness: 0.1,
                     accent: undefined,
                 };
             default:
@@ -162,10 +151,12 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     // atrium rotunda, sketchbook), whose curved walls don't have a single
     // flat "surface" this math applies to - their doors are placed on the
     // curve directly.
-    const isCircularRoom =
-        currentRoom?.id === "atrium" ||
-        currentRoom?.galleryRoomKind?.kind === "atrium" ||
-        currentRoom?.galleryRoomKind?.kind === "sketchbook";
+    const isCircularRoom = Boolean(currentRoom?.circular);
+    // Portals and the forest's fairy stone stand in for the usual panel,
+    // frame and sign; the panel stays as an invisible aim target.
+    const portal = archway.appearance === "portal";
+    const wooden = archway.appearance === "wood";
+    const customLook = fairyStone || portal || wooden;
     const doorPosition: [number, number, number] = (() => {
         const dimensions = currentRoom?.dimensions;
         if (!dimensions || isCircularRoom) return archway.position;
@@ -198,13 +189,16 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     // every room is centered at local (0,0,0), so the door's own position
     // vector reliably points "outward" (from center, through the door)
     // regardless of rotation - use it directly instead of trusting rotation.
+    // In a rectangular room that's the wall's own normal, though: a door
+    // that isn't centred on its wall would otherwise turn a few degrees off
+    // it.
     const [doorX, , doorZ] = doorPosition;
     const distFromCenter = Math.hypot(doorX, doorZ) || 1;
-    const outward: [number, number, number] = [
-        doorX / distFromCenter,
-        0,
-        doorZ / distFromCenter,
-    ];
+    const outward: [number, number, number] = isCircularRoom
+        ? [doorX / distFromCenter, 0, doorZ / distFromCenter]
+        : Math.abs(doorX) > Math.abs(doorZ)
+        ? [Math.sign(doorX), 0, 0]
+        : [0, 0, Math.sign(doorZ) || 1];
     const FRAME_OFFSET = 0.08;
     const framePosition: [number, number, number] = [
         doorPosition[0] + outward[0] * FRAME_OFFSET,
@@ -315,7 +309,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         // Use entrance point if available, otherwise use archway position
         const entrancePosition = archway.entrancePoint?.position || [
             archway.position[0],
-            3,
+            archway.position[1] + 3,
             archway.position[2],
         ];
 
@@ -445,8 +439,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 ]}
                 rotation={doorMeshRotation}
                 // Hidden (but still the aim target) when the fairy stone
-                // stands in for the door.
-                visible={!fairyStone}
+                // or a portal stands in for the door.
+                visible={!customLook}
             >
                 <boxGeometry args={[archway.width, archway.height, 0.15]} />
                 <meshStandardMaterial
@@ -588,7 +582,30 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             )}
 
-            <group position={framePosition} rotation={doorMeshRotation} visible={!fairyStone}>
+            {wooden && (
+                <WoodenDoor
+                    position={doorPosition}
+                    rotationY={labelRotationY}
+                    width={archway.width}
+                    height={archway.height}
+                    label={theme.label}
+                    hovering={isHoveringFromCenter}
+                />
+            )}
+
+            {portal && (
+                <CosmicPortal
+                    position={doorPosition}
+                    rotationY={labelRotationY}
+                    width={archway.width}
+                    height={archway.height}
+                    hovering={isHoveringFromCenter}
+                    frame={archway.frame}
+                    label={archway.frame ? theme.label : undefined}
+                />
+            )}
+
+            <group position={framePosition} rotation={doorMeshRotation} visible={!customLook}>
                 <mesh>
                     <boxGeometry
                         args={[archway.width + 0.4, archway.height + 0.4, 0.06]}
@@ -639,7 +656,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 </group>
             )}
 
-            <group position={labelPosition} rotation={[0, labelRotationY, 0]} visible={!fairyStone}>
+            <group position={labelPosition} rotation={[0, labelRotationY, 0]} visible={!customLook}>
                 {/* Label Background */}
                 <mesh position={[0, 0, 0]}>
                     <planeGeometry

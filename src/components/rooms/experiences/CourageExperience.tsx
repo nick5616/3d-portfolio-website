@@ -193,70 +193,34 @@ export const CourageExperience: React.FC = () => {
                 </mesh>
             </group>
 
-            {/* Keyboard on the desk */}
-            <group position={[0, 0.85, -2.8]} rotation={[0, 0, 0]}>
-                {/* Keyboard base */}
-                <mesh position={[0, 0, 0]}>
-                    <boxGeometry args={[0.4, 0.02, 0.15]} />
-                    <meshStandardMaterial color="#2C2C2C" roughness={0.3} />
+            {/* The keyboard: a chunky old beige one with big white keys */}
+            <group position={[0, 0.865, -2.72]} rotation={[0.08, 0, 0]}>
+                <mesh>
+                    <boxGeometry args={[0.6, 0.035, 0.22]} />
+                    <meshStandardMaterial color="#e3dccb" roughness={0.7} />
                 </mesh>
-
-                {/* Keyboard keys - main section */}
-                {Array.from({ length: 4 }).map((_, row) =>
-                    Array.from({ length: 12 }).map((_, col) => (
+                {/* Four rows of keys, then the function row behind them */}
+                {Array.from({ length: 5 }).map((_, row) =>
+                    Array.from({ length: row === 4 ? 12 : 13 }).map((_, col) => (
                         <mesh
                             key={`key-${row}-${col}`}
-                            position={[
-                                (col - 5.5) * 0.03,
-                                0.01,
-                                (row - 1.5) * 0.03,
-                            ]}
+                            position={[(col - (row === 4 ? 5.5 : 6)) * 0.041, 0.027, 0.07 - row * 0.038 - (row === 4 ? 0.01 : 0)]}
                         >
-                            <boxGeometry args={[0.025, 0.005, 0.025]} />
-                            <meshStandardMaterial
-                                color="#1A1A1A"
-                                roughness={0.2}
-                            />
+                            <boxGeometry args={[0.036, 0.018, 0.034]} />
+                            <meshStandardMaterial color="#f7f4ec" roughness={0.55} />
                         </mesh>
                     ))
                 )}
-
                 {/* Space bar */}
-                <mesh position={[0, 0.01, 0.06]}>
-                    <boxGeometry args={[0.25, 0.005, 0.02]} />
-                    <meshStandardMaterial color="#1A1A1A" roughness={0.2} />
+                <mesh position={[0, 0.027, 0.098]}>
+                    <boxGeometry args={[0.24, 0.018, 0.032]} />
+                    <meshStandardMaterial color="#f7f4ec" roughness={0.55} />
                 </mesh>
-
-                {/* Function keys row */}
-                {Array.from({ length: 12 }).map((_, i) => (
-                    <mesh
-                        key={`fkey-${i}`}
-                        position={[(i - 5.5) * 0.03, 0.01, -0.06]}
-                    >
-                        <boxGeometry args={[0.025, 0.005, 0.025]} />
-                        <meshStandardMaterial color="#1A1A1A" roughness={0.2} />
-                    </mesh>
-                ))}
-
-                {/* Number pad section */}
-                {Array.from({ length: 4 }).map((_, row) =>
-                    Array.from({ length: 3 }).map((_, col) => (
-                        <mesh
-                            key={`numpad-${row}-${col}`}
-                            position={[
-                                0.12 + (col - 1) * 0.03,
-                                0.01,
-                                (row - 1.5) * 0.03,
-                            ]}
-                        >
-                            <boxGeometry args={[0.025, 0.005, 0.025]} />
-                            <meshStandardMaterial
-                                color="#1A1A1A"
-                                roughness={0.2}
-                            />
-                        </mesh>
-                    ))
-                )}
+                {/* Cord to the computer */}
+                <mesh position={[0, 0.01, -0.16]} rotation={[Math.PI / 2, 0, 0]}>
+                    <cylinderGeometry args={[0.006, 0.006, 0.12, 6]} />
+                    <meshStandardMaterial color="#d8d0bc" />
+                </mesh>
             </group>
 
             {/* Computer Interaction */}

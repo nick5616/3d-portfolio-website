@@ -6,8 +6,8 @@ import { EnhancedMaterialSystem } from "../../configs/enhancedMaterials";
 import { DustMotes } from "../effects/GodRays";
 
 // A holed "fairy stone" (hag stone / Men-an-Tol): the folklore says looking
-// or stepping through the hole takes you to another world. In the holodeck
-// forest, the exit door becomes one: a huge standing stone with a hole full
+// or stepping through the hole takes you to another world. In the forest,
+// the way home is one: a huge standing stone with a hole full
 // of a slowly swirling other-world shimmer. Built in the door's own frame:
 // local +Z points out of the room (through the door), the slab spans X/Y.
 

@@ -78,7 +78,7 @@ const DESTINATIONS: {
 }[] = [
     { label: "Art gallery", room: "gallery", position: [-7, 1.5, 0], rotation: [0, Math.PI / 2, 0], accent: "gem--gold" },
     { label: "Software lab", room: "projects", position: [0, 1.5, 7], rotation: [0, 0, 0], accent: "gem--blue" },
-    { label: "Holodeck", room: "about", position: [-2.5, 1.6, 0], rotation: [0, -Math.PI / 2, 0], accent: "gem--purple" },
+    { label: "Jam room", room: "jam-room", position: [0, 1.5, 5.2], rotation: [0, 0, 0], accent: "gem--purple" },
     { label: "Achievements", room: "achievements", position: [0, 1.5, 7], rotation: [0, 0, 0], accent: "gem--green" },
 ];
 
@@ -191,7 +191,7 @@ export const WorldGuide: React.FC = () => {
                     <p className="mt-3 text-[15px] leading-relaxed text-[color:var(--gem-ink-dim)] max-w-[52ch]">
                         I make software and art, and I wanted my portfolio to feel
                         like a place you visit. Wander around. There&rsquo;s an art
-                        museum, a software lab, a holodeck, rupees to collect, and a
+                        museum, a software lab, rooms to play and make music in, rupees to collect, and a
                         locked door or two.
                     </p>
 

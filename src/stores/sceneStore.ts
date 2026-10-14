@@ -11,18 +11,6 @@ import {
 import { detectIsMobile } from "../utils/deviceDetection";
 import { useAchievementStore } from "./achievementStore";
 
-// Configuration for experience-specific rotation angles (in radians)
-// Each angle represents the optimal orientation for the user to face when the experience loads
-const EXPERIENCE_ROTATION_ANGLES: Record<string, number> = {
-    // Current experiences
-    computer: 0,
-    fitness: Math.PI,
-    art: 0,
-    math: 0,
-    forest: Math.PI / 4,
-    off: 0,
-};
-
 interface MovementState {
     forward: boolean;
     backward: boolean;
@@ -84,15 +72,10 @@ interface SceneState {
     // stops steering it.
     cameraOverride: boolean;
     setCameraOverride: (override: boolean) => void;
-    // When true, an experience (e.g. the holodeck forest with its day/night
-    // cycle) owns all lighting: the global fill lights and reflection
-    // environment switch off so its nights can actually get dark.
+    // When true, a room (e.g. the forest with its day/night cycle) owns
+    // all lighting: the global fill lights and reflection environment
+    // switch off so its nights can actually get dark.
     customEnvironment: boolean;
-    // Which holodeck program is running ("off" when none). Lets things
-    // outside the holodeck component react, e.g. the exit door turning
-    // into a fairy stone in the forest.
-    holodeckExperience: string;
-    setHolodeckExperience: (experience: string) => void;
     setCustomEnvironment: (custom: boolean) => void;
     lastTeleportTime: number; // Add global teleportation debounce
     performance: {
@@ -170,20 +153,9 @@ interface SceneState {
     toggleStats: () => void;
     togglePerformanceMonitoring: () => void;
     toggleMinimap: () => void;
-    rotateUser: (angle?: number) => void;
-    getExperienceRotationAngle: (experience: string) => number;
     playerGrounded: boolean;
     setPlayerGrounded: (grounded: boolean) => void;
     updatePlayerPosition: (position: [number, number, number]) => void;
-
-    // Holodeck loading state
-    holodeckLoading: boolean;
-    holodeckLoadingExperience: string | null;
-    setHolodeckLoading: (loading: boolean, experience?: string | null) => void;
-
-    // Pending holodeck experience (set by router for deep-link spawning)
-    pendingHolodeckExperience: string | null;
-    setPendingHolodeckExperience: (experience: string | null) => void;
 
     // Room transition loading state
     roomTransitionLoading: boolean;
@@ -216,8 +188,6 @@ export const useSceneStore = create<SceneState>((set) => {
         cameraOverride: false,
         setCameraOverride: (override) => set({ cameraOverride: override }),
         customEnvironment: false,
-        holodeckExperience: "off",
-        setHolodeckExperience: (experience) => set({ holodeckExperience: experience }),
         setCustomEnvironment: (custom) => set({ customEnvironment: custom }),
         lastTeleportTime: 0,
         playerGrounded: false,
@@ -419,9 +389,17 @@ export const useSceneStore = create<SceneState>((set) => {
         loadRoom: (roomId) => {
             const config = roomConfigs[roomId];
             if (config) {
+                // Arrive at the room's entrance. (Without this the player
+                // spawned at the origin, which in the atrium is the middle
+                // of the fountain.)
+                const { position, rotation } = config.defaultEntrance;
                 set({
                     currentRoom: config,
                     roomEnvironmentReady: false,
+                    playerPosition: position,
+                    cameraTarget: new THREE.Vector3(...position),
+                    cameraRotation: rotation,
+                    shouldTeleportPlayer: true,
                 });
                 useAchievementStore.getState().discoverRoom(roomId);
             } else {
@@ -507,54 +485,8 @@ export const useSceneStore = create<SceneState>((set) => {
                 if (visible) useAchievementStore.getState().unlock("minimap");
                 return { minimap: { ...state.minimap, visible } };
             }),
-        rotateUser: (angle?: number) => {
-            set((state) => {
-                // Get current rotation or default to [0, 0, 0]
-                const currentRotation = state.cameraRotation || [0, 0, 0];
-
-                // Use provided angle or get from experience config
-                let rotationAngle = angle;
-                if (rotationAngle === undefined) {
-                    // Get the current experience from the room ID or default to "off"
-                    const currentExperience = state.currentRoom?.id || "off";
-                    rotationAngle =
-                        EXPERIENCE_ROTATION_ANGLES[currentExperience] || 0;
-                }
-
-                // Apply the rotation to the Y axis
-                const newRotation: [number, number, number] = [
-                    currentRotation[0],
-                    currentRotation[1] + rotationAngle,
-                    currentRotation[2],
-                ];
-                return { cameraRotation: newRotation };
-            });
-        },
-        getExperienceRotationAngle: (experience: string) => {
-            return EXPERIENCE_ROTATION_ANGLES[experience] || 0;
-        },
         setPlayerGrounded: (grounded) => set({ playerGrounded: grounded }),
         updatePlayerPosition: (position) => set({ playerPosition: position }),
-
-        // Holodeck loading state
-        holodeckLoading: false,
-        holodeckLoadingExperience: null,
-        setHolodeckLoading: (loading, experience) => {
-            const updates: any = { holodeckLoading: loading };
-
-            // Only update the experience if one is provided
-            // This preserves the experience during the fade-out phase
-            if (experience !== undefined) {
-                updates.holodeckLoadingExperience = experience;
-            }
-
-            set(updates);
-        },
-
-        // Pending holodeck experience (set by router for deep-link spawning)
-        pendingHolodeckExperience: null,
-        setPendingHolodeckExperience: (experience) =>
-            set({ pendingHolodeckExperience: experience }),
 
         // Room transition loading state
         roomTransitionLoading: false,

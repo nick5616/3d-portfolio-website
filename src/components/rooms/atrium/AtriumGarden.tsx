@@ -10,7 +10,8 @@ import {
     COLUMN_OFFSET,
     LEVELS,
     POOL_RIM,
-    STAIR_ANGLE,
+    BRIDGE_ANGLES,
+    TOP,
     angleGap,
     polar,
     seeded,
@@ -21,7 +22,7 @@ import { getUrnGeometry, makeInstanced, place } from "./atriumParts";
 
 // Hanging gardens: palms in urns around the ambulatory, a flowering ring
 // around the pool, lily pads and lotus on the water, ferns upstairs, and
-// ivy spilling over both balconies. One draw call for all the foliage.
+// ivy spilling over every balcony. One draw call for all the foliage.
 
 const TAU = Math.PI * 2;
 const BED_SOIL = 0.38;
@@ -33,7 +34,7 @@ export const URN_SPOTS = Array.from({ length: 8 }, (_, i) => {
     return { angle: a, level: 0, radius: 11.45, scale: 0.95 };
 }).concat(
     // Small pots on each balcony, flush with the wall between the doors.
-    [1, 2].flatMap((level) =>
+    LEVELS.slice(1).map((_, k) => k + 1).flatMap((level) =>
         [0, 1, 2, 3].map((i) => ({
             angle: Math.PI / 4 + (i * Math.PI) / 2,
             level,
@@ -76,7 +77,7 @@ export const AtriumGarden: React.FC<{ materials: AtriumMaterials }> = ({ materia
         });
 
         // Ivy spilling over both balustrades, in loose clusters
-        [LEVELS[1], LEVELS[2]].forEach((level, tier) => {
+        LEVELS.slice(1).forEach((level, tier) => {
             const rail = BALUSTRADE_RADIUS;
             const clusters = tier === 0 ? 20 : 16;
             for (let c = 0; c < clusters; c++) {
@@ -85,10 +86,10 @@ export const AtriumGarden: React.FC<{ materials: AtriumMaterials }> = ({ materia
                 for (let s = 0; s < strands; s++) {
                     const seed = tier * 1000 + c * 10 + s;
                     const a = center + (seeded(seed + 1) - 0.5) * 0.12;
-                    if (angleGap(a, STAIR_ANGLE) < 0.2) continue; // keep the bridge clear
-                    // The upper columns stand in the first balcony's rail.
+                    if (BRIDGE_ANGLES.some((b) => angleGap(a, b) < 0.2)) continue; // keep the bridges clear
+                    // The next tier of columns stands in this balcony's rail.
                     const slot = ((a - COLUMN_OFFSET) * COLUMN_COUNT) / TAU;
-                    if (tier === 0 && Math.abs(slot - Math.round(slot)) * (TAU / COLUMN_COUNT) * rail < 0.4) continue;
+                    if (tier < TOP - 1 && Math.abs(slot - Math.round(slot)) * (TAU / COLUMN_COUNT) * rail < 0.4) continue;
                     const [x, z] = polar(rail, a);
                     const inward = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a));
                     const length = (tier === 0 ? 1.4 : 1.6) + seeded(seed + 2) * 2.0;

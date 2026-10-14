@@ -7,6 +7,7 @@ import { CameraController } from "./CameraController";
 import { Door } from "./Door";
 import { RouterIntegration } from "./RouterIntegration";
 import { ArtAimController } from "./ArtAimController";
+import { FairyCompanion } from "../models/FairyCompanion";
 import * as THREE from "three";
 import { useSceneStore } from "../../stores/sceneStore";
 import { updateAllShaders } from "../../configs/enhancedMaterials";
@@ -34,12 +35,19 @@ const getEnvLook = (roomId: string | undefined, quality: string): EnvLook | null
             return { intensity: base * 0.8, sky: "#9fd8ff", key: "#00e5ff", fill: "#b04dff" };
         case "atrium":
             return { intensity: base * 1.2, sky: "#fff7d6", key: "#ffe08a", fill: "#8fd3c7" };
-        case "about":
-            return { intensity: base * 0.7, sky: "#ffffff", key: "#ffe0b2", fill: "#b0c4ff" };
+        case "jam-room":
+            return { intensity: base * 1.1, sky: "#ffe6fb", key: "#ff8ad8", fill: "#8ff0ff" };
+        case "bird-dog-studio":
+            return { intensity: base * 0.9, sky: "#2a2240", key: "#b48cff", fill: "#ff9a5a" };
+        case "rupee-shop":
+            return { intensity: base * 1.1, sky: "#fff1d6", key: "#ffc56b", fill: "#3ee58f" };
         case "relaxation":
             return { intensity: base * 1.5, sky: "#e6f3ff", key: "#b3d9ff", fill: "#d6ffe6" };
         case "achievements":
             return { intensity: base * 1.2, sky: "#fff1d6", key: "#ffc56b", fill: "#ffe9c7" };
+        case "cosmic-connect-four":
+            // Violet space, gold from Nothing: what the gems reflect.
+            return { intensity: base * 1.4, sky: "#3a2c78", key: "#ffcf7a", fill: "#7a4dff" };
         default:
             return { intensity: base, sky: "#ffffff", key: "#fff0dd", fill: "#dde8ff" };
     }
@@ -162,6 +170,7 @@ export const SceneManager: React.FC = () => {
 
             <CameraController />
             <ArtAimController />
+            <FairyCompanion />
 
             {/* Render only the current room */}
             {currentRoom && (

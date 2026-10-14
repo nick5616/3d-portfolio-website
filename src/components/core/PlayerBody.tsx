@@ -8,13 +8,15 @@ import {
     interactionGroups,
     useRapier,
 } from "@react-three/rapier";
-import type { RapierRigidBody } from "@react-three/rapier";
+import type { RapierCollider, RapierRigidBody } from "@react-three/rapier";
 import { useSceneStore } from "../../stores/sceneStore";
 import { useKeyboardControls } from "../../hooks/useKeyboardControls";
 import * as THREE from "three";
 import { playSound } from "../../audio/soundManager";
 import { ROOM_SOUNDSCAPES } from "../../audio/soundManifest";
 import { soundscapeKeyForRoom } from "../../audio/roomSoundscape";
+import { carrier } from "../../stores/carrier";
+import { useUnlockStore } from "../../stores/unlockStore";
 
 const JUMP_FORCE = 4;
 const JUMP_COOLDOWN = 500; // milliseconds
@@ -100,10 +102,15 @@ export const PlayerBody: React.FC = () => {
         "footstep-stone";
 
     const playerRef = useRef<RapierRigidBody>(null);
+    const colliderRef = useRef<RapierCollider>(null);
+    const wasCarried = useRef(false);
     const velocity = useRef(new THREE.Vector3());
     const direction = useRef(new THREE.Vector3());
     const [canJump, setCanJump] = useState(true);
     const lastJumpTime = useRef(0);
+    // Cloud Boots (from the Rupee Shop): one more jump in mid-air.
+    const airJumpUsed = useRef(false);
+    const wasJumpHeld = useRef(false);
     const eyeHeight = useRef(STANDING_EYE_HEIGHT);
 
     // What's just below the feet, if anything. The capsule's lower sphere
@@ -203,6 +210,40 @@ export const PlayerBody: React.FC = () => {
             return;
         }
 
+        // Carried (the fairy lift): no collisions, no gravity, exactly where
+        // the carrier says. A movement key lets go once it allows it.
+        if (carrier.active !== wasCarried.current) {
+            wasCarried.current = carrier.active;
+            colliderRef.current?.setSensor(carrier.active);
+            playerRef.current.setGravityScale(
+                carrier.active || flyMode || !roomEnvironmentReady ? 0 : 1,
+                true
+            );
+            anchored.current = false;
+        }
+        if (carrier.active) {
+            playerRef.current.setTranslation(carrier.position, true);
+            playerRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            if (!useSceneStore.getState().cameraOverride) {
+                camera.position.set(
+                    carrier.position.x,
+                    carrier.position.y + eyeHeight.current,
+                    carrier.position.z
+                );
+            }
+            const moving =
+                movement.forward || movement.backward || movement.left || movement.right || movement.jumping;
+            if (carrier.releasable && moving) carrier.releaseRequested = true;
+            publishPlayerState(carrier.position.x, carrier.position.y, carrier.position.z, { x: 0, y: 0, z: 0 });
+            return;
+        }
+
+        if (carrier.launch) {
+            playerRef.current.setLinvel(carrier.launch, true);
+            carrier.launch = null;
+            lastJumpTime.current = Date.now(); // so the ramp/ground logic leaves it alone
+        }
+
         // Always keep camera following the player
         const pos = playerRef.current.translation();
         if (!useSceneStore.getState().cameraOverride) {
@@ -270,6 +311,24 @@ export const PlayerBody: React.FC = () => {
             currentTime - lastJumpTime.current > JUMP_COOLDOWN
         ) {
             setCanJump(true);
+        }
+
+        // Cloud Boots: a fresh press of jump while airborne, once per hop.
+        const jumpPressed = movement.jumping && !wasJumpHeld.current;
+        wasJumpHeld.current = movement.jumping;
+        if (ground !== null) airJumpUsed.current = false;
+        if (
+            jumpPressed &&
+            ground === null &&
+            !airJumpUsed.current &&
+            currentTime - lastJumpTime.current > 150 &&
+            useUnlockStore.getState().unlocked["shop-boots"]
+        ) {
+            const v = playerRef.current.linvel();
+            playerRef.current.setLinvel({ x: v.x, y: JUMP_FORCE * 1.05, z: v.z }, true);
+            airJumpUsed.current = true;
+            lastJumpTime.current = currentTime;
+            playSound("jump", { rate: 1.25 });
         }
 
         // Handle jumping
@@ -370,6 +429,7 @@ export const PlayerBody: React.FC = () => {
             collisionGroups={interactionGroups(0, [0, 1])}
         >
             <CapsuleCollider
+                ref={colliderRef}
                 args={[0.5, 0.3]}
                 position={[0, 1, 0]}
                 friction={20}

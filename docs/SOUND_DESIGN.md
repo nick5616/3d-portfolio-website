@@ -47,9 +47,14 @@ Crossfades over about 2 seconds when you walk between rooms.
 | `music-sketchbook` | **1:00** loop | Sketchbook rotunda | Intimate and handmade. You just paid to get in and found one book under a beam of light. Felt piano, music-box or celesta, maybe a little pencil and paper texture. Warm, private, a little magical. | |
 | `music-projects` | **2:00** loop | Software lab | Futuristic and focused, a place to scan through work quickly. Arpeggiated analog synths, clean pulse, ~100–115 BPM, forward motion without being busy. | |
 | `music-achievements` | **1:00** loop | Hall of Achievements | Trophy room in a wood-and-stone hall. Proud but relaxed; a quiet nod to Zelda fanfares without quoting them. Warm brass or synth-brass pads, a small heroic motif. | |
-| `music-forest` | **2:00** loop | Holodeck forest | Serene and a little mysterious, a Lost Woods-style wander. It has to sit under a 2.5-minute dawn → day → dusk → night cycle, so keep it gentle and loopable rather than tied to one time of day. Woodwinds, plucked strings, soft chimes. | |
-| `music-math` | **1:00** loop | Holodeck: Meteor Multiplication | Pure 2008 Flash-game energy: bouncy synth lead, bright square/saw arps, a driving beat around 130 BPM. Fun, not stressful; it has to survive being looped through a whole run. | |
-| `music-holodeck` | **1:00** loop | Holodeck (lobby / "off" state) | Neutral, techy and calm, so it doesn't clash when an experience starts. Grid-like pulses, soft hum. | |
+| `music-forest` | — | The Forest | **Not needed any more.** The forest plays the Song of the Forest (Bird Dog's *Childyllic*, from SoundCloud) at the fairy's keyboard instead. Skip this one. | |
+| `music-math` | **1:00** loop | Meteor Math (moon outpost) | Pure 2008 Flash-game energy: bouncy synth lead, bright square/saw arps, a driving beat around 130 BPM. Fun, not stressful; it has to survive being looped through a whole run. | |
+| `music-sky-course` | **2:00** loop | Sky Course | A timed parkour run over islands above the clouds. Bright, bouncy and quick (~125–135 BPM): breezy synths or plucks, a driving but light beat. It should make you want to sprint. | |
+| `music-shop` | **1:00** loop | Rupee Shop | A cosy little shop kept by an owl. Warm, a bit cheeky, a nod to classic RPG shop themes without quoting them: marimba, pizzicato, a lazy swing. | |
+| `music-observatory` | **2:00** loop | Observatory (rooftop, night) | Looking up at constellations made of my projects. Wide, still and wondering: soft pads, a slow celesta or piano line, lots of air. | |
+| `music-marble` | **1:00** loop | Marble Machine | A workshop of ramps and bells. Light and tinkery, quiet enough that the marbles' own notes (C pentatonic) sit on top. Keep it sparse and in C. | |
+| `music-art` | **1:00** loop | Art Studio (classroom) | A sunny art class. Gentle, playful, a little lo-fi: acoustic guitar or ukulele, brushed drums. | |
+| `music-cosmic` | **2:00** loop | Cosmic Connect Four | A board game in deep space against Nothing, a vast eyeless god-thing whose morality is unknown. Trippy and vast but patient, because people sit and think here. Detuned choir pads, slow shimmering arps, sub swells, the odd reversed bell. Uneasy and beautiful at once: never menacing, never comforting. | |
 
 ## Ambience: room tone under the music
 
@@ -61,7 +66,11 @@ Crossfades over about 2 seconds when you walk between rooms.
 | `amb-projects` | **0:30** loop | Server-room hum, faint electrical buzz, occasional soft data blips (subtle, not sci-fi beeps). |
 | `amb-achievements` | **0:30** loop | Warm room tone of a wood-paneled hall, faint fireplace crackle. |
 | `amb-forest` | **1:00** loop | Leaves in a breeze, distant birdsong, a creek far off, occasional wood creak. Should still read at night (add a few crickets/frogs in the loop). |
-| `amb-holodeck` | **0:30** loop | Low hum with a gentle grid "tick" every few seconds. |
+| `amb-farmhouse` | **0:30** loop | Courage's farmhouse: wind across empty prairie, a creaky house settling, a far-off cricket or two. Lonely and a bit eerie. |
+| `amb-sky` | **0:30** loop | High wind above the clouds, gentle and constant, the odd bird far below. |
+| `amb-observatory` | **0:30** loop | Night on a rooftop: a soft breeze, distant city hum far below, crickets. |
+| `amb-studio` | **0:30** loop | Bird Dog's studio between songs: the faint hum of gear, almost silent. Very quiet (the music is the point). |
+| `amb-cosmic` | **1:00** loop | The void: a very low cosmic drone, faint radio-static shimmer, distant whale-like tones, the rare far-off creak of something enormous moving. |
 
 ## Movement
 
@@ -73,7 +82,7 @@ Footsteps play every ~1.9 m walked, chosen by the floor surface of the room you'
 | `footstep-marble` | 4 | 0.2–0.4 s | Polished marble, a touch of room reverb (gallery, sketchbook rotunda). |
 | `footstep-metal` | 4 | 0.2–0.4 s | Light step on metal deck plating (software lab). |
 | `footstep-wood` | 4 | 0.2–0.4 s | Wooden floor, slightly hollow (achievements hall). |
-| `footstep-soft` | 4 | 0.2–0.3 s | Padded fabric floor (holodeck). |
+| `footstep-soft` | 4 | 0.2–0.3 s | Soft floors: the jam room mat, the forest floor, the art classroom. |
 | `jump` | 1 | 0.3 s | Small exertion/whoosh; keep it non-vocal. |
 | `land` | 1 | 0.3 s | Soft thud, surface-neutral. |
 
@@ -104,6 +113,17 @@ Footsteps play every ~1.9 m walked, chosen by the floor surface of the room you'
 | `math-levelup` | 1.0–1.5 s | Level up / game start | Rising arpeggio jingle. |
 | `math-gameover` | 1.5–2.5 s | Last shield gone | A sad descending jingle, more cheeky than tragic. |
 | `light-switch` | 0.2 s | Gallery light switch | Chunky switch click. |
+| `lift-rise` | 1.5–2.5 s | The fairy lift lifting off from a floor | A rising swirl of air with fairy chimes woven in, like being picked up by a breeze. |
+| `lift-chime` | 0.5–0.8 s | The lift arriving at a floor (also the Sky Course start/checkpoints) | One soft, bright chime. |
+| `c4-drop` | 0.2–0.3 s | Letting go of your chip over a column | A small glassy release; the clacks that follow carry the weight. |
+| `c4-chip-clack` | 0.1–0.25 s, **4 takes** | Your gem chip hitting the slot floor or the chip below (fires on every bounce; volume follows impact speed) | Hard gemstone on gemstone: crisp, bright, a little ring. Should sound good stacked 3–4 times in quick succession as it bounces. |
+| `c4-chip-clack-gold` | 0.1–0.25 s, **3 takes** | Nothing's chip landing | Same impact, but it's made of light: a struck crystal bowl tick with a soft shimmer tail. |
+| `c4-nothing-chip` | 0.6–0.9 s | Nothing's chip forming under its hand | A rising golden swell that resolves into a bell. |
+| `c4-chip-select` | 0.3–0.5 s | Taking a chip from the altar | A gem lifting off a stand: soft chime plus a shimmer. |
+| `c4-win` | 2–3 s | You beat Nothing | Triumphant but uncanny, like the universe is impressed and not entirely pleased. |
+| `c4-lose` | 2–3 s | Nothing wins | Vast, calm and final: a low choir chord settling. Not a sad trombone. |
+| `c4-draw` | 1.5–2 s | Board full, nobody wins | An unresolved suspended chord left hanging. |
+| `c4-reclaim` | 1.2–1.6 s | Nothing draws every chip back out of the board | Many little chimes swirling upward into a whoosh. |
 
 ## Interface
 

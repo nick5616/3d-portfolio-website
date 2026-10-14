@@ -1,8 +1,8 @@
-// Procedural layout for the holodeck forest. Deterministic per seed, so a
+// Procedural layout for the forest room. Deterministic per seed, so a
 // given forest is the same every time it's generated (and cheap to rebuild).
 
 export const FOREST_RADIUS = 46; // walkable radius
-export const SPAWN_CLEARING = 7.5; // open space around the holodeck arch
+export const SPAWN_CLEARING = 7.5; // open space around the fairy stone home
 
 export const mulberry32 = (seed: number) => {
     let a = seed >>> 0;

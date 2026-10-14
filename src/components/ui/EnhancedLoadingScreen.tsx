@@ -15,7 +15,7 @@ const CURRENT_EFFECT: LoadingEffectType = "rupee";
 /**
  * EnhancedLoadingScreen - Handles initial app loading only
  * This shows when the entire application is first loading (assets, physics initialization)
- * For holodeck experience transitions, see HolodeckLoadingScreen instead
+ * (Room-to-room transitions use RoomTransitionLoadingScreen.)
  */
 export const EnhancedLoadingScreen: React.FC = () => {
     const { progress, active } = useProgress();

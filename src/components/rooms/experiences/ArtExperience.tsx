@@ -178,8 +178,9 @@ export const ArtExperience: React.FC = () => {
                 onSubmit={handleSubmit}
             />
 
-            {/* Cork board for artwork display - on back wall */}
-            <group position={[0, 2.5, 3.9]} rotation={[0, Math.PI, 0]}>
+            {/* Cork board for artwork display - on the west wall, off to the
+                side of the door */}
+            <group position={[-4.42, 2.5, 0]} rotation={[0, Math.PI / 2, 0]}>
                 <mesh>
                     <planeGeometry args={[6, 3]} />
                     <meshStandardMaterial color="#DEB887" roughness={0.9} />
@@ -219,12 +220,12 @@ export const ArtExperience: React.FC = () => {
 
             {/* Encouraging text - above cork board */}
             <Text
-                position={[0, 4.3, 3.9]}
+                position={[-4.42, 4.3, 0]}
                 fontSize={0.3}
                 color="#FF69B4"
                 anchorX="center"
                 anchorY="middle"
-                rotation={[0, Math.PI, 0]}
+                rotation={[0, Math.PI / 2, 0]}
             >
                 {"Teacher's Favorites"}
             </Text>

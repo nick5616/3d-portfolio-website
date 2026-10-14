@@ -145,6 +145,14 @@ export const playSound = (
     });
 };
 
+// For rooms that make their own sound (the jam room's synths, the studio).
+// Their audio goes through a channel, so the mute toggle and the volume
+// settings still apply. Null until the first user gesture unlocks audio.
+export const getAudioContext = (): AudioContext | null =>
+    context && context.state === "running" ? context : null;
+export const getChannelInput = (channel: SoundChannel): GainNode | null =>
+    getAudioContext() ? channels.get(channel) ?? null : null;
+
 // Looping beds -----------------------------------------------------------
 
 interface Bed {
