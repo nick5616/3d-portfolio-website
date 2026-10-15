@@ -661,6 +661,99 @@ export class EnhancedMaterialSystem {
                     }),
                 };
 
+            // Self-built rooms (customRooms.ts) take their shell surfaces
+            // from here too, so a room one door away can preload them.
+            // Repeats are room size / tile size, per room.
+            case "rupee-shop":
+                return {
+                    walls: this.pbr("plaster", {
+                        repeat: [6, 3],
+                        fallbackColor: "#e8d6b8",
+                        tint: "#f4dcb4",
+                        metalness: 0,
+                        normalScale: 0.5,
+                    }),
+                    floor: this.pbr("wood-shop", {
+                        repeat: [3, 2.5],
+                        fallbackColor: "#6b4428",
+                        metalness: 0,
+                        anisotropy: 8,
+                    }),
+                    ceiling: this.flat("rupee-shop-ceiling", {
+                        color: "#5a3a22",
+                        roughness: 0.9,
+                    }),
+                    enhanced: {
+                        rug: this.pbr("carpet", {
+                            repeat: 2,
+                            fallbackColor: "#2f6e48",
+                            tint: "#3f8a5c",
+                            metalness: 0,
+                        }),
+                    },
+                };
+
+            case "bird-dog-studio":
+                return {
+                    walls: this.pbr("acoustic-wedge", {
+                        repeat: [8, 3.5],
+                        fallbackColor: "#17121f",
+                        tint: "#2a2236",
+                        metalness: 0,
+                    }),
+                    floor: this.pbr("wood-walnut", {
+                        repeat: [8, 7],
+                        fallbackColor: "#2b1d16",
+                        tint: "#8a7a70",
+                        metalness: 0,
+                        anisotropy: 8,
+                    }),
+                    ceiling: this.flat("bird-dog-studio-ceiling", {
+                        color: "#0e0b14",
+                        roughness: 1,
+                    }),
+                };
+
+            case "jam-room":
+                return {
+                    walls: this.pbr("acoustic-egg", {
+                        repeat: [8, 4],
+                        fallbackColor: "#3b2a5c",
+                        tint: "#5a4486",
+                        metalness: 0,
+                    }),
+                    floor: this.pbr("carpet", {
+                        repeat: 7,
+                        fallbackColor: "#2a2238",
+                        tint: "#4a3a6e",
+                        metalness: 0,
+                    }),
+                    ceiling: this.flat("jam-room-ceiling", {
+                        color: "#241a38",
+                        roughness: 1,
+                    }),
+                };
+
+            case "marble-machine":
+                return {
+                    walls: this.pbr("brick-terracotta", {
+                        repeat: [8, 4.5],
+                        fallbackColor: "#a0624a",
+                        metalness: 0,
+                    }),
+                    floor: this.pbr("wood-floor", {
+                        repeat: 5,
+                        fallbackColor: "#7a5a3a",
+                        metalness: 0,
+                        envMapIntensity: 0.8,
+                        anisotropy: 8,
+                    }),
+                    ceiling: this.flat("marble-machine-ceiling", {
+                        color: "#cdbfa6",
+                        roughness: 1,
+                    }),
+                };
+
             default:
                 return {
                     walls: this.getWallNoiseShader(),

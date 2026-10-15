@@ -1,4 +1,4 @@
-// Converts the source PBR texture sets in public/images/<Set>_SD/ into the
+// Converts the source PBR texture sets in texture-sources/<Set>_SD/ into the
 // compact runtime format the site loads from public/textures/<id>/:
 //
 //   color.webp   base color (sRGB)
@@ -9,6 +9,11 @@
 // so one packed texture replaces three. Height maps and the "Material_*"
 // preview renders are dropped - neither did anything useful on flat walls.
 //
+// Sources are the free SD sets from https://3dtextures.me (CC0). They live
+// outside public/ so they never ship with a deploy; only the built
+// public/textures/ sets do, and each one is fetched only when a room that
+// uses it is about to be seen.
+//
 // Usage (sharp is not a project dependency; install it next to the script
 // run, e.g. in a temp folder):
 //   npm i --no-save sharp && node scripts/build-textures.mjs
@@ -17,10 +22,13 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, "$1")), "..");
-const SRC = path.join(ROOT, "public", "images");
+const SRC = path.join(ROOT, "texture-sources");
 const OUT = path.join(ROOT, "public", "textures");
 
-// id -> source folder + file prefix. Size is the output edge length.
+// id -> source folder + file prefix. Size is the output edge length. Gain
+// brightens a near-black base color to a neutral one so the material's tint
+// decides the final color (tint can only darken). normalSize shrinks just
+// the normal map, which is usually the heaviest file.
 const SETS = {
     "tiles-062": { folder: "Tiles_062_SD", prefix: "Tiles_062", size: 1024 },
     "tiles-fluted": { folder: "Tiles_Flutted_001_SD", prefix: "Tiles_Fluted_001", size: 1024 },
@@ -36,6 +44,14 @@ const SETS = {
     "wood-coffers": { folder: "Wood_Ceiling_Coffers_001_SD", prefix: "Wood_Ceiling_Coffers_001", size: 1024 },
     "wall-stone": { folder: "Wall_Stone_029_SD", prefix: "Wall_Stone_029", size: 1024 },
     kintsugi: { folder: "Kintsugi_001_SD", prefix: "Kintsugi_001", size: 1024 },
+    "wood-shop": { folder: "Stylized_Wood_Floor_001_SD", prefix: "Stylized_Wood_Floor_001", size: 1024, normalSize: 512 },
+    plaster: { folder: "Plaster_001_SD", prefix: "Plaster_001", size: 512 },
+    "wood-walnut": { folder: "Wood_Floor_016_SD", prefix: "Wood_Floor_016", size: 1024 },
+    "acoustic-wedge": { folder: "Acoustic_Foam_001_SD", prefix: "Acoustic_Foam_001", size: 512, gain: 7 },
+    "acoustic-egg": { folder: "Acoustic_Foam_002_SD", prefix: "Acoustic_Foam_002", size: 512, gain: 7 },
+    carpet: { folder: "Fabric_Carpet_001_SD", prefix: "Fabric_Carpet_001", size: 512 },
+    "brick-terracotta": { folder: "Wall_Brick_Terracotta_002_SD", prefix: "Wall_Brick_Terracotta_002", size: 512 },
+    "stone-floor": { folder: "Stone_Floor_006_SD", prefix: "Stone_Floor_006", size: 1024 },
 };
 
 const findMap = (dir, prefix, suffix) => {
@@ -57,16 +73,20 @@ const channel = async (file, size, fallback) => {
         .toBuffer();
 };
 
-for (const [id, { folder, prefix, size }] of Object.entries(SETS)) {
+// Pass ids to rebuild only those sets: node scripts/build-textures.mjs carpet plaster
+const only = process.argv.slice(2);
+
+for (const [id, { folder, prefix, size, normalSize = size, gain = 1 }] of Object.entries(SETS)) {
+    if (only.length && !only.includes(id)) continue;
     const dir = path.join(SRC, folder);
     const out = path.join(OUT, id);
     fs.mkdirSync(out, { recursive: true });
 
     const color = findMap(dir, prefix, "basecolor");
     const normal = findMap(dir, prefix, "normal");
-    await sharp(color).resize(size, size).webp({ quality: 82 }).toFile(path.join(out, "color.webp"));
+    await sharp(color).resize(size, size).linear(gain, 0).webp({ quality: 82 }).toFile(path.join(out, "color.webp"));
     if (normal) {
-        await sharp(normal).resize(size, size).webp({ quality: 90 }).toFile(path.join(out, "normal.webp"));
+        await sharp(normal).resize(normalSize, normalSize).webp({ quality: 90 }).toFile(path.join(out, "normal.webp"));
     }
 
     const ormSize = size / 2; // AO/roughness/metalness are low-frequency

@@ -11,6 +11,7 @@ import { useAchievementStore } from "../../../stores/achievementStore";
 import { useKeyboardControls } from "../../../hooks/useKeyboardControls";
 import { playSound } from "../../../audio/soundManager";
 import { PROJECTS, PortfolioProject, formatDate } from "../../../data/portfolio";
+import { EnhancedMaterialSystem } from "../../../configs/enhancedMaterials";
 
 // The Observatory: a rooftop terrace above the atrium under a clear night
 // sky. Every star pattern up there is one of my projects. Look at one to
@@ -144,6 +145,19 @@ export const Observatory: React.FC = () => {
     const seen = useRef(new Set<string>());
 
     const sky = useMemo(skyMaterial, []);
+    // Shared, cached material: the terrace is a disc 20 m across, so the
+    // texture repeats 8 times over it. Lilac tint for the night light.
+    const terraceFloor = useMemo(
+        () =>
+            EnhancedMaterialSystem.getInstance().pbr("stone-floor", {
+                repeat: 8,
+                fallbackColor: "#4a4652",
+                tint: "#c8c0d8",
+                metalness: 0,
+                anisotropy: 8,
+            }),
+        []
+    );
     const skyMesh = useRef<THREE.Mesh>(null);
     const heavens = useRef<THREE.Group>(null);
     const barrel = useRef<THREE.Group>(null);
@@ -366,9 +380,8 @@ export const Observatory: React.FC = () => {
                 })}
                 <CylinderCollider args={[0.7, 0.9]} position={[0, 0.7, 0]} />
             </RigidBody>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} material={terraceFloor}>
                 <circleGeometry args={[TERRACE, 96]} />
-                <meshStandardMaterial color="#4a4652" roughness={0.85} />
             </mesh>
             {[3, 6, 9].map((r) => (
                 <mesh key={r} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>

@@ -12,6 +12,7 @@ import { useAchievementStore } from "../../../stores/achievementStore";
 import { playSound } from "../../../audio/soundManager";
 import { playInstrument } from "../jam/jamAudio";
 import { COLS, PieceKind, ROWS, cellKey, useMarbleStore } from "./marbleStore";
+import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 import {
     BOARD_BOTTOM,
     BOARD_LEFT,
@@ -428,6 +429,8 @@ export const MarbleMachine: React.FC = () => {
         return texture;
     }, []);
     useEffect(() => () => pegboard.dispose(), [pegboard]);
+    // Shared, cached materials - not ours to dispose.
+    const shell = useMemo(() => getEnhancedRoomMaterials("marble-machine"), []);
 
     const boardCenterY = (BOARD_TOP + TRAY_Y) / 2;
     const boardHeight = BOARD_TOP - TRAY_Y + 0.9;
@@ -462,9 +465,8 @@ export const MarbleMachine: React.FC = () => {
                     />
                 ))}
             </RigidBody>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} material={shell.floor}>
                 <planeGeometry args={[HALF * 2, HALF * 2]} />
-                <meshStandardMaterial color="#7a5a3a" roughness={0.7} />
             </mesh>
             {[
                 { p: [0, HEIGHT / 2, -HALF], r: [0, 0, 0] },
@@ -472,14 +474,12 @@ export const MarbleMachine: React.FC = () => {
                 { p: [-HALF, HEIGHT / 2, 0], r: [0, Math.PI / 2, 0] },
                 { p: [HALF, HEIGHT / 2, 0], r: [0, -Math.PI / 2, 0] },
             ].map((w, i) => (
-                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]}>
+                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]} material={shell.walls}>
                     <planeGeometry args={[HALF * 2, HEIGHT]} />
-                    <meshStandardMaterial color="#e9dcc4" roughness={0.9} />
                 </mesh>
             ))}
-            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} material={shell.ceiling}>
                 <planeGeometry args={[HALF * 2, HALF * 2]} />
-                <meshStandardMaterial color="#cdbfa6" roughness={1} />
             </mesh>
 
             {/* The board: pegboard, frame, glass, tray */}

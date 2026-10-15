@@ -24,6 +24,7 @@ import {
 } from "./jamAudio";
 import { BPB_RANGE, BPM_RANGE, MAX_STEPS, ROWS, useJamStore } from "./jamStore";
 import { INSTRUMENTS, InstrumentModel, instrumentInfo } from "./jamInstruments";
+import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 
 // The Jam Room. Everything here makes a sound, and nothing needs explaining:
 //  - Step on a glowing floor pad to start (or stop) a loop.
@@ -523,15 +524,10 @@ export const JamRoom: React.FC = () => {
     );
     useEffect(() => () => cables.forEach((c) => c.dispose()), [cables]);
 
-    const wallMaterial = useMemo(
-        () => new THREE.MeshStandardMaterial({ color: "#3b2a5c", roughness: 0.95 }),
-        []
-    );
+    // Shared, cached materials - not ours to dispose.
+    const shell = useMemo(() => getEnhancedRoomMaterials("jam-room"), []);
     const feltMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#4b3474", roughness: 1 }), []);
-    useEffect(() => () => {
-        wallMaterial.dispose();
-        feltMaterial.dispose();
-    }, [wallMaterial, feltMaterial]);
+    useEffect(() => () => feltMaterial.dispose(), [feltMaterial]);
 
     const isHover = (t: Target) => JSON.stringify(hover) === JSON.stringify(t);
 
@@ -578,22 +574,10 @@ export const JamRoom: React.FC = () => {
                     <CuboidCollider key={row} args={[0.42, 0.025, 0.3]} position={[SHELF_X, shelfTopY(row) - 0.025, -HALF + 0.3]} />
                 ))}
             </RigidBody>
-            {/* Floor: a soft checkerboard mat */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            {/* Floor: soft patterned carpet */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} material={shell.floor}>
                 <planeGeometry args={[HALF * 2, HALF * 2]} />
-                <meshStandardMaterial color="#2a2238" roughness={1} />
             </mesh>
-            {Array.from({ length: 49 }, (_, i) => {
-                const x = (i % 7) - 3;
-                const z = Math.floor(i / 7) - 3;
-                if ((x + z) % 2 === 0) return null;
-                return (
-                    <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x * 2, 0.002, z * 2]}>
-                        <planeGeometry args={[2, 2]} />
-                        <meshStandardMaterial color="#322844" roughness={1} />
-                    </mesh>
-                );
-            })}
             {/* Walls and ceiling (seen from inside) */}
             {[
                 { p: [0, HEIGHT / 2, -HALF], r: [0, 0, 0], w: HALF * 2 },
@@ -601,13 +585,12 @@ export const JamRoom: React.FC = () => {
                 { p: [-HALF, HEIGHT / 2, 0], r: [0, Math.PI / 2, 0], w: HALF * 2 },
                 { p: [HALF, HEIGHT / 2, 0], r: [0, -Math.PI / 2, 0], w: HALF * 2 },
             ].map((wall, i) => (
-                <mesh key={i} position={wall.p as [number, number, number]} rotation={wall.r as [number, number, number]} material={wallMaterial}>
+                <mesh key={i} position={wall.p as [number, number, number]} rotation={wall.r as [number, number, number]} material={shell.walls}>
                     <planeGeometry args={[wall.w, HEIGHT]} />
                 </mesh>
             ))}
-            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} material={shell.ceiling}>
                 <planeGeometry args={[HALF * 2, HALF * 2]} />
-                <meshStandardMaterial color="#241a38" roughness={1} />
             </mesh>
             {/* Felt dado band around the room */}
             {[0, 1, 2, 3].map((side) => (

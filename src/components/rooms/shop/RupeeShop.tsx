@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
@@ -12,6 +12,7 @@ import { useUnlockStore } from "../../../stores/unlockStore";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { playSound } from "../../../audio/soundManager";
 import { SHOP_ITEMS, ShopItem, ShopItemId } from "./shopItems";
+import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 
 // The Rupee Shop, where the holodeck used to be. A cosy wooden shop kept by
 // Pip, a round little owl behind the counter. Four upgrades under glass;
@@ -226,6 +227,8 @@ export const RupeeShop: React.FC = () => {
     const wallet = useRupeeStore((s) => s.totalValue);
     const [line, setLine] = useState(() => pick(GREETINGS));
     const aim = useAimTargets();
+    // Shared, cached materials - not ours to dispose.
+    const shell = useMemo(() => getEnhancedRoomMaterials("rupee-shop"), []);
 
     useEffect(() => {
         const timer = window.setTimeout(() => setLine(pick(GREETINGS)), 9000);
@@ -279,19 +282,11 @@ export const RupeeShop: React.FC = () => {
             </RigidBody>
 
             {/* Floor, walls, ceiling */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} material={shell.floor}>
                 <planeGeometry args={[HALF_X * 2, HALF_Z * 2]} />
-                <meshStandardMaterial color="#6b4428" roughness={0.65} />
             </mesh>
-            {Array.from({ length: 19 }, (_, i) => (
-                <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, -HALF_Z + 0.52 * (i + 0.5)]}>
-                    <planeGeometry args={[HALF_X * 2, 0.01]} />
-                    <meshBasicMaterial color="#4a2e1a" />
-                </mesh>
-            ))}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.004, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.5, 0.004, 0]} material={shell.enhanced.rug}>
                 <circleGeometry args={[2.6, 48]} />
-                <meshStandardMaterial color="#2f6e48" roughness={1} />
             </mesh>
             {[
                 { p: [0, HEIGHT / 2, -HALF_Z], r: [0, 0, 0], w: HALF_X * 2 },
@@ -299,14 +294,12 @@ export const RupeeShop: React.FC = () => {
                 { p: [-HALF_X, HEIGHT / 2, 0], r: [0, Math.PI / 2, 0], w: HALF_Z * 2 },
                 { p: [HALF_X, HEIGHT / 2, 0], r: [0, -Math.PI / 2, 0], w: HALF_Z * 2 },
             ].map((w, i) => (
-                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]}>
+                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]} material={shell.walls}>
                     <planeGeometry args={[w.w, HEIGHT]} />
-                    <meshStandardMaterial color="#e8d6b8" roughness={0.9} />
                 </mesh>
             ))}
-            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} material={shell.ceiling}>
                 <planeGeometry args={[HALF_X * 2, HALF_Z * 2]} />
-                <meshStandardMaterial color="#5a3a22" roughness={0.9} />
             </mesh>
             {/* Ceiling beams */}
             {[-3, -1, 1, 3].map((x) => (

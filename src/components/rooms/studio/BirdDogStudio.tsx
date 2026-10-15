@@ -23,6 +23,7 @@ import { Signal, StudioSignal } from "./studioSignal";
 import { LedWall, PALETTES, PALETTE_NAMES, WALL_MODES } from "./ledWall";
 import { MODES_3D, MODE_NAMES, Visuals3D } from "./Visuals3D";
 import { StageShow } from "./StageShow";
+import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 
 // Bird Dog's studio. Half recording studio, half DJ booth: foam on the
 // walls, a production desk and a couch to one side, a wall of records to
@@ -238,6 +239,8 @@ export const BirdDogStudio: React.FC = () => {
     const studio = useMemo(() => new StudioSignal(), []);
     const signal = useRef<Signal>(studio.value);
     const wall = useMemo(() => new LedWall(), []);
+    // Shared, cached materials - not ours to dispose.
+    const shell = useMemo(() => getEnhancedRoomMaterials("bird-dog-studio"), []);
     useEffect(() => () => wall.dispose(), [wall]);
 
     const paletteName = PALETTE_NAMES[paletteIndex];
@@ -423,31 +426,21 @@ export const BirdDogStudio: React.FC = () => {
                 </group>
             ))}
 
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} material={shell.floor}>
                 <planeGeometry args={[HALF_X * 2, HALF_Z * 2]} />
-                <meshStandardMaterial color="#2b1d16" roughness={0.55} />
             </mesh>
-            {/* Floorboards */}
-            {Array.from({ length: 28 }, (_, i) => (
-                <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-HALF_X + 0.57 * i + 0.28, 0.001, 0]}>
-                    <planeGeometry args={[0.012, HALF_Z * 2]} />
-                    <meshBasicMaterial color="#1a110c" />
-                </mesh>
-            ))}
             {[
                 { p: [0, HEIGHT / 2, -HALF_Z], r: [0, 0, 0], w: HALF_X * 2 },
                 { p: [0, HEIGHT / 2, HALF_Z], r: [0, Math.PI, 0], w: HALF_X * 2 },
                 { p: [-HALF_X, HEIGHT / 2, 0], r: [0, Math.PI / 2, 0], w: HALF_Z * 2 },
                 { p: [HALF_X, HEIGHT / 2, 0], r: [0, -Math.PI / 2, 0], w: HALF_Z * 2 },
             ].map((w, i) => (
-                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]}>
+                <mesh key={i} position={w.p as [number, number, number]} rotation={w.r as [number, number, number]} material={shell.walls}>
                     <planeGeometry args={[w.w, HEIGHT]} />
-                    <meshStandardMaterial color="#17121f" roughness={0.95} />
                 </mesh>
             ))}
-            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} material={shell.ceiling}>
                 <planeGeometry args={[HALF_X * 2, HALF_Z * 2]} />
-                <meshStandardMaterial color="#0e0b14" roughness={1} />
             </mesh>
             <primitive object={foam} />
 
