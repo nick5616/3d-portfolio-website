@@ -9,6 +9,7 @@ import {
     getRouteByPath,
 } from "../configs/routing";
 import { roomConfigs } from "../configs/rooms";
+import { WORLD_ONLY } from "../utils/site";
 
 export const useRoomRouter = () => {
     const navigate = useNavigate();
@@ -68,7 +69,7 @@ export const useRoomRouter = () => {
             // Update document title
             const route = getRouteByPath(getPathFromRoomId(roomId) || "/");
             if (route) {
-                document.title = `${route.title} - Nicolas Belovoskey Portfolio`;
+                document.title = WORLD_ONLY ? route.title : `${route.title} · Nicole Belovoskey`;
             }
         },
         [navigate, location.pathname, teleportToRoom]

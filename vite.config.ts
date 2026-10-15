@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { seo } from "./seo";
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), seo()],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
@@ -17,6 +18,11 @@ export default defineConfig({
         // WebAssembly); it's only loaded after the landing page.
         chunkSizeWarningLimit: 2500,
         rollupOptions: {
+            // world.html is the nameless shell 3d.saucedog.art serves.
+            input: {
+                main: path.resolve(__dirname, "index.html"),
+                world: path.resolve(__dirname, "world.html"),
+            },
             output: {
                 // Libraries change far less often than the site, so keep them
                 // in their own long-cached files: a deploy that only touches

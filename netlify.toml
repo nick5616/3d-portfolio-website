@@ -25,6 +25,43 @@
   to = "/.netlify/functions/console-chat"
   status = 200
 
+# 3d.saucedog.art is the world on its own (src/utils/site.ts): every page
+# gets the nameless, noindex shell. Real files (assets, textures) still win,
+# except index.html, which "/" would otherwise serve - hence the forced rules.
+[[redirects]]
+  from = "https://3d.saucedog.art/"
+  to = "/world.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://www.3d.saucedog.art/"
+  to = "/world.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://3d.saucedog.art/index.html"
+  to = "/world.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://www.3d.saucedog.art/index.html"
+  to = "/world.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://3d.saucedog.art/*"
+  to = "/world.html"
+  status = 200
+
+[[redirects]]
+  from = "https://www.3d.saucedog.art/*"
+  to = "/world.html"
+  status = 200
+
 # SPA routing - redirect all non-existent paths to index.html
 [[redirects]]
   from = "/*"

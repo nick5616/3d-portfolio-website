@@ -2,6 +2,7 @@
 // content.ts by scripts/sync-portfolio-content.mjs. Don't edit the JSON by
 // hand; change content.ts there and re-run the script.
 import data from "./portfolio.generated.json";
+import { WORLD_ONLY } from "../utils/site";
 
 export interface PortfolioProject {
     id: string;
@@ -27,7 +28,19 @@ export const PROFILE = data.profile as {
     links: { github: string; linkedin: string; email: string };
 };
 
-export const PROJECTS = data.projects as PortfolioProject[];
+const HOME = "https://nicolebelovoskey.com";
+
+// On the world-only domain nothing names anyone: links to this site's own
+// rooms stay on that domain, and the portfolio itself is just "The World".
+const nameless = (project: PortfolioProject): PortfolioProject => ({
+    ...project,
+    title: project.title.replace(/^Nicole['’]s World$/, "The World"),
+    url: project.url?.startsWith(HOME) ? project.url.slice(HOME.length) || "/" : project.url,
+});
+
+export const PROJECTS = WORLD_ONLY
+    ? (data.projects as PortfolioProject[]).map(nameless)
+    : (data.projects as PortfolioProject[]);
 
 // Experience/education as stated on software.nicolebelovoskey.com's bio.
 // Only what that bio states - no invented titles or dates.

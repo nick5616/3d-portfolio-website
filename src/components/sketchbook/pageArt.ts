@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { WORLD_ONLY } from "../../utils/site";
 
 // Canvas compositing for the sketchbook's pages and covers.
 
@@ -227,8 +228,10 @@ export const insideCover = () => {
     context.textAlign = "center";
     context.font = "italic 30px Fraunces, Georgia, serif";
     context.fillText("Ex Libris", PAGE_PX_W / 2, y + 78);
-    context.font = "600 34px Fraunces, Georgia, serif";
-    context.fillText("Nicole Belovoskey", PAGE_PX_W / 2, y + 150);
+    if (!WORLD_ONLY) {
+        context.font = "600 34px Fraunces, Georgia, serif";
+        context.fillText("Nicole Belovoskey", PAGE_PX_W / 2, y + 150);
+    }
     context.font = "500 18px Manrope, system-ui, sans-serif";
     context.fillStyle = "rgba(59,49,39,0.7)";
     context.fillText("ideas start here", PAGE_PX_W / 2, y + 205);

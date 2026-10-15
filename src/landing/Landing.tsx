@@ -154,7 +154,7 @@ export const Landing: React.FC = () => {
     const hovered = useRef<string | null>(null);
 
     useEffect(() => {
-        document.title = `${PROFILE.name} · Choose your adventure`;
+        document.title = `${PROFILE.name} · Software engineer and artist`;
         setSoundscape("music-landing");
         // Most visitors pick the world; start fetching it once the page is idle.
         const idle = (window as any).requestIdleCallback as

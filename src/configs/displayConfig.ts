@@ -85,23 +85,6 @@ export const displaysConfig: DisplayConfig[] = [
             mobile: mobileDimensions.pixel7,
         },
     },
-    {
-        id: "nicolas-portfolio",
-        url: "https://nicolasbelovoskey.com",
-        title: "Nicolas Belovoskey Portfolio",
-        description:
-            "Personal portfolio website showcasing development work and projects with modern design and interactive elements.",
-        screenshotUrl: "/screenshots/nicolas-portfolio.png",
-        position: [-9.7, 2, 6],
-        rotation: [0, Math.PI / 2, 0],
-        scale: [1.2, 1.2, 1],
-        crtStyle: false, // Enable retro CRT styling
-        lightColor: "#ffff00",
-        responsive: {
-            desktop: desktopDimensions.imaginaryDesktop,
-            mobile: mobileDimensions.pixel7,
-        },
-    },
 
     // Right wall displays
 

@@ -725,7 +725,7 @@ export const Web3DDisplay: React.FC<Web3DDisplayProps> = ({
         return minDimension * 0.15 * textSizeFactor;
     }, [displayWidth, displayHeight, textSizeFactor]);
 
-    // Holographic animation loop for Nicolas display
+    // Holographic animation loop
     useFrame((state) => {
         const elapsed = state.clock.elapsedTime;
 

@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 import "./styles/gem.css";
 import { Landing } from "./landing/Landing";
+import { WORLD_ONLY } from "./utils/site";
 
 // "/" is the choose-your-adventure landing (tiny, loads first). The Basic
 // portfolio and the 3D world are separate chunks fetched only when needed;
@@ -28,28 +29,33 @@ const WorldBoot = () => (
     </div>
 );
 
+const world = (
+    <Suspense fallback={<WorldBoot />}>
+        <WorldApp />
+    </Suspense>
+);
+
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route
-                    path="/basic"
-                    element={
-                        <Suspense fallback={null}>
-                            <Basic />
-                        </Suspense>
-                    }
-                />
-                <Route
-                    path="*"
-                    element={
-                        <Suspense fallback={<WorldBoot />}>
-                            <WorldApp />
-                        </Suspense>
-                    }
-                />
-            </Routes>
+            {WORLD_ONLY ? (
+                <Routes>
+                    <Route path="*" element={world} />
+                </Routes>
+            ) : (
+                <Routes>
+                    <Route path="/" element={<Landing />} />
+                    <Route
+                        path="/basic"
+                        element={
+                            <Suspense fallback={null}>
+                                <Basic />
+                            </Suspense>
+                        }
+                    />
+                    <Route path="*" element={world} />
+                </Routes>
+            )}
         </BrowserRouter>
     </StrictMode>
 );

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useShallow } from "zustand/react/shallow";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
-import { usePersona } from "../../hooks/usePersona";
+import { WORLD_ONLY } from "../../utils/site";
 import { useSceneStore } from "../../stores/sceneStore";
 import { playSound } from "../../audio/soundManager";
 import { SettingsPanel } from "./PerformanceControls";
@@ -88,7 +88,6 @@ const DESTINATIONS: {
 
 export const WorldGuide: React.FC = () => {
     const { isMobile } = useDeviceDetection();
-    const { name } = usePersona();
     const {
         isInteracting,
         setEducationalModalOpen,
@@ -106,6 +105,8 @@ export const WorldGuide: React.FC = () => {
     );
 
     const [welcomeOpen, setWelcomeOpen] = useState(() => {
+        // No intro on the world-only domain; "Guide" on the pause card still opens it.
+        if (WORLD_ONLY) return false;
         // Respect people who ticked "don't show again" on the old modal.
         try {
             if (localStorage.getItem("dontShowWelcome") === "true") return false;
@@ -209,17 +210,28 @@ export const WorldGuide: React.FC = () => {
                     aria-modal="true"
                     aria-labelledby="guide-title"
                 >
-                    <div className="gem-label">Welcome to</div>
-                    <h2 id="guide-title" className="botw-title text-4xl md:text-5xl leading-none mt-1">
-                        {name}&rsquo;s World
-                    </h2>
-                    <div className="botw-rule botw-rule--left" />
-                    <p className="mt-3 text-[15px] leading-relaxed text-[color:var(--gem-ink-dim)] max-w-[52ch]">
-                        I make software and art, and I wanted my portfolio to feel
-                        like a place you visit. Wander around. There&rsquo;s an art
-                        museum, a software lab, rooms to play and make music in, rupees to collect, and a
-                        locked door or two.
-                    </p>
+                    {WORLD_ONLY ? (
+                        <>
+                            <h2 id="guide-title" className="botw-title text-4xl md:text-5xl leading-none mt-1">
+                                How to play
+                            </h2>
+                            <div className="botw-rule botw-rule--left" />
+                        </>
+                    ) : (
+                        <>
+                            <div className="gem-label">Welcome to</div>
+                            <h2 id="guide-title" className="botw-title text-4xl md:text-5xl leading-none mt-1">
+                                Nicole&rsquo;s World
+                            </h2>
+                            <div className="botw-rule botw-rule--left" />
+                            <p className="mt-3 text-[15px] leading-relaxed text-[color:var(--gem-ink-dim)] max-w-[52ch]">
+                                I make software and art, and I wanted my portfolio to feel
+                                like a place you visit. Wander around. There&rsquo;s an art
+                                museum, a software lab, rooms to play and make music in, rupees to collect, and a
+                                locked door or two.
+                            </p>
+                        </>
+                    )}
 
                     {isMobile ? (
                         <div className="grid grid-cols-2 gap-3 mt-6">
@@ -288,10 +300,12 @@ export const WorldGuide: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="mt-7 flex items-center justify-between gap-3">
-                        <Link to="/" className="text-sm text-[color:var(--gem-ink-dim)] underline underline-offset-4">
-                            ← All four ways in
-                        </Link>
+                    <div className={`mt-7 flex items-center gap-3 ${WORLD_ONLY ? "justify-end" : "justify-between"}`}>
+                        {!WORLD_ONLY && (
+                            <Link to="/" className="text-sm text-[color:var(--gem-ink-dim)] underline underline-offset-4">
+                                ← All four ways in
+                            </Link>
+                        )}
                         <button className="gem-btn gem-btn--solid gem--green !text-base !px-6 !py-3" onClick={start} autoFocus>
                             <span className="gem-glint" />
                             {isMobile ? "Start exploring" : "Click to start"}
@@ -339,10 +353,12 @@ export const WorldGuide: React.FC = () => {
                             <span className="gem-glint" />
                             Guide
                         </button>
-                        <Link to="/" className="gem-btn !text-xs !py-1.5">
-                            <span className="gem-glint" />
-                            Home
-                        </Link>
+                        {!WORLD_ONLY && (
+                            <Link to="/" className="gem-btn !text-xs !py-1.5">
+                                <span className="gem-glint" />
+                                Home
+                            </Link>
+                        )}
                     </div>
                     {settingsOpen && (
                         <div className="mt-4 pt-4 border-t border-white/15 w-64 mx-auto">
