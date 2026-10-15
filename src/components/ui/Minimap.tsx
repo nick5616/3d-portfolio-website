@@ -5,6 +5,8 @@ import { roomConfigs } from "../../configs/rooms";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { roomColors } from "../../configs/roomColors";
 import { floorIndexAt, playerFloorIndex } from "../../utils/roomFloors";
+import { useMultiplayerStore } from "../../multiplayer/connection";
+import { samplePose, type InterpolatedPose } from "../../multiplayer/remotePoses";
 
 // "#rrggbb" -> rgba() with the given alpha.
 const withAlpha = (hex: string, alpha: number) => {
@@ -46,6 +48,16 @@ export const Minimap: React.FC = () => {
     useShallow((s) => ({ currentRoom: s.currentRoom, minimap: s.minimap, cameraData: s.cameraData, playerPosition: s.playerPosition }))
   );
   const { isMobile } = useDeviceDetection();
+  const peers = useMultiplayerStore((s) => s.peers);
+  const hasPeers = Object.keys(peers).length > 0;
+  // Other visitors move without touching React state, so while anyone's
+  // around the map redraws on a timer of its own.
+  const [peerTick, setPeerTick] = useState(0);
+  useEffect(() => {
+    if (!hasPeers || !minimap.visible) return;
+    const timer = setInterval(() => setPeerTick((n) => n + 1), 125);
+    return () => clearInterval(timer);
+  }, [hasPeers, minimap.visible]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({
     width: 250,
@@ -297,6 +309,32 @@ export const Minimap: React.FC = () => {
       ctx.stroke();
     });
 
+    // --- Everyone else in the room, on this floor -----------------------------
+    const pose: InterpolatedPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, flags: 0 };
+    const peerDot = small ? 3.5 : 4.5;
+    Object.values(peers).forEach((peer) => {
+      if (!samplePose(peer.id, pose) || !onThisFloor(pose.y)) return;
+      const px = centerX + Math.max(-1.15, Math.min(1.15, roomHalfWidth > 0 ? pose.x / roomHalfWidth : 0)) * halfW;
+      const py = centerY + Math.max(-1.15, Math.min(1.15, roomHalfDepth > 0 ? pose.z / roomHalfDepth : 0)) * halfH;
+      const color = `#${peer.look.toString(16).padStart(6, "0")}`;
+      // Facing tick: yaw 0 looks toward -z, which is up on the map.
+      const fx = -Math.sin(pose.yaw);
+      const fz = -Math.cos(pose.yaw);
+      ctx.beginPath();
+      ctx.moveTo(px + fx * peerDot * 0.6, py + fz * peerDot * 0.6);
+      ctx.lineTo(px + fx * peerDot * 2, py + fz * peerDot * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(px, py, peerDot, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(10, 8, 22, 0.9)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
     // --- You -------------------------------------------------------------------
     // Clamped to the room, but allowed to press a little past the wall so
     // actually leaving the floor still shows.
@@ -325,6 +363,8 @@ export const Minimap: React.FC = () => {
     cameraData.facing.x,
     cameraData.facing.z,
     playerPosition,
+    peers,
+    peerTick,
   ]);
 
   if (!minimap.visible) return null;

@@ -5,6 +5,7 @@ import { Stats, AdaptiveEvents, PerformanceMonitor } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
 import { PlayerBody } from "./PlayerBody";
+import { Multiplayer } from "../../multiplayer/Multiplayer";
 import { RupeeCounter } from "../ui/RupeeCounter";
 import { SceneDataBridge } from "./SceneDataBridge";
 import { useSceneStore } from "../../stores/sceneStore";
@@ -328,6 +329,7 @@ export const Scene: React.FC = () => {
                     >
                         <SceneManager />
                         {currentRoom && <PlayerBody key={currentRoom.id} />}
+                        <Multiplayer />
                         <PerformanceMonitor
                             factor={1}
                             flipflops={4}

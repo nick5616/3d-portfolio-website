@@ -8,9 +8,13 @@ import { usePersona } from "../../hooks/usePersona";
 import { useSceneStore } from "../../stores/sceneStore";
 import { playSound } from "../../audio/soundManager";
 import { SettingsPanel } from "./PerformanceControls";
+import { CharacterSelect } from "./CharacterSelect";
+import { useCharacterStore } from "../../stores/characterStore";
 
 // The world's onboarding + pause flow, as one small state machine:
 //
+//   choosing - every visit starts here: pick a character while the first
+//              room loads behind. Reopenable from the pause card.
 //   welcome  - first visit (or reopened from "Guide"): one card that
 //              teaches the loop and whose button IS the click that starts.
 //   playing  - cursor locked: no chrome at all (a one-line Esc hint fades
@@ -89,10 +93,12 @@ export const WorldGuide: React.FC = () => {
         isInteracting,
         setEducationalModalOpen,
         setShowStartPrompt,
+        setIsInteracting,
         teleportToRoom,
     } = useSceneStore(
         useShallow((s) => ({
             isInteracting: s.isInteracting,
+            setIsInteracting: s.setIsInteracting,
             setEducationalModalOpen: s.setEducationalModalOpen,
             setShowStartPrompt: s.setShowStartPrompt,
             teleportToRoom: s.teleportToRoom,
@@ -112,6 +118,14 @@ export const WorldGuide: React.FC = () => {
     const [escHint, setEscHint] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const lockCount = useRef(0);
+    const { selecting, confirmCharacter, reopenCharacter } = useCharacterStore(
+        useShallow((s) => ({ selecting: s.selecting, confirmCharacter: s.confirm, reopenCharacter: s.reopen }))
+    );
+
+    // Keys belong to the selector while it's open (A/D pick, not walk).
+    useEffect(() => {
+        setIsInteracting(selecting);
+    }, [selecting, setIsInteracting]);
 
     useEffect(() => {
         const onChange = () => {
@@ -134,12 +148,14 @@ export const WorldGuide: React.FC = () => {
         return () => document.removeEventListener("pointerlockchange", onChange);
     }, []);
 
+    const welcomeShown = welcomeOpen && !selecting;
     useEffect(() => {
-        setEducationalModalOpen(welcomeOpen);
-        if (isMobile) document.body.classList.toggle("modal-hidden", !welcomeOpen);
-    }, [welcomeOpen, isMobile, setEducationalModalOpen]);
+        const modal = welcomeShown || selecting;
+        setEducationalModalOpen(modal);
+        if (isMobile) document.body.classList.toggle("modal-hidden", !modal);
+    }, [welcomeShown, selecting, isMobile, setEducationalModalOpen]);
 
-    const paused = !isMobile && !welcomeOpen && !locked && !isInteracting;
+    const paused = !isMobile && !welcomeOpen && !selecting && !locked && !isInteracting;
     useEffect(() => {
         if (!paused) setSettingsOpen(false);
     }, [paused]);
@@ -164,9 +180,19 @@ export const WorldGuide: React.FC = () => {
     // document-level "click to lock" handler (the card decides).
     const stop = (event: React.SyntheticEvent) => event.stopPropagation();
 
+    const confirmChoice = () => {
+        confirmCharacter();
+        playSound("ui-select");
+        // Returning visitors go straight in; first-timers get the welcome
+        // card next. This click is the gesture pointer lock needs.
+        if (!welcomeOpen && !isMobile) lockPointer();
+    };
+
     let content: React.ReactNode = null;
 
-    if (welcomeOpen) {
+    if (selecting) {
+        content = <CharacterSelect onConfirm={confirmChoice} />;
+    } else if (welcomeOpen) {
         content = (
             <div
                 className="fixed inset-0 z-[60] flex items-center justify-center p-3 guide-backdrop"
@@ -304,6 +330,10 @@ export const WorldGuide: React.FC = () => {
                         >
                             <span className="gem-glint" />
                             Settings
+                        </button>
+                        <button className="gem-btn !text-xs !py-1.5" onClick={reopenCharacter}>
+                            <span className="gem-glint" />
+                            Character
                         </button>
                         <button className="gem-btn !text-xs !py-1.5" onClick={() => setWelcomeOpen(true)}>
                             <span className="gem-glint" />

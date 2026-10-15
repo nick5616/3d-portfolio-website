@@ -263,7 +263,8 @@ export const ForestFairies: React.FC<{ layout: ForestLayout }> = ({ layout }) =>
             playSound(isRegal(fairy.kind) ? "fairy-catch-regal" : "fairy-catch");
             setToast({
                 key: Date.now(),
-                text: count > 1 ? `Caught a ${name}! (${count} so far)` : `Caught a ${name}!`,
+                // The first of each kind also unlocks it as a traveler.
+                text: count > 1 ? `Caught a ${name}! (${count} so far)` : `Caught a ${name}! You can travel as one now.`,
                 at: [s.position.x, s.position.y + 0.5, s.position.z],
             });
             const achievements = useAchievementStore.getState();

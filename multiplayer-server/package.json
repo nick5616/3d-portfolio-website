@@ -1,0 +1,16 @@
+{
+    "name": "portfolio-multiplayer-server",
+    "private": true,
+    "type": "module",
+    "main": "server.mjs",
+    "scripts": {
+        "start": "node server.mjs",
+        "dev": "node --watch server.mjs"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "ws": "^8.18.0"
+    }
+}
