@@ -62,6 +62,7 @@ interface Widget {
     getSounds: (callback: (sounds: SoundCloudSound[]) => void) => void;
     getCurrentSoundIndex: (callback: (index: number) => void) => void;
     skip: (index: number) => void;
+    seekTo: (milliseconds: number) => void;
     play: () => void;
     pause: () => void;
     toggle: () => void;
@@ -98,6 +99,11 @@ let widget: Widget | null = null;
 let unsubscribeVolume: (() => void) | null = null;
 let refreshTimer: number | null = null;
 let session = 0; // bumped on close, so a slow open can tell it's stale
+// Set when a track is asked to start part-way (or paused): the widget only
+// takes a seek once the sound is playing, so it's applied on PLAY.
+let pendingStart: { position: number; pause: boolean } | null = null;
+// A shared-room change for a track the widget hasn't listed yet.
+let pendingSync: { track: number; playing: boolean; position: number } | null = null;
 
 const applyVolume = () => {
     if (!widget) return;
@@ -126,6 +132,11 @@ const refreshTracks = () => {
                 permalink: sound.permalink_url ?? SOUNDCLOUD_PROFILE,
             }));
         useStudioMusic.setState({ tracks, status: tracks.length ? "ready" : "loading" });
+        if (pendingSync && tracks.some((t) => t.id === pendingSync!.track)) {
+            const { track, playing, position } = pendingSync;
+            pendingSync = null;
+            syncPlayback(track, playing, position);
+        }
     });
 };
 
@@ -170,6 +181,15 @@ export const openStudioMusic = async (onReady?: () => void, source: string = SOU
     widget.bind(events.PLAY, () => {
         widget?.getCurrentSoundIndex((index) => useStudioMusic.setState({ current: index }));
         useStudioMusic.setState({ playing: true, positionAt: performance.now() });
+        if (pendingStart) {
+            const { position, pause } = pendingStart;
+            pendingStart = null;
+            if (position > 0) {
+                widget?.seekTo(position);
+                useStudioMusic.setState({ position, positionAt: performance.now() });
+            }
+            if (pause) widget?.pause();
+        }
     });
     widget.bind(events.PAUSE, () =>
         useStudioMusic.setState({ playing: false, position: currentPositionMs(), positionAt: performance.now() })
@@ -187,6 +207,8 @@ export const openStudioMusic = async (onReady?: () => void, source: string = SOU
 // Leaving the studio stops the music and removes the player.
 export const closeStudioMusic = () => {
     session++;
+    pendingStart = null;
+    pendingSync = null;
     widget?.pause();
     widget = null;
     iframe?.remove();
@@ -198,29 +220,74 @@ export const closeStudioMusic = () => {
     useStudioMusic.setState({ playing: false, current: null, position: 0 });
 };
 
-export const playTrack = (index: number) => {
-    if (!widget) return;
-    useStudioMusic.setState({ current: index, position: 0, positionAt: performance.now() });
+// What the controls below set the music to, so a shared room can pass it on.
+export interface PlaybackIntent {
+    track: number | null; // track id
+    playing: boolean;
+    position: number; // ms
+}
+
+const trackId = (index: number | null) =>
+    index === null ? null : useStudioMusic.getState().tracks.find((t) => t.index === index)?.id ?? null;
+
+// The music as it is right now.
+export const currentPlayback = (): PlaybackIntent => {
+    const { current, playing } = useStudioMusic.getState();
+    return { track: trackId(current), playing, position: currentPositionMs() };
+};
+
+export const playTrack = (index: number, startAt = 0, paused = false): PlaybackIntent | null => {
+    if (!widget) return null;
+    useStudioMusic.setState({ current: index, position: startAt, positionAt: performance.now() });
+    pendingStart = startAt > 0 || paused ? { position: startAt, pause: paused } : null;
     widget.skip(index);
     widget.play();
+    return { track: trackId(index), playing: !paused, position: startAt };
 };
-export const togglePlayback = () => {
-    const { current, tracks } = useStudioMusic.getState();
+export const togglePlayback = (): PlaybackIntent | null => {
+    const { current, tracks, playing } = useStudioMusic.getState();
     if (current === null) {
-        if (tracks.length) playTrack(tracks[0].index);
-        return;
+        return tracks.length ? playTrack(tracks[0].index) : null;
     }
     widget?.toggle();
+    return { track: trackId(current), playing: !playing, position: currentPositionMs() };
 };
 export const nextTrack = () => {
     const { current, tracks } = useStudioMusic.getState();
-    if (!tracks.length) return;
+    if (!tracks.length) return null;
     const at = tracks.findIndex((t) => t.index === current);
-    playTrack(tracks[(at + 1) % tracks.length].index);
+    return playTrack(tracks[(at + 1) % tracks.length].index);
 };
 export const previousTrack = () => {
     const { current, tracks } = useStudioMusic.getState();
-    if (!tracks.length) return;
+    if (!tracks.length) return null;
     const at = tracks.findIndex((t) => t.index === current);
-    playTrack(tracks[(at - 1 + tracks.length) % tracks.length].index);
+    return playTrack(tracks[(at - 1 + tracks.length) % tracks.length].index);
+};
+
+// Bring the player in line with someone else's (the shared studio): the
+// same track, playing or paused, at about the same point.
+const DRIFT_MS = 1500;
+export const syncPlayback = (track: number | null, playing: boolean, position: number) => {
+    const state = useStudioMusic.getState();
+    if (track === null) {
+        if (state.playing) widget?.pause();
+        return;
+    }
+    const target = state.tracks.find((t) => t.id === track);
+    if (!widget || !target) {
+        pendingSync = { track, playing, position };
+        return;
+    }
+    pendingSync = null;
+    if (state.current !== target.index) {
+        playTrack(target.index, position, !playing);
+        return;
+    }
+    if (Math.abs(currentPositionMs() - position) > DRIFT_MS) {
+        widget.seekTo(position);
+        useStudioMusic.setState({ position, positionAt: performance.now() });
+    }
+    if (playing && !state.playing) widget.play();
+    if (!playing && state.playing) widget.pause();
 };

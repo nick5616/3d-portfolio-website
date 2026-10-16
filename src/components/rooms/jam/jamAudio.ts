@@ -319,6 +319,33 @@ export class JamTransport {
         this.nextTime = 0;
     }
 
+    // Where the song is: the next 16th to sound, and when (audio clock).
+    position() {
+        return { time: this.nextTime, bar: this.bar, sixteenth: this.sixteenth };
+    }
+
+    // Line up with someone else's song (a shared jam room): the given 16th
+    // sounds at `time`. Anything already gone by is skipped silently.
+    align(time: number, bar: number, sixteenth: number) {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        this.nextTime = time;
+        this.bar = bar % 4;
+        this.sixteenth = sixteenth % (this.getState().beatsPerBar * 4);
+        const floor = ctx.currentTime + 0.02;
+        while (this.nextTime < floor) this.advance();
+    }
+
+    private advance() {
+        const state = this.getState();
+        this.nextTime += 60 / state.bpm / 4;
+        this.sixteenth++;
+        if (this.sixteenth >= state.beatsPerBar * 4) {
+            this.sixteenth = 0;
+            this.bar = (this.bar + 1) % 4;
+        }
+    }
+
     private pump() {
         const ctx = getAudioContext();
         if (!ctx) return;
@@ -348,13 +375,7 @@ export class JamTransport {
             });
             const event: TickEvent = { time: this.nextTime, bar: this.bar, sixteenth: s, step };
             this.listeners.forEach((listener) => listener(event));
-
-            this.nextTime += 60 / state.bpm / 4;
-            this.sixteenth++;
-            if (this.sixteenth >= bpb * 4) {
-                this.sixteenth = 0;
-                this.bar = (this.bar + 1) % 4;
-            }
+            this.advance();
         }
     }
 }

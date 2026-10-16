@@ -9,16 +9,20 @@ import { useAimTargets } from "../../core/useAimTargets";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { playSound } from "../../../audio/soundManager";
 import {
+    PlaybackIntent,
     SOUNDCLOUD_PROFILE,
     Track,
     closeStudioMusic,
+    currentPlayback,
     nextTrack,
     openStudioMusic,
     playTrack,
     previousTrack,
+    syncPlayback,
     togglePlayback,
     useStudioMusic,
 } from "./soundcloud";
+import { StudioSync, connectStudio, positionNow } from "./studioSync";
 import { Signal, StudioSignal } from "./studioSignal";
 import { LedWall, PALETTES, PALETTE_NAMES, WALL_MODES } from "./ledWall";
 import { MODES_3D, MODE_NAMES, Visuals3D } from "./Visuals3D";
@@ -30,7 +34,9 @@ import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 // the other, and at the far end a booth on a riser in front of an LED wall.
 // The music is Bird Dog's own, streamed from SoundCloud; the LED wall runs
 // Bird Dog's song-visualizer, and the same visuals float over the stage in
-// the middle of the room. Walking in starts the first track.
+// the middle of the room. Walking in starts the first track - unless other
+// people are already in, in which case you join whatever they're hearing
+// (see studioSync.ts: the knobs and the decks are shared by everyone here).
 
 const HALF_X = 8;
 const HALF_Z = 7;
@@ -219,19 +225,58 @@ export const BirdDogStudio: React.FC = () => {
     const playing = useStudioMusic((s) => s.playing);
     const [modeIndex, setModeIndex] = useState(0);
     const [paletteIndex, setPaletteIndex] = useState(PALETTE_NAMES.indexOf("synthwave"));
+    const [listeners, setListeners] = useState(0);
     const aim = useAimTargets();
     const clock = useThree((s) => s.clock);
+    const visualsRef = useRef({ mode: 0, palette: paletteIndex });
+    visualsRef.current = { mode: modeIndex, palette: paletteIndex };
+    const sync = useRef<StudioSync | null>(null);
+    // Set once someone already here has told us what's playing.
+    const heardRoom = useRef(false);
 
-    // Open the player and start the first track on arrival.
+    // Join the shared room, open the player, and start the first track on
+    // arrival if nobody's here to tell us what's on. Finding the others can
+    // take a few seconds, so wait a little before starting on our own.
     useEffect(() => {
-        openStudioMusic(() => {
-            window.setTimeout(() => {
-                const { tracks: list, current: now } = useStudioMusic.getState();
-                if (now === null && list.length) playTrack(list[0].index);
-            }, 600);
+        heardRoom.current = false;
+        const link = connectStudio(visualsRef.current, {
+            onVisuals: ({ mode, palette }) => {
+                setModeIndex(mode % MODES_3D.length);
+                setPaletteIndex(palette % PALETTE_NAMES.length);
+                lastChange.current = clock.elapsedTime;
+            },
+            onTransport: (t) => {
+                heardRoom.current = true;
+                syncPlayback(t.track, t.playing, positionNow(t));
+            },
+            onPeers: setListeners,
+            currentTransport: currentPlayback,
         });
-        return () => closeStudioMusic();
-    }, []);
+        sync.current = link;
+        let startTimer: number | undefined;
+        openStudioMusic(() => {
+            startTimer = window.setTimeout(() => {
+                const { tracks: list, current: now } = useStudioMusic.getState();
+                if (!heardRoom.current && now === null && list.length) playTrack(list[0].index);
+            }, 2500);
+        });
+        return () => {
+            window.clearTimeout(startTimer);
+            link.leave();
+            sync.current = null;
+            closeStudioMusic();
+        };
+    }, [clock]);
+
+    // The controls: act here, then tell everyone else in the room.
+    const share = (intent: PlaybackIntent | null) => {
+        if (intent) sync.current?.setTransport(intent);
+    };
+    const shareVisuals = (mode: number, palette: number) => {
+        setModeIndex(mode);
+        setPaletteIndex(palette);
+        sync.current?.setVisuals({ mode, palette });
+    };
     useEffect(() => {
         if (playing) useAchievementStore.getState().unlock("studio-listen");
     }, [playing]);
@@ -281,10 +326,11 @@ export const BirdDogStudio: React.FC = () => {
         frame.current++;
         if (frame.current % 2 === 0) wall.draw(WALL_MODES[modeIndex % WALL_MODES.length], PALETTES[paletteName], b);
 
-        if (b.playing && b.drop > 0.8 && t - lastChange.current > 24) {
+        // With company, only one visitor makes the call, and tells the rest.
+        if (b.playing && b.drop > 0.8 && t - lastChange.current > 24 && (sync.current?.isLeader() ?? true)) {
             lastChange.current = t;
-            setModeIndex((i) => (i + 1) % MODES_3D.length);
-            setPaletteIndex((i) => (i + 1) % PALETTE_NAMES.length);
+            const { mode: m, palette: p } = visualsRef.current;
+            shareVisuals((m + 1) % MODES_3D.length, (p + 1) % PALETTE_NAMES.length);
         }
 
         speakers.current.forEach((cone) => {
@@ -321,7 +367,7 @@ export const BirdDogStudio: React.FC = () => {
             : status !== "ready"
             ? "Tuning in to Bird Dog on SoundCloud…"
             : nowPlaying
-            ? `${playing ? "▶" : "❚❚"}  ${nowPlaying.title}`
+            ? `${playing ? "▶" : "❚❚"}  ${nowPlaying.title}${listeners ? `  ·  ${listeners + 1} listening` : ""}`
             : "Pick a record, or press play on the decks.";
 
     const prompt = (action: string, accent: "gold" | "green" | "purple" = "gold") => () => <GemPrompt accent={accent} action={action} />;
@@ -482,8 +528,8 @@ export const BirdDogStudio: React.FC = () => {
                     its transport buttons in the corner nearest the DJ, the way
                     a real deck does. */}
                 {[
-                    { x: DECK_X, label: "#ff2975", second: { id: "prev", text: "PREV", use: previousTrack, prompt: "Previous track" } },
-                    { x: -DECK_X, label: "#00ffdd", second: { id: "next", text: "NEXT", use: nextTrack, prompt: "Next track" } },
+                    { x: DECK_X, label: "#ff2975", second: { id: "prev", text: "PREV", use: () => share(previousTrack()), prompt: "Previous track" } },
+                    { x: -DECK_X, label: "#00ffdd", second: { id: "next", text: "NEXT", use: () => share(nextTrack()), prompt: "Next track" } },
                 ].map((deck) => (
                     <group key={deck.x} position={[deck.x, 0.9, 0]}>
                         <Turntable position={[0, 0, 0]} spinning={playing} label={deck.label} />
@@ -492,7 +538,7 @@ export const BirdDogStudio: React.FC = () => {
                             radius={0.06}
                             color={playing ? "#3ee58f" : "#ffd23c"}
                             text={playing ? "PAUSE" : "PLAY"}
-                            bindRef={aim.bind(`play-${deck.x}`, { reach: 4.5, prompt: prompt(playing ? "Pause" : "Play"), use: togglePlayback })}
+                            bindRef={aim.bind(`play-${deck.x}`, { reach: 4.5, prompt: prompt(playing ? "Pause" : "Play"), use: () => share(togglePlayback()) })}
                         />
                         <DeckButton
                             position={[0.33, 0.085, -0.08]}
@@ -568,7 +614,7 @@ export const BirdDogStudio: React.FC = () => {
                             reach: 4.5,
                             prompt: prompt(`Visuals: ${MODE_NAMES[mode]} (turn)`, "purple"),
                             use: () => {
-                                setModeIndex((i) => (i + 1) % MODES_3D.length);
+                                shareVisuals((modeIndex + 1) % MODES_3D.length, paletteIndex);
                                 lastChange.current = clock.elapsedTime; // hold your choice a while
                                 playSound("ui-select");
                             },
@@ -583,7 +629,7 @@ export const BirdDogStudio: React.FC = () => {
                             reach: 4.5,
                             prompt: prompt(`Colours: ${paletteName} (turn)`, "purple"),
                             use: () => {
-                                setPaletteIndex((i) => (i + 1) % PALETTE_NAMES.length);
+                                shareVisuals(modeIndex, (paletteIndex + 1) % PALETTE_NAMES.length);
                                 playSound("ui-select");
                             },
                         })}
@@ -776,7 +822,7 @@ export const BirdDogStudio: React.FC = () => {
                             bindRef={aim.bind(`record-${track.id}`, {
                                 reach: 5,
                                 prompt: prompt(track.index === current ? (playing ? "Playing" : "Resume") : `Play "${track.title}"`),
-                                use: () => (track.index === current ? togglePlayback() : playTrack(track.index)),
+                                use: () => share(track.index === current ? togglePlayback() : playTrack(track.index)),
                             })}
                         />
                     </group>

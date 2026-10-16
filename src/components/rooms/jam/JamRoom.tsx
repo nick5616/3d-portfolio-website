@@ -25,6 +25,7 @@ import {
 import { BPB_RANGE, BPM_RANGE, MAX_STEPS, ROWS, useJamStore } from "./jamStore";
 import { INSTRUMENTS, InstrumentModel, instrumentInfo } from "./jamInstruments";
 import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
+import { connectJam } from "./jamSync";
 
 // The Jam Room. Everything here makes a sound, and nothing needs explaining:
 //  - Step on a glowing floor pad to start (or stop) a loop.
@@ -34,6 +35,8 @@ import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 //    instrument off the rack (E), carry it - it floats along in front of
 //    you - and put it on a shelf (E) to give that row its sound.
 //  - On the left wall: tempo, beats in a bar, and a button to clear the wall.
+// The room is shared (jamSync.ts): everyone in it plays the same song, in
+// time, and sees each other's changes as they happen.
 
 const HALF = 7;
 const HEIGHT = 7;
@@ -127,12 +130,15 @@ export const JamRoom: React.FC = () => {
 
     // --- Transport, and the visual beat that follows it ----------------------
     const transport = useMemo(() => new JamTransport(() => useJamStore.getState()), []);
+    const [jammers, setJammers] = useState(0); // others in the room with us
     const pending = useRef<TickEvent[]>([]);
     const beat = useRef({ playhead: -1, lastBeat: 0, pulse: 0, rowFlash: [0, 0, 0, 0], sixteenthPulse: 0 });
     useEffect(() => {
         const off = transport.onTick((event) => pending.current.push(event));
         transport.start();
+        const leave = connectJam(transport, setJammers);
         return () => {
+            leave();
             off();
             transport.stop();
         };
@@ -206,6 +212,27 @@ export const JamRoom: React.FC = () => {
         playInstrument(id, undefined, 60);
         useAchievementStore.getState().unlock("jam-bandleader");
     };
+
+    // Someone else in the room put an instrument on a shelf, or took one off:
+    // move ours to match. (Our own moves already agree, so they're left be.)
+    useEffect(() => {
+        INSTRUMENTS.forEach(({ id }) => {
+            const row = rows.findIndex((r) => r.instrument === id);
+            const mode = modes.current.get(id);
+            if (row >= 0) {
+                if (mode?.mode === "placed" && mode.row === row) return;
+                if (heldRef.current === id) {
+                    heldRef.current = null;
+                    setHeld(null);
+                }
+                setMode(id, { mode: "placed", row });
+            } else if (mode?.mode === "placed") {
+                setMode(id, { mode: "free" });
+            }
+        });
+        // setMode only touches refs and the physics bodies.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]);
 
     const drop = () => {
         const id = heldRef.current;
@@ -623,7 +650,7 @@ export const JamRoom: React.FC = () => {
                 YOUR SONG
             </Text>
             <Text position={[GRID_CENTER_X, 3.72, WALL_Z + 0.05]} fontSize={0.17} color="#cbb8ef" anchorX="center" anchorY="middle">
-                Look at a square and press E to light it up
+                {jammers ? `${jammers + 1} of you jamming - look at a square and press E` : "Look at a square and press E to light it up"}
             </Text>
             {/* Row shelves, each wired to its row */}
             {ROW_Y.map((_, row) => {
