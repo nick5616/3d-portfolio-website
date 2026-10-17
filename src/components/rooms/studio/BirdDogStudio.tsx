@@ -11,32 +11,40 @@ import { playSound } from "../../../audio/soundManager";
 import {
     PlaybackIntent,
     SOUNDCLOUD_PROFILE,
-    Track,
     closeStudioMusic,
     currentPlayback,
     nextTrack,
     openStudioMusic,
     playTrack,
-    previousTrack,
     syncPlayback,
     togglePlayback,
     useStudioMusic,
 } from "./soundcloud";
+import { useShallow } from "zustand/react/shallow";
 import { StudioSync, connectStudio, positionNow } from "./studioSync";
 import { Signal, StudioSignal } from "./studioSignal";
 import { LedWall, PALETTES, PALETTE_NAMES, WALL_MODES } from "./ledWall";
 import { MODES_3D, MODE_NAMES, Visuals3D } from "./Visuals3D";
 import { StageShow } from "./StageShow";
 import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
+import { loadCrate, trackMeta, useCrate } from "./dj/crate";
+import { DjEngine, engineRef } from "./dj/djEngine";
+import { createDjSync } from "./dj/djSync";
+import { DECKS, DeckId, dj, freeDeck, initialShared, isRolling, useDj } from "./dj/djStore";
+import { closeDjConsole, openDjConsole } from "./dj/consoleGate";
+import { DjBooth3D } from "./dj/DjBooth3D";
 
 // Bird Dog's studio. Half recording studio, half DJ booth: foam on the
 // walls, a production desk and a couch to one side, a wall of records to
 // the other, and at the far end a booth on a riser in front of an LED wall.
-// The music is Bird Dog's own, streamed from SoundCloud; the LED wall runs
-// Bird Dog's song-visualizer, and the same visuals float over the stage in
-// the middle of the room. Walking in starts the first track - unless other
-// people are already in, in which case you join whatever they're hearing
-// (see studioSync.ts: the knobs and the decks are shared by everyone here).
+// The booth is two CDJs and a DJM that really work (dj/: step up and press
+// E), playing Bird Dog's own masters; the LED wall runs Bird Dog's
+// song-visualizer off the live mix, and the same visuals float over the
+// stage in the middle of the room. Walking in starts the first record -
+// unless other people are already in, in which case you hear whatever
+// they're playing (studioSync.ts: the booth and the lights are shared by
+// everyone here). If the records can't be reached, the studio falls back to
+// streaming Bird Dog's SoundCloud.
 
 const HALF_X = 8;
 const HALF_Z = 7;
@@ -70,8 +78,15 @@ const RECORD_ROWS = 4;
 
 const sleeveColors = ["#ff2975", "#00ffdd", "#f222ff", "#ffd700", "#00bbf9", "#05ffa1"];
 
-const Sleeve: React.FC<{ track: Track; playing: boolean; bindRef: (o: THREE.Object3D | null) => void }> = ({
-    track,
+interface WallRecord {
+    key: string;
+    title: string;
+    artwork: string | null;
+    colorIndex: number;
+}
+
+const Sleeve: React.FC<{ record: WallRecord; playing: boolean; bindRef: (o: THREE.Object3D | null) => void }> = ({
+    record: track,
     playing,
     bindRef,
 }) => {
@@ -96,7 +111,7 @@ const Sleeve: React.FC<{ track: Track; playing: boolean; bindRef: (o: THREE.Obje
         };
     }, [track.artwork]);
     useEffect(() => () => texture?.dispose(), [texture]);
-    const color = sleeveColors[track.index % sleeveColors.length];
+    const color = sleeveColors[track.colorIndex % sleeveColors.length];
     return (
         <group>
             <mesh ref={bindRef}>
@@ -121,71 +136,9 @@ const Sleeve: React.FC<{ track: Track; playing: boolean; bindRef: (o: THREE.Obje
     );
 };
 
-// --- Turntable -------------------------------------------------------------------
-
-const Turntable: React.FC<{ position: [number, number, number]; spinning: boolean; label: string; bindRef?: (o: THREE.Object3D | null) => void }> = ({
-    position,
-    spinning,
-    label,
-    bindRef,
-}) => {
-    const platter = useRef<THREE.Group>(null);
-    const speed = useRef(0);
-    useFrame((_, delta) => {
-        speed.current += ((spinning ? 3.5 : 0) - speed.current) * Math.min(1, delta * 2);
-        if (platter.current) platter.current.rotation.y -= speed.current * delta;
-    });
-    return (
-        <group position={position}>
-            <mesh position={[0, 0.04, 0]} ref={bindRef}>
-                <boxGeometry args={[0.95, 0.08, 0.75]} />
-                <meshStandardMaterial color="#1c1c22" roughness={0.4} metalness={0.5} />
-            </mesh>
-            <group ref={platter} position={[-0.08, 0.1, 0]}>
-                <mesh>
-                    <cylinderGeometry args={[0.31, 0.31, 0.03, 48]} />
-                    <meshStandardMaterial color="#0b0b0e" roughness={0.25} metalness={0.3} />
-                </mesh>
-                <mesh position={[0, 0.017, 0]}>
-                    <cylinderGeometry args={[0.1, 0.1, 0.004, 32]} />
-                    <meshStandardMaterial color={label} emissive={label} emissiveIntensity={0.4} />
-                </mesh>
-                <mesh position={[0.06, 0.02, 0]}>
-                    <boxGeometry args={[0.03, 0.002, 0.01]} />
-                    <meshBasicMaterial color="#ffffff" />
-                </mesh>
-            </group>
-            {/* Tonearm */}
-            <mesh position={[0.32, 0.13, 0.2]} rotation={[0, -0.5, 0]}>
-                <boxGeometry args={[0.03, 0.02, 0.4]} />
-                <meshStandardMaterial color="#c8c8d0" metalness={0.9} roughness={0.2} />
-            </mesh>
-        </group>
-    );
-};
-
 // Flat labels on the gear read the right way up for the DJ, who stands on
 // the -Z side looking toward +Z.
 const DJ_LABEL: [number, number, number] = [-Math.PI / 2, 0, Math.PI];
-
-const DeckButton: React.FC<{
-    position: [number, number, number];
-    radius: number;
-    color: string;
-    text: string;
-    square?: boolean;
-    bindRef: (o: THREE.Object3D | null) => void;
-}> = ({ position, radius, color, text, square, bindRef }) => (
-    <group position={position}>
-        <mesh ref={bindRef}>
-            {square ? <boxGeometry args={[radius * 2, 0.02, radius * 2]} /> : <cylinderGeometry args={[radius, radius, 0.02, 24]} />}
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} />
-        </mesh>
-        <Text position={[0, 0.012, -radius - 0.03]} rotation={DJ_LABEL} fontSize={0.026} color="#d8d0e8" anchorX="center" anchorY="middle">
-            {text}
-        </Text>
-    </group>
-);
 
 const MixerKnob: React.FC<{
     position: [number, number, number];
@@ -233,40 +186,133 @@ export const BirdDogStudio: React.FC = () => {
     const sync = useRef<StudioSync | null>(null);
     // Set once someone already here has told us what's playing.
     const heardRoom = useRef(false);
+    const crateStatus = useCrate((s) => s.status);
+    const crate = useCrate((s) => s.tracks);
+    const djMode = crateStatus === "ready";
+    const scMode = crateStatus === "error";
+    // What the room needs to re-render for: which records are on the
+    // decks and whether they're rolling (the gear itself moves per frame).
+    const booth = useDj(
+        useShallow((s) => ({
+            a: s.decks.a.track,
+            b: s.decks.b.track,
+            aRolling: isRolling(s, "a"),
+            bRolling: isRolling(s, "b"),
+        }))
+    );
+    const studio = useMemo(() => new StudioSignal(), []);
 
-    // Join the shared room, open the player, and start the first track on
-    // arrival if nobody's here to tell us what's on. Finding the others can
-    // take a few seconds, so wait a little before starting on our own.
+    // Join the shared room and get the music going: the decks if the crate
+    // loads, SoundCloud if it doesn't. On arrival, if nobody's here to tell
+    // us what's on, start the first record ourselves - after a moment,
+    // since finding the others can take a few seconds.
     useEffect(() => {
         heardRoom.current = false;
-        const link = connectStudio(visualsRef.current, {
-            onVisuals: ({ mode, palette }) => {
-                setModeIndex(mode % MODES_3D.length);
-                setPaletteIndex(palette % PALETTE_NAMES.length);
-                lastChange.current = clock.elapsedTime;
+        const booth = createDjSync();
+        const link = connectStudio(
+            visualsRef.current,
+            {
+                onVisuals: ({ mode, palette }) => {
+                    setModeIndex(mode % MODES_3D.length);
+                    setPaletteIndex(palette % PALETTE_NAMES.length);
+                    lastChange.current = clock.elapsedTime;
+                },
+                onTransport: (t) => {
+                    if (useCrate.getState().status === "ready") return;
+                    heardRoom.current = true;
+                    syncPlayback(t.track, t.playing, positionNow(t));
+                },
+                onPeers: setListeners,
+                currentTransport: currentPlayback,
             },
-            onTransport: (t) => {
-                heardRoom.current = true;
-                syncPlayback(t.track, t.playing, positionNow(t));
-            },
-            onPeers: setListeners,
-            currentTransport: currentPlayback,
-        });
+            booth
+        );
         sync.current = link;
+        let cancelled = false;
         let startTimer: number | undefined;
-        openStudioMusic(() => {
+        let engineTimer: number | undefined;
+
+        // The engine needs a running AudioContext (after the first click or
+        // key anywhere), so keep trying until there is one.
+        const startEngine = async () => {
+            if (cancelled || engineRef.current) return;
+            const engine = await DjEngine.create().catch(() => null);
+            if (cancelled) return engine?.dispose();
+            if (!engine) {
+                engineTimer = window.setTimeout(startEngine, 500);
+                return;
+            }
+            engineRef.current = engine;
+            studio.live = { analyser: engine.analyser, playing: () => DECKS.some((id) => isRolling(useDj.getState(), id)) };
+        };
+
+        loadCrate().then((tracks) => {
+            if (cancelled) return;
+            if (!tracks) {
+                openStudioMusic(() => {
+                    startTimer = window.setTimeout(() => {
+                        const { tracks: list, current: now } = useStudioMusic.getState();
+                        if (!heardRoom.current && now === null && list.length) playTrack(list[0].index);
+                    }, 2500);
+                });
+                return;
+            }
+            startEngine();
             startTimer = window.setTimeout(() => {
-                const { tracks: list, current: now } = useStudioMusic.getState();
-                if (!heardRoom.current && now === null && list.length) playTrack(list[0].index);
+                const s = useDj.getState();
+                if (booth.heard() || DECKS.some((id) => s.decks[id].track)) return;
+                if (dj.load("a", tracks[0].id)) dj.play("a");
             }, 2500);
         });
+
         return () => {
+            cancelled = true;
             window.clearTimeout(startTimer);
+            window.clearTimeout(engineTimer);
+            closeDjConsole();
             link.leave();
             sync.current = null;
+            engineRef.current?.dispose();
+            engineRef.current = null;
+            studio.live = null;
+            // The booth is the room's; we start fresh next visit.
+            useDj.setState(initialShared());
             closeStudioMusic();
         };
-    }, [clock]);
+    }, [clock, studio]);
+
+    // When a record runs out and the other deck isn't going, put the next
+    // one on so the room isn't left in silence. One visitor does it.
+    useEffect(() => {
+        if (!djMode) return;
+        const id = window.setInterval(() => {
+            if (!(sync.current?.isLeader() ?? true)) return;
+            const s = useDj.getState();
+            DECKS.forEach((deck) => {
+                const d = s.decks[deck];
+                if (!d.track || !d.anchor.playing || isRolling(s, deck)) return;
+                const other: DeckId = deck === "a" ? "b" : "a";
+                if (isRolling(s, other)) return dj.stop(deck);
+                const list = useCrate.getState().tracks;
+                const next = list[(list.findIndex((t) => t.id === d.track) + 1) % list.length];
+                if (next && dj.load(deck, next.id)) dj.play(deck);
+            });
+        }, 1000);
+        return () => window.clearInterval(id);
+    }, [djMode]);
+
+    // A record off the wall goes on whichever deck the crowd can't hear;
+    // if nothing's playing, it starts.
+    const loadRecord = (trackId: string) => {
+        const deck = freeDeck();
+        if (!deck) return;
+        const silent = !DECKS.some((id) => isRolling(useDj.getState(), id));
+        if (dj.load(deck, trackId) && silent) {
+            dj.channel(deck, "fader", 1);
+            dj.play(deck);
+        }
+        playSound("ui-select");
+    };
 
     // The controls: act here, then tell everyone else in the room.
     const share = (intent: PlaybackIntent | null) => {
@@ -277,11 +323,11 @@ export const BirdDogStudio: React.FC = () => {
         setPaletteIndex(palette);
         sync.current?.setVisuals({ mode, palette });
     };
+    const listening = playing || booth.aRolling || booth.bRolling;
     useEffect(() => {
-        if (playing) useAchievementStore.getState().unlock("studio-listen");
-    }, [playing]);
+        if (listening) useAchievementStore.getState().unlock("studio-listen");
+    }, [listening]);
 
-    const studio = useMemo(() => new StudioSignal(), []);
     const signal = useRef<Signal>(studio.value);
     const wall = useMemo(() => new LedWall(), []);
     // Shared, cached materials - not ours to dispose.
@@ -316,7 +362,6 @@ export const BirdDogStudio: React.FC = () => {
     );
     useEffect(() => () => beamMaterials.forEach((m) => m.dispose()), [beamMaterials]);
     const stageRing = useRef<THREE.Mesh>(null);
-    const vu = useRef<(THREE.Mesh | null)[]>([]);
     const lights = useRef<(THREE.PointLight | null)[]>([]);
 
     useFrame(({ clock }, delta) => {
@@ -347,12 +392,6 @@ export const BirdDogStudio: React.FC = () => {
             const m = stageRing.current.material as THREE.MeshBasicMaterial;
             m.color.copy(palette[0]).multiplyScalar(0.4 + b.bass * 1.2);
         }
-        vu.current.forEach((bar, i) => {
-            if (!bar) return;
-            const level = Math.min(1, 0.05 + (i % 2 ? b.mid : b.bass) * 1.2);
-            bar.scale.z = level;
-            bar.position.z = -0.15 * (1 - level); // anchored at the DJ's end
-        });
         lights.current.forEach((light, i) => {
             if (!light) return;
             light.color.copy(palette[i % palette.length]);
@@ -361,8 +400,19 @@ export const BirdDogStudio: React.FC = () => {
     });
 
     const nowPlaying = tracks.find((t) => t.index === current);
-    const statusLine =
-        status === "error"
+    const company = listeners ? `  ·  ${listeners + 1} here` : "";
+    const deckLine = (id: DeckId) => {
+        const meta = trackMeta(booth[id]);
+        return meta ? `${id === "a" ? "1" : "2"} ${booth[`${id}Rolling`] ? "▶" : "❚❚"} ${meta.title}` : null;
+    };
+    const onDecks = [deckLine("a"), deckLine("b")].filter(Boolean).join("     ");
+    const statusLine = djMode
+        ? onDecks
+            ? onDecks + company
+            : "Step up to the decks, or pick a record off the wall."
+        : !scMode
+        ? "Digging through the crate…"
+        : status === "error"
             ? "Couldn't reach SoundCloud right now."
             : status !== "ready"
             ? "Tuning in to Bird Dog on SoundCloud…"
@@ -372,8 +422,33 @@ export const BirdDogStudio: React.FC = () => {
 
     const prompt = (action: string, accent: "gold" | "green" | "purple" = "gold") => () => <GemPrompt accent={accent} action={action} />;
 
-    // Records: a face-out wall display on the east wall.
-    const records = tracks.slice(0, RECORD_COLUMNS * RECORD_ROWS);
+    // Records: a face-out wall display on the east wall - the crate, or
+    // the SoundCloud list when the studio is streaming instead.
+    const records: (WallRecord & { playing: boolean; prompt: string; use: () => void })[] = (
+        djMode
+            ? crate.map((t, i) => {
+                  const on = DECKS.find((id) => booth[id] === t.id) ?? null;
+                  const free = freeDeck();
+                  return {
+                      key: t.id,
+                      title: t.title,
+                      artwork: null,
+                      colorIndex: i,
+                      playing: on !== null && booth[`${on}Rolling`],
+                      prompt: on ? `On deck ${on === "a" ? 1 : 2}` : free ? `Put "${t.title}" on deck ${free === "a" ? 1 : 2}` : "Both decks are playing",
+                      use: () => !on && loadRecord(t.id),
+                  };
+              })
+            : tracks.map((t) => ({
+                  key: String(t.id),
+                  title: t.title,
+                  artwork: t.artwork,
+                  colorIndex: t.index,
+                  playing: t.index === current,
+                  prompt: t.index === current ? (playing ? "Playing" : "Resume") : `Play "${t.title}"`,
+                  use: () => share(t.index === current ? togglePlayback() : playTrack(t.index)),
+              }))
+    ).slice(0, RECORD_COLUMNS * RECORD_ROWS);
 
     const foam = useMemo(() => {
         // Acoustic foam: wedge panels tiled on both side walls.
@@ -523,90 +598,45 @@ export const BirdDogStudio: React.FC = () => {
                     {statusLine}
                 </Text>
 
-                {/* Two decks butted up against the mixer. The DJ stands on the
-                    stage side (-Z), so "left" for them is +X. Each deck has
-                    its transport buttons in the corner nearest the DJ, the way
-                    a real deck does. */}
-                {[
-                    { x: DECK_X, label: "#ff2975", second: { id: "prev", text: "PREV", use: () => share(previousTrack()), prompt: "Previous track" } },
-                    { x: -DECK_X, label: "#00ffdd", second: { id: "next", text: "NEXT", use: () => share(nextTrack()), prompt: "Next track" } },
-                ].map((deck) => (
-                    <group key={deck.x} position={[deck.x, 0.9, 0]}>
-                        <Turntable position={[0, 0, 0]} spinning={playing} label={deck.label} />
-                        <DeckButton
-                            position={[0.33, 0.085, -0.27]}
-                            radius={0.06}
-                            color={playing ? "#3ee58f" : "#ffd23c"}
-                            text={playing ? "PAUSE" : "PLAY"}
-                            bindRef={aim.bind(`play-${deck.x}`, { reach: 4.5, prompt: prompt(playing ? "Pause" : "Play"), use: () => share(togglePlayback()) })}
-                        />
-                        <DeckButton
-                            position={[0.33, 0.085, -0.08]}
-                            radius={0.042}
-                            color="#00bbf9"
-                            text={deck.second.text}
-                            square
-                            bindRef={aim.bind(deck.second.id, { reach: 4.5, prompt: prompt(deck.second.prompt), use: deck.second.use })}
-                        />
-                        {/* Pitch fader, for looks */}
-                        <mesh position={[0.4, 0.083, 0.17]}>
-                            <boxGeometry args={[0.025, 0.004, 0.22]} />
-                            <meshStandardMaterial color="#0a0a0e" />
-                        </mesh>
-                        <mesh position={[0.4, 0.092, 0.17]}>
-                            <boxGeometry args={[0.05, 0.014, 0.03]} />
-                            <meshStandardMaterial color="#d8d8e0" metalness={0.8} roughness={0.3} />
-                        </mesh>
-                    </group>
-                ))}
-
-                {/* Mixer: level meters, channel faders, a crossfader, and the
-                    two big knobs that change the show */}
+                {/* Two CDJs either side of a DJM (dj/DjBooth3D.tsx), every
+                    control where the shared booth has it. The DJ stands on
+                    the stage side (-Z), so "left" for them is +X: deck 1. */}
                 <group position={[0, 0.9, 0]}>
+                    <DjBooth3D
+                        deckX={DECK_X}
+                        fallbackPlaying={scMode && playing}
+                        bindCdj={(id) =>
+                            aim.bind(`cdj-${id}`, {
+                                reach: 4.5,
+                                ...(djMode
+                                    ? { prompt: prompt("Step up to the decks", "purple"), use: openDjConsole }
+                                    : scMode && id === "a"
+                                    ? { prompt: prompt(playing ? "Pause" : "Play"), use: () => share(togglePlayback()) }
+                                    : scMode
+                                    ? { prompt: prompt("Next track"), use: () => share(nextTrack()) }
+                                    : { prompt: prompt("Digging through the crate…"), use: () => {} }),
+                            })
+                        }
+                        bindMixer={aim.bind("mixer", {
+                            reach: 4.5,
+                            prompt: prompt(djMode ? "Step up to the decks" : "The decks are warming up", "purple"),
+                            use: () => djMode && openDjConsole(),
+                        })}
+                    />
+                </group>
+
+                {/* The light desk, at the DJ's right hand: the two big knobs
+                    that change the show */}
+                <group position={[-1.5, 0.9, -0.05]}>
                     <mesh position={[0, 0.04, 0]}>
-                        <boxGeometry args={[MIXER_WIDTH, 0.08, 0.76]} />
+                        <boxGeometry args={[0.32, 0.08, 0.62]} />
                         <meshStandardMaterial color="#26222e" roughness={0.4} metalness={0.5} />
                     </mesh>
-                    {[-0.22, -0.16, 0.16, 0.22].map((x, i) => (
-                        <group key={x} position={[x, 0.082, 0.04]}>
-                            <mesh>
-                                <boxGeometry args={[0.026, 0.002, 0.3]} />
-                                <meshBasicMaterial color="#0a0a10" />
-                            </mesh>
-                            {/* The meter fills from the DJ's end */}
-                            <mesh
-                                position={[0, 0.002, 0]}
-                                ref={(m) => {
-                                    vu.current[i] = m;
-                                }}
-                            >
-                                <boxGeometry args={[0.02, 0.003, 0.3]} />
-                                <meshBasicMaterial color={i % 2 ? "#00ffdd" : "#ff2975"} toneMapped={false} />
-                            </mesh>
-                        </group>
-                    ))}
-                    {[-0.07, 0.07].map((x) => (
-                        <group key={x} position={[x, 0.082, -0.08]}>
-                            <mesh>
-                                <boxGeometry args={[0.02, 0.002, 0.2]} />
-                                <meshBasicMaterial color="#0a0a10" />
-                            </mesh>
-                            <mesh position={[0, 0.012, 0.03]}>
-                                <boxGeometry args={[0.06, 0.02, 0.025]} />
-                                <meshStandardMaterial color="#e8e4dc" />
-                            </mesh>
-                        </group>
-                    ))}
-                    <mesh position={[0, 0.082, -0.31]}>
-                        <boxGeometry args={[0.3, 0.002, 0.02]} />
-                        <meshBasicMaterial color="#0a0a10" />
-                    </mesh>
-                    <mesh position={[0, 0.094, -0.31]}>
-                        <boxGeometry args={[0.03, 0.022, 0.06]} />
-                        <meshStandardMaterial color="#e8e4dc" />
-                    </mesh>
+                    <Text position={[0, 0.082, 0.27]} rotation={DJ_LABEL} fontSize={0.026} color="#9a96a8" anchorX="center" anchorY="middle">
+                        LIGHTS
+                    </Text>
                     <MixerKnob
-                        position={[0.11, 0.08, 0.24]}
+                        position={[0, 0.08, 0.1]}
                         color="#f222ff"
                         text="VISUALS"
                         turn={modeIndex / MODES_3D.length}
@@ -621,7 +651,7 @@ export const BirdDogStudio: React.FC = () => {
                         })}
                     />
                     <MixerKnob
-                        position={[-0.11, 0.08, 0.24]}
+                        position={[0, 0.08, -0.14]}
                         color="#ffd700"
                         text="COLOURS"
                         turn={paletteIndex / PALETTE_NAMES.length}
@@ -809,21 +839,21 @@ export const BirdDogStudio: React.FC = () => {
                 RECORDS
             </Text>
             <Text position={[HALF_X - 0.05, 4.62, 2.0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.13} color="#a99cc8" anchorX="center">
-                {status === "ready" ? "Look at a record and press E to play it" : "Loading the crate…"}
+                {djMode
+                    ? "Look at a record and press E to put it on a deck"
+                    : status === "ready"
+                    ? "Look at a record and press E to play it"
+                    : "Loading the crate…"}
             </Text>
-            {records.map((track, i) => {
+            {records.map((record, i) => {
                 const col = i % RECORD_COLUMNS;
                 const row = Math.floor(i / RECORD_COLUMNS);
                 return (
-                    <group key={track.id} position={[HALF_X - 0.06, 3.85 - row * 0.95, 0.35 + col * 1.1]} rotation={[0, -Math.PI / 2, 0]}>
+                    <group key={record.key} position={[HALF_X - 0.06, 3.85 - row * 0.95, 0.35 + col * 1.1]} rotation={[0, -Math.PI / 2, 0]}>
                         <Sleeve
-                            track={track}
-                            playing={track.index === current}
-                            bindRef={aim.bind(`record-${track.id}`, {
-                                reach: 5,
-                                prompt: prompt(track.index === current ? (playing ? "Playing" : "Resume") : `Play "${track.title}"`),
-                                use: () => share(track.index === current ? togglePlayback() : playTrack(track.index)),
-                            })}
+                            record={record}
+                            playing={record.playing}
+                            bindRef={aim.bind(`record-${record.key}`, { reach: 5, prompt: prompt(record.prompt), use: record.use })}
                         />
                     </group>
                 );

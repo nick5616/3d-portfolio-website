@@ -3,6 +3,33 @@ import { WORLD_ONLY } from "../../utils/site";
 
 // Canvas compositing for the sketchbook's pages and covers.
 
+// What makes one book look different from another on the lectern.
+export interface BookStyle {
+    title: string; // gold-foil title on the cover
+    tagline: string; // under "Ex Libris" on the bookplate
+    leather: [string, string]; // cover gradient, light -> dark
+    endpaper: string; // marbled inside-cover base
+    board: string; // back board + spine
+}
+
+export const SKETCHES_BOOK: BookStyle = {
+    title: "Sketches",
+    tagline: "ideas start here",
+    leather: ["#21402f", "#16291f"],
+    endpaper: "#2c4a3a",
+    board: "#1c3326",
+};
+
+// Drawn with my left hand while learning to be ambidextrous. The book
+// itself is bound "backwards" (spine on the right, reads right to left).
+export const LEFT_HAND_BOOK: BookStyle = {
+    title: "Left Hand",
+    tagline: "practice makes ambidextrous",
+    leather: ["#5a2424", "#381414"],
+    endpaper: "#4d2a2a",
+    board: "#3e1a1a",
+};
+
 export const PAGE_PX_W = 720;
 export const PAGE_PX_H = 960; // page aspect 3:4
 
@@ -135,10 +162,10 @@ export const blankPage = (spineOnLeft: boolean, text?: string) => {
     return toTexture(canvas, !spineOnLeft);
 };
 
-const leather = (context: CanvasRenderingContext2D) => {
+const leather = (context: CanvasRenderingContext2D, style: BookStyle) => {
     const base = context.createLinearGradient(0, 0, PAGE_PX_W, PAGE_PX_H);
-    base.addColorStop(0, "#21402f");
-    base.addColorStop(1, "#16291f");
+    base.addColorStop(0, style.leather[0]);
+    base.addColorStop(1, style.leather[1]);
     context.fillStyle = base;
     context.fillRect(0, 0, PAGE_PX_W, PAGE_PX_H);
     // Grain
@@ -162,10 +189,12 @@ const goldFoil = (context: CanvasRenderingContext2D) => {
     return foil;
 };
 
-export const frontCover = () => {
+// `mirrored`: the book is drawn mirror-imaged (spine on the right), so its
+// covers are flipped back to read the right way round.
+export const frontCover = (style: BookStyle, mirrored = false) => {
     const canvas = newCanvas();
     const context = canvas.getContext("2d")!;
-    leather(context);
+    leather(context, style);
     const foil = goldFoil(context);
     context.strokeStyle = foil;
     context.lineWidth = 3;
@@ -188,17 +217,17 @@ export const frontCover = () => {
     context.fillStyle = foil;
     context.textAlign = "center";
     context.font = "italic 600 92px Fraunces, Georgia, serif";
-    context.fillText("Sketches", cx, PAGE_PX_H * 0.62);
+    context.fillText(style.title, cx, PAGE_PX_H * 0.62);
     context.font = "500 22px Manrope, system-ui, sans-serif";
     context.fillText("N  ·  B", cx, PAGE_PX_H * 0.69);
-    return toTexture(canvas, false);
+    return toTexture(canvas, mirrored);
 };
 
-export const insideCover = () => {
+export const insideCover = (style: BookStyle, mirrored = false) => {
     const canvas = newCanvas();
     const context = canvas.getContext("2d")!;
     // Marbled-ish endpaper: soft overlapping ellipses
-    context.fillStyle = "#2c4a3a";
+    context.fillStyle = style.endpaper;
     context.fillRect(0, 0, PAGE_PX_W, PAGE_PX_H);
     for (let i = 0; i < 160; i++) {
         context.fillStyle = `rgba(${200 + Math.random() * 55},${180 + Math.random() * 50},${120 + Math.random() * 60},${0.05 + Math.random() * 0.08})`;
@@ -234,8 +263,8 @@ export const insideCover = () => {
     }
     context.font = "500 18px Manrope, system-ui, sans-serif";
     context.fillStyle = "rgba(59,49,39,0.7)";
-    context.fillText("ideas start here", PAGE_PX_W / 2, y + 205);
-    return toTexture(canvas, true);
+    context.fillText(style.tagline, PAGE_PX_W / 2, y + 205);
+    return toTexture(canvas, !mirrored);
 };
 
 export const fontsReady = () =>

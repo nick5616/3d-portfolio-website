@@ -533,7 +533,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 width: 3,
                 height: 4,
                 entrancePoint: {
-                    position: [0, 1.5, 7] as [number, number, number],
+                    position: [0, 1.5, 3.6] as [number, number, number],
                     rotation: [0, 0, 0] as [number, number, number],
                 },
             },
@@ -593,15 +593,26 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         ],
     },
 
+    // A second sketchbook rotunda: drawings made left-handed, in a book
+    // bound the other way round.
     "gallery-hall-lefthanded": {
         id: "gallery-hall-lefthanded",
-        name: "Left-Handed Hall",
+        name: "Left-Handed Rotunda",
         position: [-20, 0, -50] as [number, number, number],
-        dimensions: [20, GALLERY_HALL_CEILING_HEIGHT, 20],
-        galleryRoomKind: { kind: "hall", category: "lefthanded" },
-        lightPreset: galleryHallLightPreset("#ffe0cc"),
+        dimensions: [12, SKETCHBOOK_WALL_HEIGHT, 12], // circular, width = diameter
+        galleryRoomKind: { kind: "sketchbook", category: "lefthanded" },
+        circular: true,
+        // SketchbookRotunda lights itself; this only satisfies the type.
+        lightPreset: {
+            ambient: { intensity: 0.2, color: "#fff1dc" },
+            directional: {
+                position: [0, 8, 0] as [number, number, number],
+                intensity: 0,
+                color: "#fff1dc",
+            },
+        },
         defaultEntrance: {
-            position: [0, 1.5, 7] as [number, number, number],
+            position: [0, 1.5, 3.6] as [number, number, number],
             rotation: [0, 0, 0] as [number, number, number],
         },
         interactiveElements: [],
@@ -609,10 +620,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 id: "to-gallery-hall-paintings-from-lefthanded",
                 targetRoomId: "gallery-hall-paintings",
-                position: [0, 0, 9.7] as [number, number, number],
+                position: [0, 0, 5.85] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
-                width: 3,
-                height: 4,
+                width: 2.4,
+                height: 3.6,
                 entrancePoint: {
                     position: [0, 1.5, -7] as [number, number, number],
                     rotation: [0, Math.PI, 0] as [number, number, number],
@@ -664,6 +675,10 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         ],
     },
 
+    // Not really a hall any more: TruthRoom (a custom room, see
+    // customRooms.ts) replaces it with a white void and a watching eye. It
+    // keeps its hall kind so doors, music and theming treat it as part of
+    // the gallery.
     "gallery-hall-notesappart": {
         id: "gallery-hall-notesappart",
         name: "Notes App Art",

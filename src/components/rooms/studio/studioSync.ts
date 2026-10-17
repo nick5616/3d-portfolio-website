@@ -1,9 +1,12 @@
 import { connectSharedRoom } from "../../../multiplayer/sharedRoom";
+import type { DjSync } from "./dj/djSync";
 
 // Everyone in Bird Dog's studio sees the same show and hears the same song
-// (see multiplayer/sharedRoom.ts). The room has two parts: the visuals (the
-// two mixer knobs) and the transport (which record, playing or paused, and
-// where in it). Each is sent only when someone changes it.
+// (see multiplayer/sharedRoom.ts). The room has the visuals (the two light
+// knobs), the booth (dj/djSync.ts: every control on the decks and mixer),
+// and - when the decks can't load and the studio falls back to SoundCloud -
+// the transport (which record, playing or paused, and where in it). Each
+// part is sent only when someone changes it.
 
 export type Visuals = { mode: number; palette: number };
 export type Transport = {
@@ -38,22 +41,26 @@ export interface StudioSync {
 export const positionNow = (t: Transport) =>
     t.playing ? t.position + Math.min(MAX_FLIGHT_MS, Math.max(0, Date.now() - t.sentAt)) : t.position;
 
-export const connectStudio = (initial: Visuals, handlers: StudioSyncHandlers): StudioSync => {
+export const connectStudio = (initial: Visuals, handlers: StudioSyncHandlers, dj: DjSync): StudioSync => {
     let visuals = initial;
     const room = connectSharedRoom("bird-dog-studio", {
         snapshot: () => ({
             visuals,
             transport: { ...handlers.currentTransport(), sentAt: Date.now() },
+            ...dj.snapshot(),
         }),
-        apply: (parts) => {
+        apply: (parts, from) => {
             if (parts.visuals) {
                 visuals = parts.visuals as Visuals;
                 handlers.onVisuals(visuals);
             }
             if (parts.transport) handlers.onTransport(parts.transport as Transport);
+            dj.apply(parts, from);
         },
         onPeers: handlers.onPeers,
+        onPeerJoin: dj.onPeerJoin,
     });
+    dj.attach(room);
     return {
         setVisuals: (value) => {
             visuals = value;
@@ -61,6 +68,9 @@ export const connectStudio = (initial: Visuals, handlers: StudioSyncHandlers): S
         },
         setTransport: (value) => room.publish({ transport: { ...value, sentAt: Date.now() } }),
         isLeader: room.isLeader,
-        leave: room.leave,
+        leave: () => {
+            dj.leave();
+            room.leave();
+        },
     };
 };

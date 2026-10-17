@@ -7,6 +7,9 @@ import { ArtInspector } from "./components/ui/ArtInspector";
 import { SketchbookHUD } from "./components/sketchbook/SketchbookHUD";
 import { ProjectViewer } from "./components/projects/ProjectViewer";
 import { MeteorHUD } from "./components/rooms/experiences/math/MeteorHUD";
+import { useDjConsole } from "./components/rooms/studio/dj/consoleGate";
+
+const DjConsole = React.lazy(() => import("./components/rooms/studio/dj/DjConsole"));
 import { useRoomSoundscape } from "./audio/roomSoundscape";
 import { WebGLErrorBoundary } from "./components/ui/WebGLErrorBoundary";
 import { useDeviceDetection } from "./hooks/useDeviceDetection";
@@ -27,6 +30,7 @@ export default function App() {
     const [hasInteracted, setHasInteracted] = useState(false);
 
     const currentRoomId = useSceneStore((s) => s.currentRoom?.id);
+    const djConsoleOpen = useDjConsole((s) => s.open);
     useEffect(() => {
         // Textures for the room you're standing in load right away; rooms
         // one door away load in the background once the browser is idle.
@@ -220,6 +224,11 @@ export default function App() {
             <SketchbookHUD />
             <ProjectViewer />
             <MeteorHUD />
+            {djConsoleOpen && (
+                <Suspense fallback={null}>
+                    <DjConsole />
+                </Suspense>
+            )}
             {/*
                 Rendered unconditionally (not just as the Suspense fallback)
                 because Scene.tsx wraps its own suspending content (models,

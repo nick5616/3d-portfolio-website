@@ -64,7 +64,16 @@ export const loadAnalysis = (track: Track) => {
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const noise = (x: number) => Math.sin(x * 1.7) * 0.5 + Math.sin(x * 3.1 + 1.3) * 0.3 + Math.sin(x * 7.3 + 2.1) * 0.2;
 
+// When the booth is playing, the visuals hear the real mix instead.
+export interface LiveSource {
+    analyser: AnalyserNode;
+    playing: () => boolean;
+}
+
 export class StudioSignal {
+    live: LiveSource | null = null;
+    private bins: Uint8Array | null = null;
+    private bassAverage = 0;
     readonly value: Signal = {
         bass: 0,
         low: 0,
@@ -82,6 +91,7 @@ export class StudioSignal {
 
     update(delta: number) {
         this.time += delta;
+        if (this.live) return this.fromMix(delta, this.live);
         const music = useStudioMusic.getState();
         const track = music.tracks.find((t) => t.index === music.current) ?? null;
         if (track && this.analysisFor !== track.id) {
@@ -133,6 +143,45 @@ export class StudioSignal {
             const tilt = 1 - (k / 128) * 0.45;
             const shimmer = 0.7 + 0.3 * noise(k * 0.37 + t * 5);
             v.spectrum[k] = lerp(v.spectrum[k], Math.min(255, band * tilt * shimmer * 300), Math.min(1, delta * 18));
+        }
+        return v;
+    }
+
+    // Bands and a 128-bin log spectrum straight from the master output.
+    private fromMix(delta: number, live: LiveSource) {
+        const { analyser } = live;
+        if (!this.bins || this.bins.length !== analyser.frequencyBinCount) this.bins = new Uint8Array(analyser.frequencyBinCount);
+        const bins = this.bins;
+        analyser.getByteFrequencyData(bins);
+        const hz = analyser.context.sampleRate / analyser.fftSize;
+        const band = (from: number, to: number) => {
+            const a = Math.max(1, Math.floor(from / hz));
+            const b = Math.max(a + 1, Math.floor(to / hz));
+            let sum = 0;
+            for (let i = a; i < b; i++) sum += bins[i];
+            return Math.min(1, (sum / (b - a) / 255) * 1.35);
+        };
+        const v = this.value;
+        v.playing = live.playing();
+        const smooth = (current: number, target: number, rate: number) => lerp(current, target, Math.min(1, delta * rate));
+        const bass = band(30, 140);
+        v.bass = smooth(v.bass, bass, 20);
+        v.low = smooth(v.low, band(140, 500), 14);
+        v.mid = smooth(v.mid, band(500, 3000), 14);
+        v.high = smooth(v.high, band(3000, 12000) * 1.4, 18);
+        v.total = (v.bass + v.low + v.mid + v.high) / 4;
+        // A drop: the low end coming back hard after time away.
+        this.bassAverage = lerp(this.bassAverage, bass, Math.min(1, delta * 0.4));
+        const jump = bass - this.bassAverage;
+        v.drop = jump > 0.35 && bass > 0.6 ? Math.max(v.drop, Math.min(1, jump * 2)) : Math.max(0, v.drop - delta * 2.2);
+        for (let k = 0; k < 128; k++) {
+            const f0 = 30 * Math.pow(16000 / 30, k / 128);
+            const f1 = 30 * Math.pow(16000 / 30, (k + 1) / 128);
+            const a = Math.floor(f0 / hz);
+            const b = Math.max(a + 1, Math.floor(f1 / hz));
+            let peak = 0;
+            for (let i = a; i < b && i < bins.length; i++) peak = Math.max(peak, bins[i]);
+            v.spectrum[k] = lerp(v.spectrum[k], peak, Math.min(1, delta * 18));
         }
         return v;
     }

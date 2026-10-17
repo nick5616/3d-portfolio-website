@@ -18,4 +18,5 @@ export const CUSTOM_ROOMS: Record<string, LazyExoticComponent<ComponentType>> = 
     "rupee-shop": room(() => import("./shop/RupeeShop"), "RupeeShop"),
     observatory: room(() => import("./observatory/Observatory"), "Observatory"),
     "marble-machine": room(() => import("./marble/MarbleMachine"), "MarbleMachine"),
+    "gallery-hall-notesappart": room(() => import("./truth/TruthRoom"), "TruthRoom"),
 };

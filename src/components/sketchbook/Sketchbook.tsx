@@ -12,7 +12,9 @@ import { detectIsMobile } from "../../utils/deviceDetection";
 import { useSketchbookStore } from "./sketchbookStore";
 import { GemPrompt } from "../ui/GemPrompt";
 import { isWorldUnfocused } from "../../utils/worldFocus";
+import { ArtCategoryId } from "../../configs/gcsConfig";
 import {
+    BookStyle,
     blankPage,
     fontsReady,
     frontCover,
@@ -85,10 +87,18 @@ interface LeafRender {
     loaded: boolean;
 }
 
+// A mirrored book is the same book drawn with scale.x = -1: spine on the
+// right, pages turning left to right. All the physics and pointer maths
+// stay in book-local space, so only the textures (flipped back to read
+// correctly) and the arrow keys need to know.
 export const Sketchbook: React.FC<{
     position: [number, number, number];
     rotation: [number, number, number];
-}> = ({ position, rotation }) => {
+    category: ArtCategoryId;
+    style: BookStyle;
+    mirrored?: boolean;
+    finishAchievement?: string;
+}> = ({ position, rotation, category, style, mirrored = false, finishAchievement }) => {
     const camera = useThree((state) => state.camera);
     const gl = useThree((state) => state.gl);
     const groupRef = useRef<THREE.Group>(null);
@@ -99,8 +109,8 @@ export const Sketchbook: React.FC<{
     const isMobile = useMemo(() => detectIsMobile(), []);
 
     useEffect(() => {
-        getAllArtPieces("sketches").then(setPieces).catch(() => setPieces([]));
-    }, []);
+        getAllArtPieces(category).then(setPieces).catch(() => setPieces([]));
+    }, [category]);
 
     // Leaf 0 is the front cover; every following leaf carries two sketches.
     const leafCount = pieces.length ? 1 + Math.ceil(pieces.length / 2) : 0;
@@ -134,7 +144,7 @@ export const Sketchbook: React.FC<{
             const make = () =>
                 new THREE.MeshStandardMaterial({
                     // Paper-colored until the page's artwork arrives.
-                    color: isCover ? "#1f3a2c" : "#efe6d2",
+                    color: isCover ? style.leather[1] : "#efe6d2",
                     roughness: isCover ? 0.6 : 0.93,
                     side: THREE.FrontSide,
                 });
@@ -154,7 +164,7 @@ export const Sketchbook: React.FC<{
                 loaded: false,
             };
         });
-    }, [leafCount]);
+    }, [leafCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(
         () => () => {
@@ -203,17 +213,21 @@ export const Sketchbook: React.FC<{
         leaf.loaded = true;
         if (i === 0) {
             await fontsReady();
-            leaf.front.map = frontCover();
-            leaf.back.map = insideCover();
+            leaf.front.map = frontCover(style, mirrored);
+            leaf.back.map = insideCover(style, mirrored);
         } else {
             const sides = await Promise.all(
                 (["front", "back"] as const).map(async (side) => {
+                    // In a mirrored book the front of a leaf has its spine
+                    // on the right; compositing it that way and letting the
+                    // texture flip undo the mirror lands everything right.
+                    const spineOnLeft = (side === "front") !== mirrored;
                     const index = imageFor(i, side);
-                    if (index === null) return blankPage(side === "front");
+                    if (index === null) return blankPage(spineOnLeft);
                     const bitmap = await loadBitmap(
                         resizedImageUrl(pieces[index].url, 1100, 80)
                     );
-                    const texture = sketchPage(bitmap, index + 1, side === "front");
+                    const texture = sketchPage(bitmap, index + 1, spineOnLeft);
                     bitmap?.close();
                     return texture;
                 })
@@ -354,8 +368,10 @@ export const Sketchbook: React.FC<{
         useSketchbookStore.getState().set({
             leaves: leafCount,
             images: pieces.length,
+            title: style.title,
+            mirrored,
         });
-    }, [leafCount, pieces.length]);
+    }, [leafCount, pieces.length, style.title, mirrored]);
 
     // Keyboard
     useEffect(() => {
@@ -375,14 +391,18 @@ export const Sketchbook: React.FC<{
                 }
                 return;
             }
+            // Arrows follow the page: a mirrored book turns forward to the
+            // right, so "next" is the left arrow there.
+            const forward = mirrored ? ["ArrowLeft", "KeyA"] : ["ArrowRight", "KeyD"];
+            const back = mirrored ? ["ArrowRight", "KeyD"] : ["ArrowLeft", "KeyA"];
             switch (event.code) {
-                case "ArrowRight":
-                case "KeyD":
+                case forward[0]:
+                case forward[1]:
                 case "Space":
                     next();
                     break;
-                case "ArrowLeft":
-                case "KeyA":
+                case back[0]:
+                case back[1]:
                     prev();
                     break;
                 case "KeyE":
@@ -511,7 +531,7 @@ export const Sketchbook: React.FC<{
             const index =
                 x >= 0 ? imageFor(spread, "front") : imageFor(spread - 1, "back");
             if (index !== null) {
-                useArtInspectStore.getState().openInspect("sketches", index);
+                useArtInspectStore.getState().openInspect(category, index);
             }
         };
         element.addEventListener("pointerdown", onDown);
@@ -663,7 +683,9 @@ export const Sketchbook: React.FC<{
             store.set({ spread: turnedCount });
             if (turnedCount === n && n > 0 && !finishedOnce.current) {
                 finishedOnce.current = true;
-                useAchievementStore.getState().unlock("sketchbook-finished");
+                if (finishAchievement) {
+                    useAchievementStore.getState().unlock(finishAchievement);
+                }
             }
         }
         if (leaves.length) updateTextures(turnedCount);
@@ -706,19 +728,24 @@ export const Sketchbook: React.FC<{
     const bookThickness = BACK_BOARD + leafCount * LEAF_T + 0.004;
 
     return (
-        <group ref={groupRef} position={position} rotation={rotation}>
+        <group
+            ref={groupRef}
+            position={position}
+            rotation={rotation}
+            scale={[mirrored ? -1 : 1, 1, 1]}
+        >
             {/* Back board: the only fixed board. The front cover is leaf 0,
                 which swings over to the left when the book opens. */}
             <mesh position={[PAGE_W / 2 + 0.006, BACK_BOARD / 2, 0]}>
                 <boxGeometry args={[PAGE_W + 0.014, BACK_BOARD, PAGE_H + 0.018]} />
-                <meshStandardMaterial color="#1c3326" roughness={0.6} />
+                <meshStandardMaterial color={style.board} roughness={0.6} />
             </mesh>
             {/* Spine: a rounded leather edge as thick as the whole book,
                 with two gold bands */}
             <group ref={spine} position={[0, bookThickness / 2, 0]}>
                 <mesh rotation={[Math.PI / 2, 0, 0]}>
                     <cylinderGeometry args={[bookThickness / 2, bookThickness / 2, PAGE_H + 0.018, 18, 1, true, Math.PI, Math.PI]} />
-                    <meshStandardMaterial color="#173022" roughness={0.55} side={THREE.DoubleSide} />
+                    <meshStandardMaterial color={style.board} roughness={0.55} side={THREE.DoubleSide} />
                 </mesh>
                 {[-0.2, 0.2].map((z) => (
                     <mesh key={z} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]}>
@@ -759,7 +786,7 @@ export const Sketchbook: React.FC<{
                     <GemPrompt
                         accent="gold"
                         keyLabel={isMobile ? null : "E"}
-                        action={isMobile ? "Tap to read the sketchbook" : "Read the sketchbook"}
+                        action={isMobile ? `Tap to read ${style.title}` : `Read ${style.title}`}
                     />
                 </Html>
             )}

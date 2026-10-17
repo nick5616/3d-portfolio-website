@@ -181,36 +181,44 @@ export class GardenBuilder {
         }
     }
 
-    // A strand of ivy spilling over a balustrade at `top` and hanging down,
-    // `inward` being the horizontal direction away from the rail, clearing
-    // it by `reach`.
-    ivy(top: THREE.Vector3, inward: THREE.Vector3, length: number, seed: number, reach = 0.35) {
-        const spacing = 0.15;
-        const count = Math.floor(length / spacing);
+    // A strand of ivy draped along `profile` - [inward, up] offsets from
+    // `anchor`, `inward` being the horizontal direction away from the rail -
+    // so it hugs whatever it climbs over, then hangs free for `hang` metres
+    // below the profile's last point.
+    ivy(anchor: THREE.Vector3, inward: THREE.Vector3, profile: [number, number][], hang: number, seed: number) {
+        const tangent = new THREE.Vector3(-inward.z, 0, inward.x);
+        const points = profile.map(([i, u]) => anchor.clone().addScaledVector(inward, i).add(new THREE.Vector3(0, u, 0)));
+        const lengths = [0];
+        for (let k = 1; k < points.length; k++) lengths.push(lengths[k - 1] + points[k].distanceTo(points[k - 1]));
+        const draped = lengths[lengths.length - 1];
+        const count = Math.floor((draped + hang) / 0.15);
         const p = new THREE.Vector3();
         for (let i = 0; i < count; i++) {
             const s = seed * 101 + i;
-            const d = i * spacing;
-            // First 0.4 m arc over the rail, the rest hangs with a slow wiggle.
-            const over = Math.min(d, 0.4) / 0.4;
-            p.copy(top)
-                .addScaledVector(inward, reach * Math.sin((over * Math.PI) / 2) + Math.sin(d * 2.1 + seed) * 0.05)
-                .add(new THREE.Vector3(0, -Math.max(0, d - 0.25), 0));
-            p.y += 0.12 * Math.sin(over * Math.PI);
+            const d = i * 0.15;
+            if (d < draped) {
+                let k = 1;
+                while (lengths[k] < d) k++;
+                p.lerpVectors(points[k - 1], points[k], (d - lengths[k - 1]) / (lengths[k] - lengths[k - 1]));
+            } else {
+                // Past the edge it hangs free, with a slow wiggle off the wall.
+                const free = d - draped;
+                p.copy(points[points.length - 1])
+                    .addScaledVector(inward, 0.04 + Math.sin(free * 2.1 + seed) * 0.04)
+                    .add(new THREE.Vector3(0, -free, 0));
+            }
+            // Meander sideways along the rail, never off the surface.
+            p.addScaledVector(tangent, Math.sin(d * 1.7 + seed) * 0.05 + (seeded(s + 4) - 0.5) * 0.08);
             const leaf = new THREE.OctahedronGeometry(1, 0);
             const size = 0.07 + seeded(s) * 0.05;
             leaf.scale(size * 1.3, size * 0.35, size);
             leaf.rotateX(seeded(s + 1) * Math.PI);
             leaf.rotateY(seeded(s + 2) * Math.PI * 2);
             leaf.rotateZ((seeded(s + 3) - 0.5) * 1.2);
-            const jitter = 0.06;
-            leaf.translate(
-                p.x + (seeded(s + 4) - 0.5) * jitter * 2,
-                p.y,
-                p.z + (seeded(s + 5) - 0.5) * jitter * 2
-            );
+            leaf.translate(p.x, p.y, p.z);
             const shade = pick(LEAF_GREENS, s + 6);
-            const sway = (d / length) * 1.6;
+            // Clinging leaves barely stir; the free end swings.
+            const sway = d < draped ? 0.1 : 0.3 + ((d - draped) / Math.max(hang, 0.01)) * 1.3;
             this.parts.push(finish(leaf, () => color.set(shade).multiplyScalar(0.8 + seeded(s + 8) * 0.35), sway));
         }
     }

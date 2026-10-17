@@ -116,6 +116,8 @@ const artworkFor = (sound: SoundCloudSound) => {
     return url ? url.replace("-large.", "-t300x300.") : null;
 };
 
+const isChildyllic = (track: Track) => /\/childyllic\/?$/i.test(track.permalink) || /childyllic/i.test(track.title);
+
 const refreshTracks = () => {
     widget?.getSounds((sounds) => {
         // The widget fills in long lists lazily; keep the ones it has loaded.
@@ -130,7 +132,10 @@ const refreshTracks = () => {
                 duration: sound.duration ?? 0,
                 waveformUrl: sound.waveform_url ?? null,
                 permalink: sound.permalink_url ?? SOUNDCLOUD_PROFILE,
-            }));
+            }))
+            // Childyllic is a quiet piano piece, not one for the club: last
+            // in the crate, so it's never what the studio opens with.
+            .sort((a, b) => Number(isChildyllic(a)) - Number(isChildyllic(b)));
         useStudioMusic.setState({ tracks, status: tracks.length ? "ready" : "loading" });
         if (pendingSync && tracks.some((t) => t.id === pendingSync!.track)) {
             const { track, playing, position } = pendingSync;

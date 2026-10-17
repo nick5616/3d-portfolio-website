@@ -10,6 +10,8 @@ export const SketchbookHUD: React.FC = () => {
     const spread = useSketchbookStore((s) => s.spread);
     const leaves = useSketchbookStore((s) => s.leaves);
     const images = useSketchbookStore((s) => s.images);
+    const title = useSketchbookStore((s) => s.title);
+    const mirrored = useSketchbookStore((s) => s.mirrored);
     const inspecting = useArtInspectStore((s) => Boolean(s.inspecting));
     const isMobile = detectIsMobile();
 
@@ -21,6 +23,10 @@ export const SketchbookHUD: React.FC = () => {
 
     if (!reading || inspecting) return null;
     const controls = useSketchbookStore.getState().controls;
+    // The arrow buttons follow the page; a mirrored book turns forward
+    // to the right.
+    const goLeft = () => (mirrored ? controls?.next() : controls?.prev());
+    const goRight = () => (mirrored ? controls?.prev() : controls?.next());
 
     // spread = leaves turned. 0: closed; 1: inside cover + first sketch;
     // n: sketches 2n-3 and 2n-2 (1-based), clipped to what exists.
@@ -44,21 +50,21 @@ export const SketchbookHUD: React.FC = () => {
             <div className="gem gem--gold flex items-center gap-3 px-3 py-2 pointer-events-auto">
                 <button
                     className="gem-btn !px-3"
-                    onClick={() => controls?.prev()}
-                    aria-label="Previous page"
+                    onClick={goLeft}
+                    aria-label={mirrored ? "Next page" : "Previous page"}
                 >
                     <span className="gem-glint" />‹
                 </button>
                 <div className="text-center min-w-[150px]">
-                    <div className="gem-label">Sketchbook</div>
+                    <div className="gem-label">{title}</div>
                     <div className="gem-display text-base tabular-nums">
                         {where}
                     </div>
                 </div>
                 <button
                     className="gem-btn !px-3"
-                    onClick={() => controls?.next()}
-                    aria-label="Next page"
+                    onClick={goRight}
+                    aria-label={mirrored ? "Previous page" : "Next page"}
                 >
                     <span className="gem-glint" />›
                 </button>

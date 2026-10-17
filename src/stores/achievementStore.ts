@@ -44,7 +44,7 @@ const ROOM_NAMES: Record<string, string> = {
     "gallery-hall-digitalart": "the Digital Art Hall",
     "gallery-hall-paintings": "the Paintings Hall",
     "gallery-hall-sketches": "the Sketchbook Rotunda",
-    "gallery-hall-lefthanded": "the Left-Handed Hall",
+    "gallery-hall-lefthanded": "the Left-Handed Rotunda",
     "gallery-hall-miscellaneous": "the Miscellaneous Hall",
     "gallery-hall-notesappart": "the Notes App Art room",
     projects: "the Software Projects room",
@@ -159,6 +159,18 @@ export const ACHIEVEMENTS: AchievementDef[] = [
         title: "Cover to Cover",
         description: "Turned every page of the sketchbook.",
         hint: "Some books deserve to be read all the way through.",
+    },
+    {
+        id: "lefthanded-finished",
+        title: "Back to Front",
+        description: "Read the left-handed sketchbook all the way through.",
+        hint: "One book in the gallery is bound the other way round.",
+    },
+    {
+        id: "truth-seen",
+        title: "Equivalent Exchange",
+        description: "Looked into the eye in the Notes App room.",
+        hint: "Something at the very end of the gallery is watching.",
     },
     {
         id: "project-opened",

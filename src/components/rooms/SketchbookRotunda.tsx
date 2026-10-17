@@ -8,6 +8,7 @@ import { RoomEnvironmentReady } from "../core/RoomEnvironmentReady";
 import { GodRays, DustMotes } from "../effects/GodRays";
 import { Sketchbook } from "../sketchbook/Sketchbook";
 import { getLightPoolMaterial } from "../models/artFrameParts";
+import { BookStyle, LEFT_HAND_BOOK, SKETCHES_BOOK } from "../sketchbook/pageArt";
 
 interface SketchbookRotundaProps {
     config: RoomConfig;
@@ -20,10 +21,33 @@ interface SketchbookRotundaProps {
 // a lectern holding the sketchbook.
 const LECTERN_TILT = 0.32; // radians; far edge raised toward the reader
 
+// Which book sits on the lectern, per category. The floor inlay picks up
+// the book's leather.
+const BOOKS: Partial<
+    Record<string, { style: BookStyle; mirrored: boolean; inlay: string; finishAchievement: string }>
+> = {
+    sketches: {
+        style: SKETCHES_BOOK,
+        mirrored: false,
+        inlay: "#284a3b",
+        finishAchievement: "sketchbook-finished",
+    },
+    lefthanded: {
+        style: LEFT_HAND_BOOK,
+        mirrored: true,
+        inlay: "#5a2626",
+        finishAchievement: "lefthanded-finished",
+    },
+};
+
 export const SketchbookRotunda: React.FC<SketchbookRotundaProps> = ({
+    config,
     width,
     height: wallHeight,
 }) => {
+    const category =
+        config.galleryRoomKind?.kind === "sketchbook" ? config.galleryRoomKind.category : "sketches";
+    const book = BOOKS[category] ?? BOOKS.sketches!;
     const radius = width / 2;
     const system = EnhancedMaterialSystem.getInstance();
     const domeStart = 0.22; // oculus opening (radians from the top)
@@ -59,8 +83,8 @@ export const SketchbookRotunda: React.FC<SketchbookRotundaProps> = ({
                 roughness: 0.5,
                 metalness: 0,
             }),
-            inlay: system.flat("rotunda-inlay", {
-                color: "#284a3b",
+            inlay: system.flat(`rotunda-inlay-${category}`, {
+                color: book.inlay,
                 roughness: 0.25,
                 metalness: 0,
             }),
@@ -75,7 +99,7 @@ export const SketchbookRotunda: React.FC<SketchbookRotundaProps> = ({
                 metalness: 0,
             }),
         }),
-        [system]
+        [system, category, book.inlay]
     );
     // Seen from inside: the wall cylinder and dome face inward, and the
     // open-cylinder mouldings need both faces. (These materials are unique
@@ -292,6 +316,10 @@ export const SketchbookRotunda: React.FC<SketchbookRotundaProps> = ({
             <Sketchbook
                 position={[lecternTop[0], lecternTop[1] + 0.002 * Math.cos(LECTERN_TILT), lecternTop[2]]}
                 rotation={[LECTERN_TILT, 0, 0]}
+                category={category}
+                style={book.style}
+                mirrored={book.mirrored}
+                finishAchievement={book.finishAchievement}
             />
         </>
     );

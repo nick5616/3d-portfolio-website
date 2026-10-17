@@ -27,6 +27,22 @@ import { getUrnGeometry, makeInstanced, place } from "./atriumParts";
 const TAU = Math.PI * 2;
 const BED_SOIL = 0.38;
 
+// How balcony ivy drapes, as [inward from the balustrade, height above the
+// floor]: over the cap rail, down the face of the balusters, across the
+// floor lip and over the nosing, clearing the dentils below.
+const IVY_DRAPE: [number, number][] = [
+    [-0.04, 1.12],
+    [0.05, 1.12],
+    [0.12, 1.0],
+    [0.1, 0.85],
+    [0.1, 0.22],
+    [0.15, 0.1],
+    [0.22, 0.05],
+    [0.34, 0.05],
+    [0.42, 0.02],
+    [0.47, -0.12],
+];
+
 // Ground floor urns sit between the doors, under the sconces, pushed back
 // against the wall so the walk behind the columns stays ~1 m wide.
 export const URN_SPOTS = Array.from({ length: 8 }, (_, i) => {
@@ -92,8 +108,11 @@ export const AtriumGarden: React.FC<{ materials: AtriumMaterials }> = ({ materia
                     if (tier < TOP - 1 && Math.abs(slot - Math.round(slot)) * (TAU / COLUMN_COUNT) * rail < 0.4) continue;
                     const [x, z] = polar(rail, a);
                     const inward = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a));
-                    const length = (tier === 0 ? 1.4 : 1.6) + seeded(seed + 2) * 2.0;
-                    builder.ivy(new THREE.Vector3(x, level + 1.0, z), inward, length, seed, 0.65);
+                    // Some strands stop partway down the balusters; most
+                    // reach the balcony edge and hang over the fascia.
+                    const hang = (tier === 0 ? 0.15 : 0.35) + seeded(seed + 2) * 2.0 - 0.3;
+                    const profile = hang > 0 ? IVY_DRAPE : IVY_DRAPE.slice(0, 5);
+                    builder.ivy(new THREE.Vector3(x, level, z), inward, profile, Math.max(0, hang), seed);
                 }
             }
         });
