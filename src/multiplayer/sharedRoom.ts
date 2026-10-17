@@ -31,6 +31,7 @@ export interface SharedRoomHandlers {
     apply: (parts: Parts, from: string) => void;
     onPeers?: (count: number) => void;
     onPeerJoin?: (peerId: string) => void;
+    onPeerLeave?: (peerId: string) => void;
 }
 
 export interface SharedRoom {
@@ -91,12 +92,25 @@ export const connectSharedRoom = (roomId: string, handlers: SharedRoomHandlers):
         room.onPeerLeave = (peerId) => {
             peers.delete(peerId);
             handlers.onPeers?.(peers.size);
+            handlers.onPeerLeave?.(peerId);
         };
     } catch {
         // No WebRTC here: the room still works, just on its own.
         room = null;
         send = null;
     }
+
+    // Closing or reloading the tab doesn't unmount anything, so say goodbye
+    // here - otherwise the others keep a ghost of us (maybe as leader, so
+    // nobody keeps time) until the connection times out.
+    const leave = () => {
+        window.removeEventListener("pagehide", leave);
+        room?.leave().catch(() => {});
+        room = null;
+        send = null;
+        peers.clear();
+    };
+    window.addEventListener("pagehide", leave);
 
     return {
         publish: (parts) => {
@@ -118,11 +132,6 @@ export const connectSharedRoom = (roomId: string, handlers: SharedRoomHandlers):
             };
         },
         ping: (peerId) => room?.ping(peerId) ?? Promise.resolve(0),
-        leave: () => {
-            room?.leave().catch(() => {});
-            room = null;
-            send = null;
-            peers.clear();
-        },
+        leave,
     };
 };

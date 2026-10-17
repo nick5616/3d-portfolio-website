@@ -485,6 +485,16 @@
     78% { opacity: 1; }
     100% { opacity: 0; }
 }
+/* A longer, slower line across the middle of the screen (announce.ts) */
+.botw-announce {
+    animation: botw-announce 6.5s ease-in-out both;
+}
+@keyframes botw-announce {
+    0% { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+    14% { opacity: 1; transform: none; filter: none; }
+    84% { opacity: 1; }
+    100% { opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
-    .botw-region, .botw-prompt { animation: none; }
+    .botw-region, .botw-prompt, .botw-announce { animation: none; }
 }

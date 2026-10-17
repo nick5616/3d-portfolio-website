@@ -1,14 +1,7 @@
 import { Board, ChooseOptions, MoveChoice, Player, chooseMove } from "./connectFour";
 
-// How Nothing plays: a solid six-ply search (beatable with care), a small
-// habit of playing on a whim, and an occasional refusal to take a win it
-// has already seen.
-export const NOTHING_STYLE: ChooseOptions = {
-    maxDepth: 6,
-    timeBudgetMs: 450,
-    mercy: 0.22,
-    whim: 0.12,
-};
+// Every opponent at the table thinks in the same worker; how well is in
+// its style (see OPPONENTS in opponents.ts).
 
 let worker: Worker | null = null;
 let workerBroken = false;
@@ -34,24 +27,25 @@ const getWorker = () => {
     return worker;
 };
 
-export const thinkFor = (board: Board, who: Player): Promise<MoveChoice> => {
+// No worker: think on this thread, more briefly.
+const thinkHere = (board: Board, who: Player, style: ChooseOptions) =>
+    chooseMove(board, who, { ...style, timeBudgetMs: Math.min(style.timeBudgetMs, 120) });
+
+export const thinkFor = (board: Board, who: Player, style: ChooseOptions): Promise<MoveChoice> => {
     const w = getWorker();
-    if (!w) {
-        // No workers: think on this thread, more briefly.
-        return Promise.resolve(chooseMove(board, who, { ...NOTHING_STYLE, timeBudgetMs: 120 }));
-    }
+    if (!w) return Promise.resolve(thinkHere(board, who, style));
     const id = nextId++;
     return new Promise((resolve) => {
         // If the worker dies mid-thought, fall back rather than hang.
         const timeout = setTimeout(() => {
             if (!pending.has(id)) return;
             pending.delete(id);
-            resolve(chooseMove(board, who, { ...NOTHING_STYLE, timeBudgetMs: 120 }));
-        }, 4000);
+            resolve(thinkHere(board, who, style));
+        }, style.timeBudgetMs + 3500);
         pending.set(id, (choice) => {
             clearTimeout(timeout);
             resolve(choice);
         });
-        w.postMessage({ id, board, who, opts: NOTHING_STYLE });
+        w.postMessage({ id, board, who, opts: style });
     });
 };

@@ -4,16 +4,29 @@ import { CosmicSky } from "./CosmicSky";
 import { CosmicPlatform } from "./CosmicPlatform";
 import { ConnectFourGame } from "./ConnectFourGame";
 import { ChipAltar } from "./ChipAltar";
+import { OpponentAltar } from "./OpponentAltar";
+import { OpponentSeat } from "./OpponentSeat";
+import { VisitorTables } from "./VisitorTables";
 import { Nothing } from "./Nothing";
 import { RoomRupeeSpawner } from "../../models/RoomRupeeSpawner";
-import { ALTAR_POSITION, BOARD_POSITION, DOOR_Z, HOLD_Y } from "./cosmicLayout";
+import {
+    ALTAR_POSITION,
+    BOARD_POSITION,
+    DOOR_Z,
+    HOLD_Y,
+    OPPONENT_ALTAR_POSITION,
+    TABLES_POSITION,
+} from "./cosmicLayout";
 
 // Cosmic Connect Four. Through the second-floor portal: a disc of black
-// glass adrift in deep space, a table, a board, and across it Nothing - a
+// glass adrift in deep space, a table, a board, and behind it the Void - a
 // vast eyeless thing of pale light that some would call God, whose
 // intentions toward you are not known. You play rubies (or whatever you
-// take from the altar); it plays light. Far behind it, a board the size of
-// a building shows the same game, move for move, bounce for bounce.
+// take from the altar on your left) against whoever you pick from the
+// altar on your right: Pibble, then Willow, then the Fairy King, and only
+// then the Void itself, which plays light. Behind you, everyone else in
+// the room: watch their games, or challenge them. Far behind the Void, a
+// board the size of a building shows your board, move for move.
 
 export const CosmicConnectFourRoom: React.FC = () => (
     <>
@@ -38,7 +51,10 @@ export const CosmicConnectFourRoom: React.FC = () => (
         <CosmicPlatform />
         <Nothing />
         <ConnectFourGame />
+        <OpponentSeat />
         <ChipAltar />
+        <OpponentAltar />
+        <VisitorTables />
         <RoomRupeeSpawner
             roomId="cosmic-connect-four"
             dimensions={[16, 12, 16]}
@@ -59,7 +75,9 @@ const pickRupeeSpot = (): [number, number, number] => {
         const r = 4.5 + Math.random() * 2.8;
         const x = Math.cos(angle) * r;
         const z = Math.sin(angle) * r;
-        const nearAltar = Math.hypot(x - ALTAR_POSITION[0], z - ALTAR_POSITION[2]) < 1.2;
+        const nearAltar = [ALTAR_POSITION, OPPONENT_ALTAR_POSITION, TABLES_POSITION].some(
+            ([ax, , az]) => Math.hypot(x - ax, z - az) < 1.2
+        );
         const nearDoor = Math.hypot(x, z - DOOR_Z) < 1.6;
         if (z > -1 && !nearAltar && !nearDoor) return [x, 0.5, z];
     }

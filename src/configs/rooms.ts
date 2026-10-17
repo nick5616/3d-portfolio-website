@@ -229,7 +229,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
     },
 
     // A floating platform in deep space: a table, a board, and across it,
-    // Nothing. Builds its own everything (CosmicConnectFourRoom).
+    // the Void. Builds its own everything (CosmicConnectFourRoom).
     "cosmic-connect-four": {
         id: "cosmic-connect-four",
         name: "Cosmic Connect Four",

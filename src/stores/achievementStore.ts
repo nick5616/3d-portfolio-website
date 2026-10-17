@@ -181,19 +181,25 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     {
         id: "c4-first-game",
         title: "Took a Seat",
-        description: "Played Connect Four against Nothing.",
+        description: "Played a game of Cosmic Connect Four.",
         hint: "Something upstairs wants a game.",
     },
     {
         id: "c4-win",
-        title: "Something from Nothing",
-        description: "Beat Nothing at Connect Four.",
-        hint: "Win against the thing across the table.",
+        title: "Something from the Void",
+        description: "Beat the Void at Connect Four.",
+        hint: "Win against the thing across the table. Eventually.",
+    },
+    {
+        id: "c4-all",
+        title: "Connect Four, Itself",
+        description: "Beat Pibble, Willow, the Fairy King and the Void.",
+        hint: "Everyone at the cosmic table, one after another.",
     },
     {
         id: "c4-spared",
         title: "Spared",
-        description: "Nothing could have won, and chose not to.",
+        description: "The Void could have won, and chose not to.",
         hint: "It could end you. Will it?",
     },
     {

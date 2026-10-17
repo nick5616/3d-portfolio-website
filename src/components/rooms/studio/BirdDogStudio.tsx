@@ -258,10 +258,14 @@ export const BirdDogStudio: React.FC = () => {
                 return;
             }
             startEngine();
+            // Only provisionally: if the others turn up a few seconds late,
+            // what they're playing replaces this rather than fighting it.
             startTimer = window.setTimeout(() => {
                 const s = useDj.getState();
                 if (booth.heard() || DECKS.some((id) => s.decks[id].track)) return;
-                if (dj.load("a", tracks[0].id)) dj.play("a");
+                booth.provisionally(() => {
+                    if (dj.load("a", tracks[0].id)) dj.play("a");
+                });
             }, 2500);
         });
 
@@ -619,7 +623,10 @@ export const BirdDogStudio: React.FC = () => {
                         }
                         bindMixer={aim.bind("mixer", {
                             reach: 4.5,
-                            prompt: prompt(djMode ? "Step up to the decks" : "The decks are warming up", "purple"),
+                            prompt: prompt(
+                                djMode ? "Step up to the decks" : scMode ? "The records are out - streaming SoundCloud" : "Digging through the crate…",
+                                "purple"
+                            ),
                             use: () => djMode && openDjConsole(),
                         })}
                     />

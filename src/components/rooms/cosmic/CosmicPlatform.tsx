@@ -7,6 +7,8 @@ import { NOISE_GLSL } from "./cosmicShaders";
 import {
     ALTAR_POSITION,
     DOOR_Z,
+    OPPONENT_ALTAR_POSITION,
+    TABLES_POSITION,
     PLATFORM_RADIUS,
     TABLE_SIZE,
     TABLE_THICKNESS,
@@ -171,8 +173,10 @@ export const CosmicPlatform: React.FC = () => {
                 ))}
                 {/* The table, the board standing on it, and the altar */}
                 <CuboidCollider args={[tableW / 2, TABLE_TOP / 2 + 0.6, tableD / 2]} position={[0, TABLE_TOP / 2 + 0.6, 0]} />
-                <CylinderCollider args={[0.6, 0.55]} position={[ALTAR_POSITION[0], 0.6, ALTAR_POSITION[2]]} />
-                {/* Keeps you out of the space where Nothing is */}
+                {[ALTAR_POSITION, OPPONENT_ALTAR_POSITION, TABLES_POSITION].map(([x, , z]) => (
+                    <CylinderCollider key={`${x},${z}`} args={[0.6, 0.55]} position={[x, 0.6, z]} />
+                ))}
+                {/* Keeps you out of the space where the Void is */}
                 <CylinderCollider args={[2.5, 1.9]} position={[0, 2.5, -2.9]} />
             </RigidBody>
 

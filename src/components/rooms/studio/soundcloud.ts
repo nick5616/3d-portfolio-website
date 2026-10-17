@@ -105,6 +105,14 @@ let pendingStart: { position: number; pause: boolean } | null = null;
 // A shared-room change for a track the widget hasn't listed yet.
 let pendingSync: { track: number; playing: boolean; position: number } | null = null;
 
+// Whether the music is meant to be playing. Arriving straight from a reload,
+// before any click or key, the browser may refuse to let the widget start;
+// the next click or key anywhere gets it going.
+let wantPlaying = false;
+const resumeOnGesture = () => {
+    if (wantPlaying && widget && !useStudioMusic.getState().playing) widget.play();
+};
+
 const applyVolume = () => {
     if (!widget) return;
     const { muted, volumes } = getSoundSettings();
@@ -207,6 +215,8 @@ export const openStudioMusic = async (onReady?: () => void, source: string = SOU
     });
     widget.bind(events.ERROR, () => useStudioMusic.setState({ status: "error" }));
     unsubscribeVolume = subscribeSoundSettings(applyVolume);
+    window.addEventListener("pointerdown", resumeOnGesture);
+    window.addEventListener("keydown", resumeOnGesture);
 };
 
 // Leaving the studio stops the music and removes the player.
@@ -214,6 +224,9 @@ export const closeStudioMusic = () => {
     session++;
     pendingStart = null;
     pendingSync = null;
+    wantPlaying = false;
+    window.removeEventListener("pointerdown", resumeOnGesture);
+    window.removeEventListener("keydown", resumeOnGesture);
     widget?.pause();
     widget = null;
     iframe?.remove();
@@ -245,6 +258,7 @@ export const playTrack = (index: number, startAt = 0, paused = false): PlaybackI
     if (!widget) return null;
     useStudioMusic.setState({ current: index, position: startAt, positionAt: performance.now() });
     pendingStart = startAt > 0 || paused ? { position: startAt, pause: paused } : null;
+    wantPlaying = !paused;
     widget.skip(index);
     widget.play();
     return { track: trackId(index), playing: !paused, position: startAt };
@@ -255,6 +269,7 @@ export const togglePlayback = (): PlaybackIntent | null => {
         return tracks.length ? playTrack(tracks[0].index) : null;
     }
     widget?.toggle();
+    wantPlaying = !playing;
     return { track: trackId(current), playing: !playing, position: currentPositionMs() };
 };
 export const nextTrack = () => {
@@ -275,6 +290,7 @@ export const previousTrack = () => {
 const DRIFT_MS = 1500;
 export const syncPlayback = (track: number | null, playing: boolean, position: number) => {
     const state = useStudioMusic.getState();
+    wantPlaying = track !== null && playing;
     if (track === null) {
         if (state.playing) widget?.pause();
         return;

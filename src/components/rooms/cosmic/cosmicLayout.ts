@@ -45,5 +45,18 @@ export const REPLICA_POSITION: [number, number, number] = [
     -30,
 ];
 
-// The chip altar to your left.
+// The chip altar to your left, the opponents' altar to your right, and the
+// other visitors' tables (watch or challenge them) behind you on the right.
 export const ALTAR_POSITION: [number, number, number] = [-2.75, 0, 1.55];
+export const OPPONENT_ALTAR_POSITION: [number, number, number] = [2.75, 0, 1.55];
+export const TABLES_POSITION: [number, number, number] = [2.6, 0, 4.4];
+// Where you stand to play.
+export const PLAY_SPOT: [number, number] = [0, 2.4];
+// Yaw that turns something at `position` to face the play spot.
+export const facePlaySpot = (position: [number, number, number]) =>
+    Math.atan2(PLAY_SPOT[0] - position[0], PLAY_SPOT[1] - position[2]);
+
+// Across the table, beside the board: small opponents stand on the table
+// itself, everyone else on the floor behind it.
+export const SEAT_ON_TABLE: [number, number, number] = [1.3, TABLE_TOP, -0.45];
+export const SEAT_ON_FLOOR: [number, number, number] = [1.5, 0, -1.35];

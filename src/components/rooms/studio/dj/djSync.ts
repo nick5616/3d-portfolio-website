@@ -59,6 +59,11 @@ export interface DjSync {
     attach: (room: SharedRoom) => void;
     // Someone already here has told us how the booth is.
     heard: () => boolean;
+    // Change the booth here without telling anyone, and without a stamp -
+    // so whatever the room already has wins over it when it arrives. For
+    // starting the music on arrival before we know if anyone's here
+    // (finding the others can take several seconds).
+    provisionally: (change: () => void) => void;
     isLeader: () => boolean;
     leave: () => void;
 }
@@ -173,6 +178,14 @@ export const createDjSync = (): DjSync => {
             probeTimer = window.setInterval(() => peers.forEach((p) => askClock({ q: now(), a: null }, p)), 20000);
         },
         heard: () => heard,
+        provisionally: (change) => {
+            applying = true;
+            try {
+                change();
+            } finally {
+                applying = false;
+            }
+        },
         isLeader: () => room?.isLeader() ?? true,
         leave: () => {
             unsubscribe();

@@ -148,11 +148,18 @@ export interface ChooseOptions {
     mercy: number;
     // Chance of picking among near-equal moves rather than the very best.
     whim: number;
+    // How far below the best a move can score and still count as near-equal.
+    closeMargin?: number;
+    // Chance of just playing any column at all, good or not.
+    blunder?: number;
     random?: () => number;
 }
 
 // Root scores for each legal column via iterative deepening, keeping the
-// deepest depth that finished inside the time budget.
+// deepest depth that finished inside the time budget. A player with no
+// whims only needs the best column, so the root is searched with a window
+// too (the other columns' scores are then upper bounds, not exact), best
+// column from the last depth first.
 const scoreColumns = (board: Board, who: Player, opts: ChooseOptions) => {
     const work = cloneBoard(board);
     const heights = work.map((col) => {
@@ -164,23 +171,31 @@ const scoreColumns = (board: Board, who: Player, opts: ChooseOptions) => {
         nodes: 0,
         aborted: false,
     };
+    // (Mercy only needs some move that isn't a win, so a bound will do.)
+    const exact = opts.whim > 0;
+    let order = ORDER;
     let finished: Map<number, number> | null = null;
     for (let depth = 1; depth <= opts.maxDepth; depth++) {
         const scores = new Map<number, number>();
-        for (const c of ORDER) {
+        let alpha = -Infinity;
+        for (const c of order) {
             const r = heights[c];
             if (r >= ROWS) continue;
             work[c][r] = who;
             heights[c]++;
             const score = findWin(work, c, r)
                 ? WIN
-                : -negamax(work, heights, (3 - who) as Player, depth - 1, -Infinity, Infinity, 1, ctx);
+                : -negamax(work, heights, (3 - who) as Player, depth - 1, -Infinity, exact ? Infinity : -alpha, 1, ctx);
             heights[c]--;
             work[c][r] = 0;
             scores.set(c, score);
+            if (score > alpha) alpha = score;
         }
         if (ctx.aborted) break;
         finished = scores;
+        // A forced result needs no deeper look.
+        if (Math.abs(alpha) >= WIN / 2) break;
+        order = [...order].sort((a, b) => (scores.get(b) ?? -Infinity) - (scores.get(a) ?? -Infinity));
     }
     return finished;
 };
@@ -200,10 +215,15 @@ export const chooseMove = (board: Board, who: Player, opts: ChooseOptions): Move
         return { col: winning[0][0], sparedYou: false };
     }
 
+    if (opts.blunder && random() < opts.blunder) {
+        return { col: legal[Math.floor(random() * legal.length)], sparedYou: false };
+    }
+
     const [bestCol, bestScore] = ranked[0];
     if (random() < opts.whim && bestScore > -WIN / 2) {
         // Any move close to the best that doesn't hand over the game.
-        const close = ranked.filter(([, s]) => s >= bestScore - 25 && s > -WIN / 2);
+        const margin = opts.closeMargin ?? 25;
+        const close = ranked.filter(([, s]) => s >= bestScore - margin && s > -WIN / 2);
         return { col: close[Math.floor(random() * close.length)][0], sparedYou: false };
     }
     return { col: bestCol, sparedYou: false };

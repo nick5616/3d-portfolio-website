@@ -1,20 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { useCosmicStore } from "./cosmicStore";
 import { getGlowTexture } from "./chipDesigns";
 import { NOTHING_POSITION } from "./cosmicLayout";
 import { seeded } from "../atrium/atriumLayout";
+import { TypedSpeech } from "./TypedSpeech";
 
-// Across the table: Nothing. There is no one there. Wheels of gold turn
+// Behind the table: the Void. There is no one there. Wheels of gold turn
 // around an empty middle with a single eye at its centre, light drifts up
 // into it, and eyes hang open in the dark around it, more of them as the
-// game tightens, all following you. Its chips simply appear over the board.
+// game tightens, all following you. When it plays, its chips simply
+// appear over the board; when someone else plays you, it watches.
 
-const DISPLAY_FONT = "/fonts/Fraunces.ttf";
-const TYPE_RATE = 34; // characters per second
 const PRESENCE_Y = 3.9; // centre of the wheels, above the board
 
 // The eye at the centre of the wheels, always half-awake, then the eyes
@@ -85,58 +84,10 @@ const Eye: React.FC<{
     );
 };
 
-// Nothing's words, typed out above its head, then left to fade.
+// The Void's words, typed out above its wheels, then left to fade.
 const Speech: React.FC = () => {
     const speech = useCosmicStore((s) => s.speech);
-    const [shown, setShown] = useState("");
-    const typed = useRef(0);
-    const age = useRef(0);
-    const opacity = useRef(0);
-    const textRef = useRef<THREE.Mesh & { fillOpacity: number; outlineOpacity: number }>(null);
-
-    useEffect(() => {
-        typed.current = 0;
-        age.current = 0;
-        setShown("");
-    }, [speech?.key]);
-
-    useFrame((_, delta) => {
-        if (!speech) return;
-        const full = speech.text;
-        if (typed.current < full.length) {
-            const before = Math.floor(typed.current);
-            typed.current = Math.min(full.length, typed.current + delta * TYPE_RATE);
-            const after = Math.floor(typed.current);
-            if (after !== before) setShown(full.slice(0, after));
-        } else {
-            age.current += delta;
-        }
-        const target = age.current > 4 + full.length * 0.03 ? 0 : 1;
-        opacity.current += (target - opacity.current) * Math.min(1, delta * 3);
-        if (textRef.current) {
-            textRef.current.fillOpacity = opacity.current;
-            textRef.current.outlineOpacity = opacity.current;
-        }
-    });
-
-    return (
-        <Text
-            ref={textRef}
-            font={DISPLAY_FONT}
-            position={[0, PRESENCE_Y + 2.35, 0.6]}
-            fontSize={0.22}
-            maxWidth={4.2}
-            lineHeight={1.25}
-            textAlign="center"
-            color="#f6e6c0"
-            outlineWidth={0.012}
-            outlineColor="#120822"
-            anchorX="center"
-            anchorY="bottom"
-        >
-            {shown}
-        </Text>
-    );
+    return <TypedSpeech speech={speech} position={[0, PRESENCE_Y + 2.35, 0.6]} />;
 };
 
 export const Nothing: React.FC = () => {

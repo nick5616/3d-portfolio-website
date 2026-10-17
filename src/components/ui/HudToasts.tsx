@@ -3,6 +3,7 @@ import { ACHIEVEMENTS, useAchievementStore } from "../../stores/achievementStore
 import { useSceneStore } from "../../stores/sceneStore";
 import { onMusicStart } from "../../audio/soundManager";
 import { SOUNDS, SoundDef } from "../../audio/soundManifest";
+import { Announcement, onAnnounce } from "./announce";
 
 interface Banner {
     key: number;
@@ -18,7 +19,7 @@ const REGION_SUBTITLES: Record<string, string> = {
     projects: "Software Lab",
     achievements: "Hall of Achievements",
     "gallery-hall-sketches": "Ideas start here",
-    "cosmic-connect-four": "Nothing is waiting",
+    "cosmic-connect-four": "The Void is waiting",
     "rupee-shop": "Spend what you've found",
     "meteor-math": "Defend the city",
     courage: "The computer has opinions",
@@ -79,6 +80,17 @@ export const HudToasts: React.FC = () => {
         []
     );
 
+    const [announcement, setAnnouncement] = useState<(Announcement & { key: number }) | null>(null);
+    useEffect(
+        () =>
+            onAnnounce((a) => {
+                const key = nextKey.current++;
+                setAnnouncement({ ...a, key });
+                setTimeout(() => setAnnouncement((current) => (current?.key === key ? null : current)), 6500);
+            }),
+        []
+    );
+
     useEffect(
         () =>
             onMusicStart((id) => {
@@ -96,6 +108,23 @@ export const HudToasts: React.FC = () => {
                     <div className="botw-rule w-72" />
                     {region.subtitle && (
                         <div className="gem-label text-sm">{region.subtitle}</div>
+                    )}
+                </div>
+            )}
+
+            {announcement && (
+                <div
+                    key={announcement.key}
+                    className="fixed inset-x-0 top-[30vh] z-[46] flex flex-col items-center px-4 text-center pointer-events-none botw-announce"
+                >
+                    <div className="gem-display italic text-2xl md:text-4xl text-[color:var(--botw-cream)] max-w-3xl" style={{ textShadow: "0 0 24px rgba(0,0,0,0.85), 0 2px 6px rgba(0,0,0,0.7)" }}>
+                        {announcement.line}
+                    </div>
+                    {announcement.detail && (
+                        <>
+                            <div className="botw-rule w-72" />
+                            <div className="gem-label text-sm">{announcement.detail}</div>
+                        </>
                     )}
                 </div>
             )}

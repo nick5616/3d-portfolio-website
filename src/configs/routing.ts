@@ -30,7 +30,7 @@ export const roomRoutes: RoomRoute[] = [
         path: "/cosmic-connect-four",
         roomId: "cosmic-connect-four",
         title: "Cosmic Connect Four",
-        description: "A game of Connect Four against Nothing, adrift in deep space",
+        description: "A game of Connect Four against the Void (and each other), adrift in deep space",
     },
     { path: "/meteor-math", roomId: "meteor-math", title: "Meteor Math", description: "Times tables on the moon" },
     { path: "/math", roomId: "meteor-math", title: "Meteor Math" },

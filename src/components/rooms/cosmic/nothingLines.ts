@@ -1,18 +1,20 @@
-// What Nothing says. It is never clear whether it wishes you well.
+// What the Void says. It is never clear whether it wishes you well. It
+// plays you itself only once you've beaten everyone else at the table, and
+// otherwise watches, and talks.
 
 export const LINES = {
     firstMeeting: [
         "You came up the stairs. They always do.",
-        "I am Nothing. Sit. The board was set before you were born.",
-        "Rubies for you, light for me. That has always been the arrangement.",
+        "I am the Void. Sit. The board was set before you were born.",
+        "Not me. Not yet. Start with the small ones, and climb.",
     ],
     returning: [
         "Back again. I counted the seconds. There were not many.",
         "You again. Good. Or not. Sit.",
         "The board remembers you. So do I.",
     ],
-    yourTurnOpening: ["You first. You always go first. That's the only kindness I'm sure of."],
-    nothingOpens: ["This time, I begin."],
+    greet: ["Rubies for you, light for me. That has always been the arrangement.", "So. Finally. Sit across from me."],
+    opens: ["This time, I begin."],
     afterYourMove: [
         "Interesting.",
         "Is that a choice, or a habit?",
@@ -23,7 +25,7 @@ export const LINES = {
         "Brave. Or careless. From here they look the same.",
         "Ah.",
     ],
-    afterNothingMove: [
+    afterTheirMove: [
         "Mine.",
         "Here.",
         "A small light, set down carefully.",
@@ -31,7 +33,6 @@ export const LINES = {
         "There.",
         "Look closer.",
     ],
-    thinking: ["…", "Let me see.", "Mm."],
     spared: [
         "Not yet.",
         "I could have ended this. I didn't. Wonder why.",
@@ -40,9 +41,9 @@ export const LINES = {
     youWin: [
         "You won. Was that the thing you wanted?",
         "Four. Take it. Everything you take, you carry.",
-        "Well. Something from Nothing. They'll write that down somewhere.",
+        "Well. Something from the Void. They'll write that down somewhere.",
     ],
-    nothingWins: [
+    theyWin: [
         "Four in a row. Don't grieve. It's only a game. Mostly.",
         "The light settles where it settles.",
         "I win. I'm not sure that means anything. I'm not sure it doesn't.",
@@ -51,14 +52,33 @@ export const LINES = {
     again: ["Again?", "Another? Press it, if you dare to want more.", "Shall we?"],
     columnFull: ["That one is full. Even I can't fit more into it."],
     notYourTurn: ["Patience. It's my turn to exist."],
+
+    // Narrating everyone else's games.
+    locked: ["Not me. Not yet. Beat the one before.", "You haven't earned that seat."],
+    watching: ["Someone else's game. Watch, then.", "Their board, on yours. Look how they think.", "A window onto another table."],
+    stopWatching: ["Back to your own.", "Enough watching."],
+    challengeSent: ["You've called them out. Now wait.", "A challenge. Let's see if they answer."],
+    challenged: ["Someone wants to play you. The tables behind you.", "You've been called out. Look behind you."],
+    versusStart: ["Two of you. I'll watch.", "No light from me this time. Just the two of you.", "Begin. I'm curious."],
+    versusYouWin: ["You beat them. They'll remember.", "Four. Over another one of you."],
+    versusYouLose: ["They had you. I saw it coming.", "Beaten by one of your own."],
+    versusDraw: ["Neither of you. Interesting."],
+    versusTheirTurn: ["Their move, not yours."],
+    partnerLeft: ["They've gone. They do that.", "Your opponent is elsewhere now."],
+    watchedLeft: ["They've gone. Back to your own table."],
+    allBeaten: ["All of us. Even me. Now what will you do?"],
 };
+
+export type LineKind = keyof typeof LINES;
 
 const lastPicked = new Map<string, number>();
 
-export const pickLine = (kind: keyof typeof LINES) => {
-    const lines = LINES[kind];
+// A line from a list, never the same one twice running.
+export const pickFrom = (memo: string, lines: string[]) => {
     let index = Math.floor(Math.random() * lines.length);
-    if (lines.length > 1 && index === lastPicked.get(kind)) index = (index + 1) % lines.length;
-    lastPicked.set(kind, index);
+    if (lines.length > 1 && index === lastPicked.get(memo)) index = (index + 1) % lines.length;
+    lastPicked.set(memo, index);
     return lines[index];
 };
+
+export const pickLine = (kind: LineKind) => pickFrom(`void:${kind}`, LINES[kind]);
