@@ -316,8 +316,11 @@ const main = async () => {
         console.log(`uploading to ${BUCKET}…`);
         // Tracks keep their names when re-encoded, so cache them a day, not forever.
         const files = crate.tracks.flatMap((t) => [join(OUT, t.audio), join(OUT, t.analysis)]);
-        await run("gsutil", ["-m", "-h", "Cache-Control:public, max-age=86400", "cp", ...files, `${BUCKET}/`]);
-        await run("gsutil", ["-h", "Cache-Control:public, max-age=300", "cp", join(OUT, "crate.json"), `${BUCKET}/crate.json`]);
+        // On Windows gsutil runs through a shell: no spaces in the header,
+        // and paths quoted.
+        const q = (path) => (process.platform === "win32" ? `"${path}"` : path);
+        await run("gsutil", ["-m", "-h", "Cache-Control:public,max-age=86400", "cp", ...files.map(q), `${BUCKET}/`]);
+        await run("gsutil", ["-h", "Cache-Control:public,max-age=300", "cp", q(join(OUT, "crate.json")), `${BUCKET}/crate.json`]);
         console.log("done");
     }
 };
