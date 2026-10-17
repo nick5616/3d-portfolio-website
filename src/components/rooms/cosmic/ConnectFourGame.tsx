@@ -354,6 +354,8 @@ export const ConnectFourGame: React.FC = () => {
     const lastNag = useRef(0);
     const sync = useRef<CosmicSync | null>(null);
     const partnerSeen = useRef(false);
+    // Until you start a game of your own, you watch whoever's playing.
+    const optedOwn = useRef(false);
 
     const later = (ms: number, fn: () => void) => {
         const id = window.setTimeout(() => {
@@ -389,10 +391,13 @@ export const ConnectFourGame: React.FC = () => {
 
     // --- Talking ----------------------------------------------------------------
 
-    // Whoever you're playing from the ladder.
+    // Whoever you're playing from the ladder. Everyone watching your game
+    // hears it say the same thing.
     const speak = (kind: keyof BotLines) => {
         const bot = activeBot.current;
-        store().say(pickFrom(`${bot}:${kind}`, OPPONENTS[bot].lines[kind]), bot === "void" ? "void" : "seat");
+        const line = { text: pickFrom(`${bot}:${kind}`, OPPONENTS[bot].lines[kind]), by: bot === "void" ? "void" : "seat" } as const;
+        store().say(line.text, line.by);
+        sync.current?.say(line);
     };
     const voidSays = (kind: LineKind) => store().say(pickLine(kind));
 
@@ -417,6 +422,7 @@ export const ConnectFourGame: React.FC = () => {
             first: g.first,
             moves: [...g.moves],
             result: g.result,
+            watching: m.kind === "watch",
         };
     };
     // (Mid-clear the board is between games; whatever starts next sends.)
@@ -455,6 +461,7 @@ export const ConnectFourGame: React.FC = () => {
         if (row < 0) return null;
         board.current[col][row] = who;
         game.current.moves.push(col);
+        store().setLastMove(col);
         return { chip: sim.spawn(who, col, row, holdTime), row };
     };
 
@@ -663,6 +670,10 @@ export const ConnectFourGame: React.FC = () => {
         else botTurn();
         publishTable();
     };
+    const backToOwn = () => {
+        restoreOwn();
+        maybeAutoWatch();
+    };
 
     // Set your game aside before the board shows anything else.
     const parkOwn = () => {
@@ -690,6 +701,7 @@ export const ConnectFourGame: React.FC = () => {
             playSound("ui-back");
             return;
         }
+        optedOwn.current = true;
         // Your first chip of a game (you or they may have opened).
         if (game.current.moves.length <= 1) {
             s.countGame();
@@ -712,6 +724,7 @@ export const ConnectFourGame: React.FC = () => {
 
     const startVersus = (peer: string, gameId: string, challenger: boolean) => {
         const s = store();
+        optedOwn.current = true;
         parkOwn();
         const out = s.outgoing;
         if (out && out.peer !== peer) sync.current?.challenge(out.peer, { kind: "cancel", game: out.game });
@@ -734,6 +747,11 @@ export const ConnectFourGame: React.FC = () => {
 
         if (m.kind === "watch" && m.peer === peer) {
             if (s.phase === "clearing") return; // it'll load the latest
+            if (t.watching) {
+                // They've gone to watch someone else; so do we, or play.
+                s.setMode({ kind: "bot" });
+                return clearBoard(backToOwn);
+            }
             refreshLooks();
             const g = game.current;
             const continues =
@@ -771,7 +789,10 @@ export const ConnectFourGame: React.FC = () => {
                 return;
             }
             pullRemote();
+            return;
         }
+
+        maybeAutoWatch();
     };
 
     const onLeave = (peer: string) => {
@@ -783,7 +804,7 @@ export const ConnectFourGame: React.FC = () => {
         if (m.kind === "watch" && m.peer === peer) {
             voidSays("watchedLeft");
             s.setMode({ kind: "bot" });
-            clearBoard(restoreOwn);
+            clearBoard(backToOwn);
         } else if (m.kind === "versus" && m.peer === peer) {
             partnerLeft();
         }
@@ -798,6 +819,7 @@ export const ConnectFourGame: React.FC = () => {
                 playSound("ui-back");
                 return;
             }
+            optedOwn.current = true;
             if (s.mode.kind === "bot" && s.opponent === bot && s.phase !== "clearing") return;
             s.setOpponent(bot);
             own.current = null;
@@ -821,6 +843,7 @@ export const ConnectFourGame: React.FC = () => {
         },
         stopWatching: () => {
             if (store().mode.kind !== "watch") return;
+            optedOwn.current = true;
             voidSays("stopWatching");
             store().setMode({ kind: "bot" });
             clearBoard(restoreOwn);
@@ -847,6 +870,21 @@ export const ConnectFourGame: React.FC = () => {
             sync.current?.challenge(peer, { kind: "accept", game: gameId });
             startVersus(peer, gameId, false);
         },
+    };
+
+    // Someone's mid-game and you haven't started one of your own: their
+    // game is what your board shows.
+    const isPlaying = (t: TableState) => !t.watching && t.moves.length > 0 && t.result === null;
+    const maybeAutoWatch = () => {
+        const s = store();
+        if (optedOwn.current || s.mode.kind !== "bot" || s.phase === "clearing") return;
+        if (game.current.moves.length > 0 && game.current.result === null) return;
+        const playing = Object.keys(s.tables)
+            .sort()
+            .filter((id) => isPlaying(s.tables[id]));
+        // A game between two visitors is the better show.
+        const peer = playing.find((id) => s.tables[id].opponent.kind === "peer") ?? playing[0];
+        if (peer) control.watch(peer);
     };
 
     const handleTrigger = () => {
@@ -907,6 +945,11 @@ export const ConnectFourGame: React.FC = () => {
                 } else if (st.outgoing?.peer === peer && st.outgoing.game === message.game) {
                     startVersus(peer, message.game, true);
                 }
+            },
+            // The opponent at the table you're watching, speaking.
+            onSay: (peer, line) => {
+                const m = store().mode;
+                if (m.kind === "watch" && m.peer === peer) store().say(line.text, line.by);
             },
         });
         cosmicControl.current = control;
@@ -1232,7 +1275,7 @@ export const ConnectFourGame: React.FC = () => {
                     />
                 );
             case "watching":
-                return <GemPrompt accent="gold" action="Back to your own game" />;
+                return <GemPrompt accent="gold" action="Play your own game" />;
             default:
                 return null;
         }

@@ -4,29 +4,35 @@ import * as THREE from "three";
 import { characterAt } from "../../../multiplayer/characters";
 import { useCosmicStore } from "./cosmicStore";
 import { OPPONENTS } from "./opponents";
-import { SEAT_ON_FLOOR, SEAT_ON_TABLE } from "./cosmicLayout";
+import { BOARD_POSITION, PLAY_SPOT, SEAT_ON_FLOOR, SEAT_ON_TABLE, colX } from "./cosmicLayout";
 import { TravelerFigure } from "./TravelerFigure";
 import { TypedSpeech } from "./TypedSpeech";
 
 // Whoever plays you across the table, beside the board: Pibble, Willow or
 // the Fairy King from the ladder, or the traveler of the visitor you're
 // playing (or of whoever is playing the game you're watching). The Void
-// needs no seat. Small ones stand on the table, the rest behind it, and
-// they turn to keep you in view.
+// needs no seat. Small ones stand on the table, the rest behind it.
+//
+// Where they stand and which way they face follow only from the game, so
+// everyone watching the same game sees them the same: facing the spot
+// where their player stands, glancing at each chip as it goes in.
+
+const GLANCE_MS = 1600;
 
 export const OpponentSeat: React.FC = () => {
     const seat = useCosmicStore((s) => s.seat);
     const speech = useCosmicStore((s) => s.seatSpeech);
     const group = useRef<THREE.Group>(null);
-    const target = useRef(new THREE.Vector3());
 
-    useFrame(({ camera }, delta) => {
+    useFrame((_, delta) => {
         const g = group.current;
-        if (!g) return;
-        target.current.copy(camera.position);
-        g.parent?.worldToLocal(target.current);
-        // Models face -Z; turn toward the camera, smoothly.
-        const yaw = Math.atan2(-(target.current.x - g.position.x), -(target.current.z - g.position.z));
+        const base = g?.parent?.position;
+        if (!g || !base) return;
+        const last = useCosmicStore.getState().lastMove;
+        const glancing = last && performance.now() - last.at < GLANCE_MS;
+        const [tx, tz] = glancing ? [BOARD_POSITION[0] + colX(last.col), BOARD_POSITION[2]] : PLAY_SPOT;
+        // Models face -Z; turn toward the target, smoothly.
+        const yaw = Math.atan2(-(tx - base.x), -(tz - base.z));
         let d = yaw - g.rotation.y;
         while (d > Math.PI) d -= Math.PI * 2;
         while (d < -Math.PI) d += Math.PI * 2;

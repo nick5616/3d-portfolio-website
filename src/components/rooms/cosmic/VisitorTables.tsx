@@ -29,6 +29,7 @@ const FACING = facePlaySpot(TABLES_POSITION);
 type Target = { peer: string; action: "watch" | "challenge" };
 
 const statusOf = (t: TableState) => {
+    if (t.watching) return "watching\na game";
     const against =
         t.opponent.kind === "bot"
             ? OPPONENTS[t.opponent.bot].name

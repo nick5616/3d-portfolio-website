@@ -53,6 +53,10 @@ interface CosmicState {
     seatSpeech: Speech | null; // whoever sits across the table
     // The Void's mood drives its eyes and glow: 0 calm .. 1 intent.
     intensity: number;
+    // The last chip to go in (and when, performance.now()): whoever sits
+    // across the table glances at it. Comes from the game itself, so every
+    // client watching a game turns its opponent the same way.
+    lastMove: { col: number; at: number } | null;
     // Everyone else in the room, by peer id.
     tables: Record<string, TableState>;
     // Challenges waiting for your answer (peer -> game id), and yours.
@@ -68,6 +72,7 @@ interface CosmicState {
     setHoverCol: (col: number | null) => void;
     say: (text: string, by?: "void" | "seat") => void;
     setIntensity: (intensity: number) => void;
+    setLastMove: (col: number | null) => void;
     recordResult: (bot: BotId, winner: 0 | 1 | 2) => void;
     markBeaten: (bot: BotId) => void;
     countGame: () => void;
@@ -95,6 +100,7 @@ export const useCosmicStore = create<CosmicState>()(
             speech: null,
             seatSpeech: null,
             intensity: 0,
+            lastMove: null,
             tables: {},
             invites: {},
             outgoing: null,
@@ -110,6 +116,7 @@ export const useCosmicStore = create<CosmicState>()(
             say: (text, by = "void") =>
                 set(by === "void" ? { speech: { key: ++speechKey, text } } : { seatSpeech: { key: ++speechKey, text } }),
             setIntensity: (intensity) => set({ intensity }),
+            setLastMove: (col) => set({ lastMove: col === null ? null : { col, at: performance.now() } }),
             recordResult: (bot, winner) =>
                 set((s) => {
                     const r = s.records[bot] ?? { wins: 0, losses: 0, draws: 0 };

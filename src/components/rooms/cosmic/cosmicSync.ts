@@ -12,7 +12,9 @@ import type { BotId, SideLook } from "./opponents";
 // point at each other with the same game key; whoever's turn it is adds a
 // column to theirs, and the other side plays it.
 //
-// Challenges go on a side channel: invite, accept, cancel.
+// Challenges go on a side channel: invite, accept, cancel. Whatever the
+// opponent at a table says goes out on another, so everyone watching that
+// game hears the same Pibble (or Willow, or King, or Void) as its player.
 
 export interface TableState {
     character: number; // the host's traveler (index into CHARACTERS)
@@ -24,20 +26,26 @@ export interface TableState {
     first: Player; // 1: the host went first
     moves: number[];
     result: 0 | 1 | 2 | null; // from the host's side
+    // They're watching someone else (and this is their game, set aside).
+    watching: boolean;
 }
 
 export type ChallengeMessage = { kind: "invite" | "accept" | "cancel"; game: string };
+// A line said at someone's table, so everyone watching it hears it too.
+export type SpokenLine = { text: string; by: "void" | "seat" };
 
 export interface CosmicSyncHandlers {
     onTable: (peer: string, table: TableState) => void;
     onLeave: (peer: string) => void;
     onChallenge: (peer: string, message: ChallengeMessage) => void;
+    onSay: (peer: string, line: SpokenLine) => void;
 }
 
 export interface CosmicSync {
     selfId: string;
     publish: (table: TableState) => void;
     challenge: (peer: string, message: ChallengeMessage) => void;
+    say: (line: SpokenLine) => void;
     leave: () => void;
 }
 
@@ -57,6 +65,7 @@ export const connectCosmic = (initial: TableState, handlers: CosmicSyncHandlers)
         onPeerLeave: handlers.onLeave,
     });
     const send = room.channel<ChallengeMessage>("c4-challenge", (message, from) => handlers.onChallenge(from, message));
+    const speak = room.channel<SpokenLine>("c4-say", (line, from) => handlers.onSay(from, line));
     return {
         selfId,
         publish: (table) => {
@@ -64,6 +73,7 @@ export const connectCosmic = (initial: TableState, handlers: CosmicSyncHandlers)
             room.publish({ [PREFIX + selfId]: table as unknown as JsonValue });
         },
         challenge: (peer, message) => send(message, peer),
+        say: (line) => speak(line),
         leave: room.leave,
     };
 };
