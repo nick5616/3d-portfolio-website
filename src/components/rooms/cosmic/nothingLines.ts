@@ -55,6 +55,7 @@ export const LINES = {
 
     // Narrating everyone else's games.
     locked: ["Not me. Not yet. Beat the one before.", "You haven't earned that seat."],
+    autoWatching: ["Someone's already playing. Watch, or start your own.", "Another table's game, on yours. Play your own whenever you like."],
     watching: ["Someone else's game. Watch, then.", "Their board, on yours. Look how they think.", "A window onto another table."],
     stopWatching: ["Back to your own.", "Enough watching."],
     challengeSent: ["You've called them out. Now wait.", "A challenge. Let's see if they answer."],

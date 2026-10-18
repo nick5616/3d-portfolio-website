@@ -8,7 +8,8 @@ import { announce } from "../../ui/announce";
 import { playSound } from "../../../audio/soundManager";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { useCharacterStore } from "../../../stores/characterStore";
-import { lookFor } from "../../../multiplayer/characters";
+import { characterAt, lookFor } from "../../../multiplayer/characters";
+import { Text } from "@react-three/drei";
 import {
     COLS,
     ROWS,
@@ -330,6 +331,15 @@ export const ConnectFourGame: React.FC = () => {
             sides: s.sides,
         }))
     );
+    // Whose game is on your board, when it isn't yours.
+    const watchedLabel = useCosmicStore((s) => {
+        if (s.mode.kind !== "watch") return null;
+        const t = s.tables[s.mode.peer];
+        if (!t) return null;
+        const against =
+            t.opponent.kind === "bot" ? OPPONENTS[t.opponent.bot].name : characterAt(t.opponent.character).name;
+        return `WATCHING ${characterAt(t.character).name.toUpperCase()} VS ${against.toUpperCase()}`;
+    });
     const designInfo = designById(design);
     const nearLook = lookOf(sides[0]);
     const nothingLook = getNothingChipLook();
@@ -851,13 +861,13 @@ export const ConnectFourGame: React.FC = () => {
                 speak("greet");
             });
         },
-        watch: (peer: string) => {
+        watch: (peer: string, auto = false) => {
             const s = store();
             if (!s.tables[peer]) return;
             if (s.mode.kind === "watch" && s.mode.peer === peer) return control.stopWatching();
             parkOwn();
             s.setMode({ kind: "watch", peer });
-            voidSays("watching");
+            voidSays(auto ? "autoWatching" : "watching");
             playSound("c4-chip-select");
             clearBoard(loadWatched);
         },
@@ -929,7 +939,7 @@ export const ConnectFourGame: React.FC = () => {
             .filter((id) => isPlaying(s.tables[id]));
         // A game between two visitors is the better show.
         const peer = playing.find((id) => s.tables[id].opponent.kind === "peer") ?? playing[0];
-        if (peer) control.watch(peer);
+        if (peer) control.watch(peer, true);
     };
 
     const handleTrigger = () => {
@@ -1012,6 +1022,17 @@ export const ConnectFourGame: React.FC = () => {
             },
         });
         cosmicControl.current = control;
+        // Dev only: a handle for driving the table from the console or a test.
+        if (import.meta.env.DEV) {
+            (window as unknown as Record<string, unknown>).__c4 = {
+                store: useCosmicStore,
+                control,
+                drop: (col: number) => store().phase === "yourTurn" && dropYours(col),
+                trigger: handleTrigger,
+                game: () => ({ ...game.current, moves: [...game.current.moves] }),
+                selfId: () => sync.current?.selfId,
+            };
+        }
         startGame();
 
         if (s.gamesStarted === 0) {
@@ -1356,6 +1377,21 @@ export const ConnectFourGame: React.FC = () => {
                 <mesh ref={marker} material={markerMaterial} visible={false}>
                     <ringGeometry args={[HOLE_RADIUS * 0.8, HOLE_RADIUS * 1.05, 32]} />
                 </mesh>
+                {(watchedLabel || phase === "waiting") && (
+                    <Text
+                        font="/fonts/Fraunces.ttf"
+                        position={[0, HOLD_Y + 0.12, PANEL_Z + 0.05]}
+                        fontSize={0.05}
+                        letterSpacing={0.18}
+                        maxWidth={INNER_WIDTH + 0.4}
+                        textAlign="center"
+                        color="#e9c77a"
+                        anchorX="center"
+                        anchorY="middle"
+                    >
+                        {watchedLabel ?? "SEAT OPEN · WAITING FOR ANYONE"}
+                    </Text>
+                )}
                 <mesh ref={(m) => (beams.current[0] = m)} material={beamMaterial} visible={false}>
                     <planeGeometry args={[1, 0.035]} />
                 </mesh>

@@ -19,7 +19,15 @@ export type Parts = Record<string, JsonValue>;
 type Stamp = { rev: number; since: number; by: string };
 type Message = { since: number; parts: Record<string, { value: JsonValue; stamp: Stamp }> };
 
-const APP_ID = "nicolebelovoskey-world";
+// Dev builds get rooms of their own, so working on the site never puts you
+// in a room with real visitors (or theirs on your board). `?mp=name` in dev
+// splits that further, for testing with several tabs in private.
+const APP_ID = (() => {
+    const base = "nicolebelovoskey-world";
+    if (!import.meta.env.DEV) return base;
+    const split = new URLSearchParams(location.search).get("mp");
+    return `${base}-dev${split ? `-${split}` : ""}`;
+})();
 
 const beats = (a: Stamp, b: Stamp) =>
     a.rev !== b.rev ? a.rev > b.rev : a.since !== b.since ? a.since < b.since : a.by < b.by;
