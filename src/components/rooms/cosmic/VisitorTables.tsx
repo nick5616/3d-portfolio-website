@@ -30,6 +30,7 @@ type Target = { peer: string; action: "watch" | "challenge" };
 
 const statusOf = (t: TableState) => {
     if (t.watching) return "watching\na game";
+    if (t.open) return "seat open\nanyone can join";
     const against =
         t.opponent.kind === "bot"
             ? OPPONENTS[t.opponent.bot].name
@@ -104,6 +105,7 @@ export const VisitorTables: React.FC = () => {
         }
         if (playing === target.peer) return <GemPrompt accent="gold" keyLabel={null} action={`Playing ${name}`} />;
         if (invites[target.peer]) return <GemPrompt accent="gold" action={`Accept ${name}'s challenge`} />;
+        if (tables[target.peer].open) return <GemPrompt accent="gold" action={`Join ${name}'s table`} />;
         if (outgoing?.peer === target.peer) return <GemPrompt accent="red" action="Take back your challenge" />;
         return <GemPrompt accent="gold" action={`Challenge ${name}`} />;
     };
@@ -114,6 +116,7 @@ export const VisitorTables: React.FC = () => {
         if (target.action === "watch") return control.watch(target.peer);
         if (playing === target.peer) return;
         if (invites[target.peer]) return control.accept(target.peer);
+        if (tables[target.peer]?.open) return control.join(target.peer);
         control.challenge(target.peer);
     };
 
@@ -210,7 +213,15 @@ export const VisitorTables: React.FC = () => {
                             anchorX="center"
                             anchorY="middle"
                         >
-                            {playing === peer ? "PLAYING" : invites[peer] ? "ACCEPT" : outgoing?.peer === peer ? "SENT" : "CHALLENGE"}
+                            {playing === peer
+                                ? "PLAYING"
+                                : invites[peer]
+                                  ? "ACCEPT"
+                                  : t.open
+                                    ? "JOIN"
+                                    : outgoing?.peer === peer
+                                      ? "SENT"
+                                      : "CHALLENGE"}
                         </Text>
                     </group>
                 );

@@ -28,8 +28,12 @@ export interface TableState {
     result: 0 | 1 | 2 | null; // from the host's side
     // They're watching someone else (and this is their game, set aside).
     watching: boolean;
+    // Their seat is open to anyone: join by accepting this game.
+    open: string | null;
 }
 
+// Joining an open table is an "accept" of its game; a host who's already
+// been taken answers a late joiner with "cancel".
 export type ChallengeMessage = { kind: "invite" | "accept" | "cancel"; game: string };
 // A line said at someone's table, so everyone watching it hears it too.
 export type SpokenLine = { text: string; by: "void" | "seat" };

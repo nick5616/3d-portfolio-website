@@ -10,15 +10,18 @@ import { BotId, LADDER, OPPONENTS, isUnlocked, previousOnLadder } from "./oppone
 import { OPPONENT_ALTAR_POSITION, facePlaySpot } from "./cosmicLayout";
 import { cosmicControl } from "./cosmicControl";
 import { TravelerFigure } from "./TravelerFigure";
+import { characterAt } from "../../../multiplayer/characters";
 
 // A slab to your right with everyone who'll play you, easiest first, each
 // on a small dais. Look at one and press E to have them sit down. Each is
-// a shadow until you've beaten the one before.
+// a shadow until you've beaten the one before. Last comes Anyone: join
+// whoever in the room has a seat open, or open yours for anyone to take.
 
 const DISPLAY_FONT = "/fonts/Fraunces.ttf";
 const TOP = 1.0;
 const SPACING = 0.32;
 const FIGURE_HEIGHT = 0.26;
+const SLAB_WIDTH = 1.75;
 const FACING = facePlaySpot(OPPONENT_ALTAR_POSITION);
 
 // The Void, small: a gold ring with an eye in it.
@@ -57,12 +60,42 @@ const Shadow: React.FC<{ material: THREE.Material }> = ({ material }) => {
     );
 };
 
+// Anyone: a seat of light, for playing whoever else is in the room.
+const AnyoneToken: React.FC<{ material: THREE.Material; open: boolean }> = ({ material, open }) => {
+    const ring = useRef<THREE.Mesh>(null);
+    useFrame(({ clock }) => {
+        const t = clock.elapsedTime;
+        if (ring.current) {
+            ring.current.rotation.x = Math.PI / 2 + Math.sin(t * 0.9) * 0.3;
+            ring.current.scale.setScalar(1 + (open ? Math.sin(t * 5) * 0.12 : 0));
+        }
+    });
+    return (
+        <group position={[0, 0.13, 0]}>
+            <mesh material={material}>
+                <sphereGeometry args={[0.035, 16, 12]} />
+            </mesh>
+            <mesh ref={ring} material={material}>
+                <torusGeometry args={[0.075, 0.005, 8, 40]} />
+            </mesh>
+        </group>
+    );
+};
+
+type Choice = BotId | "anyone";
+const CHOICES: Choice[] = [...LADDER, "anyone"];
+
 export const OpponentAltar: React.FC = () => {
     const opponent = useCosmicStore((s) => s.opponent);
     const beaten = useCosmicStore((s) => s.beaten);
     const records = useCosmicStore((s) => s.records);
     const modeKind = useCosmicStore((s) => s.mode.kind);
-    const [hovered, setHovered] = useState<BotId | null>(null);
+    const tables = useCosmicStore((s) => s.tables);
+    const [hovered, setHovered] = useState<Choice | null>(null);
+    // Other visitors with a seat open, first come first served.
+    const openPeers = Object.keys(tables)
+        .sort()
+        .filter((id) => tables[id].open);
     const daises = useRef<(THREE.Group | null)[]>([]);
     const targets = useRef<THREE.Group>(null);
 
@@ -91,24 +124,36 @@ export const OpponentAltar: React.FC = () => {
                 emissive: "#2a1650",
                 emissiveIntensity: 0.4,
             }),
+            light: new THREE.MeshBasicMaterial({ color: "#f3efe6", toneMapped: false }),
         }),
         []
     );
     useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
 
+    const isChosen = (id: Choice) =>
+        id === "anyone" ? modeKind === "open" || modeKind === "versus" : id === opponent && modeKind === "bot";
+
     useFrame((_, delta) => {
-        LADDER.forEach((id, i) => {
+        CHOICES.forEach((id, i) => {
             const g = daises.current[i];
             if (!g) return;
-            const lift = id === opponent && modeKind === "bot" ? 0.06 : hovered === id ? 0.03 : 0;
+            const lift = isChosen(id) ? 0.06 : hovered === id ? 0.03 : 0;
             g.position.y += (TOP + lift - g.position.y) * Math.min(1, delta * 6);
         });
     });
 
-    const offsetX = (i: number) => (i - (LADDER.length - 1) / 2) * SPACING;
-    const hoveredUnlocked = hovered ? isUnlocked(hovered, beaten) : false;
+    const offsetX = (i: number) => (i - (CHOICES.length - 1) / 2) * SPACING;
+    const hoveredUnlocked = hovered && hovered !== "anyone" ? isUnlocked(hovered, beaten) : true;
     const promptFor = () => {
         if (!hovered) return "";
+        if (hovered === "anyone") {
+            if (modeKind === "open") return <GemPrompt accent="red" action="Close your open seat" />;
+            if (openPeers.length) {
+                const name = characterAt(tables[openPeers[0]].character).name;
+                return <GemPrompt accent="gold" action={`Join ${name}'s table`} />;
+            }
+            return <GemPrompt accent="gold" action="Open your seat to anyone" />;
+        }
         const def = OPPONENTS[hovered];
         if (!hoveredUnlocked) {
             const before = previousOnLadder(hovered)!;
@@ -123,10 +168,10 @@ export const OpponentAltar: React.FC = () => {
     return (
         <group position={OPPONENT_ALTAR_POSITION} rotation={[0, FACING, 0]}>
             <mesh position={[0, TOP - 0.04, 0]} material={materials.slab}>
-                <boxGeometry args={[1.42, 0.08, 0.42]} />
+                <boxGeometry args={[SLAB_WIDTH, 0.08, 0.42]} />
             </mesh>
             <mesh position={[0, TOP - 0.04, 0]} material={materials.gold}>
-                <boxGeometry args={[1.45, 0.018, 0.45]} />
+                <boxGeometry args={[SLAB_WIDTH + 0.03, 0.018, 0.45]} />
             </mesh>
             <mesh position={[0, (TOP - 0.08) / 2, 0]} material={materials.slab}>
                 <cylinderGeometry args={[0.12, 0.3, TOP - 0.08, 7]} />
@@ -200,8 +245,43 @@ export const OpponentAltar: React.FC = () => {
                 );
             })}
 
+            {/* Last on the slab: anyone else in the room. */}
+            <group>
+                <group
+                    ref={(g) => {
+                        daises.current[LADDER.length] = g;
+                    }}
+                    position={[offsetX(LADDER.length), TOP, 0]}
+                >
+                    <mesh position={[0, 0.01, 0]} material={materials.gold}>
+                        <cylinderGeometry args={[0.1, 0.11, 0.02, 24]} />
+                    </mesh>
+                    <AnyoneToken material={materials.light} open={modeKind === "open" || openPeers.length > 0} />
+                    {isChosen("anyone") && (
+                        <mesh position={[0, 0.022, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                            <ringGeometry args={[0.115, 0.13, 32]} />
+                            <meshBasicMaterial color="#ffe2a0" toneMapped={false} />
+                        </mesh>
+                    )}
+                </group>
+                <Text
+                    position={[offsetX(LADDER.length), TOP + 0.005, 0.2]}
+                    rotation={[-Math.PI / 2 + 0.5, 0, 0]}
+                    fontSize={0.03}
+                    maxWidth={SPACING * 0.95}
+                    textAlign="center"
+                    color={isChosen("anyone") || openPeers.length ? "#ffe2a0" : "#a99cc8"}
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    {`ANYONE\n${
+                        modeKind === "open" ? "WAITING" : openPeers.length ? `${openPeers.length} WAITING` : "PEOPLE"
+                    }`}
+                </Text>
+            </group>
+
             <group ref={targets}>
-                {LADDER.map((id, i) => (
+                {CHOICES.map((id, i) => (
                     <mesh key={id} visible={false} userData={{ bot: id }} position={[offsetX(i), TOP + 0.18, 0]}>
                         <boxGeometry args={[SPACING, 0.38, 0.3]} />
                     </mesh>
@@ -220,14 +300,18 @@ export const OpponentAltar: React.FC = () => {
                 }}
                 callbacks={{
                     onRayStay: (hit) => {
-                        const id = hit.object.userData.bot as BotId | undefined;
+                        const id = hit.object.userData.bot as Choice | undefined;
                         if (id && id !== hovered) {
                             setHovered(id);
                             playSound("ui-hover");
                         }
                     },
                     onRayExit: () => setHovered(null),
-                    onTrigger: () => hovered && cosmicControl.current?.chooseOpponent(hovered),
+                    onTrigger: () => {
+                        if (!hovered) return;
+                        if (hovered === "anyone") cosmicControl.current?.playAnyone();
+                        else cosmicControl.current?.chooseOpponent(hovered);
+                    },
                 }}
                 visual={{
                     prompt: {

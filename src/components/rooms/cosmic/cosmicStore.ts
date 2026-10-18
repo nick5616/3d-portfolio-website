@@ -17,12 +17,15 @@ export type GamePhase =
     | "theirChipFalling"
     | "over"
     | "clearing"
-    | "watching";
+    | "watching"
+    | "waiting";
 
 // What your board is showing: your own game against an opponent from the
-// ladder, a game against another visitor, or someone else's game.
+// ladder, an empty board with a seat open for anyone, a game against
+// another visitor, or someone else's game.
 export type TableMode =
     | { kind: "bot" }
+    | { kind: "open"; game: string }
     | { kind: "versus"; peer: string; game: string; round: number; challenger: boolean }
     | { kind: "watch"; peer: string };
 

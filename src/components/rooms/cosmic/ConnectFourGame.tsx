@@ -423,6 +423,7 @@ export const ConnectFourGame: React.FC = () => {
             moves: [...g.moves],
             result: g.result,
             watching: m.kind === "watch",
+            open: m.kind === "open" ? m.game : null,
         };
     };
     // (Mid-clear the board is between games; whatever starts next sends.)
@@ -448,7 +449,8 @@ export const ConnectFourGame: React.FC = () => {
         } else {
             const bot = activeBot.current;
             sides = [s.design, botChips(bot, s.design)];
-            seat = bot === "void" ? null : { kind: "bot", bot };
+            // An open seat is empty until someone takes it.
+            seat = bot === "void" || m.kind === "open" ? null : { kind: "bot", bot };
         }
         if (sides[0] !== s.sides[0] || sides[1] !== s.sides[1]) s.setSides(sides);
         if (!sameSeat(seat, s.seat)) s.setSeat(seat);
@@ -675,6 +677,21 @@ export const ConnectFourGame: React.FC = () => {
         maybeAutoWatch();
     };
 
+    // An empty board, and a seat across it open to anyone in the room.
+    const startWaiting = () => {
+        const s = store();
+        const m = s.mode;
+        if (m.kind !== "open") return restoreOwn();
+        game.current = { key: `open:${m.game}`, first: 1, moves: [], result: null };
+        board.current = emptyBoard();
+        markWinning(null);
+        s.setWinner(null);
+        s.setIntensity(0.1);
+        refreshLooks();
+        s.setPhase("waiting");
+        publishTable();
+    };
+
     // Set your game aside before the board shows anything else.
     const parkOwn = () => {
         if (store().mode.kind !== "bot") return;
@@ -742,7 +759,10 @@ export const ConnectFourGame: React.FC = () => {
 
     const onTable = (peer: string, t: TableState) => {
         const s = store();
+        const wasOpen = Boolean(s.tables[peer]?.open);
         s.setTable(peer, t);
+        // Say so when someone opens a seat, unless you're busy playing.
+        if (t.open && !wasOpen && s.mode.kind !== "versus" && !isPlaying(tableNow())) voidSays("someoneOpen");
         const m: TableMode = s.mode;
 
         if (m.kind === "watch" && m.peer === peer) {
@@ -870,6 +890,31 @@ export const ConnectFourGame: React.FC = () => {
             sync.current?.challenge(peer, { kind: "accept", game: gameId });
             startVersus(peer, gameId, false);
         },
+        join: (peer: string) => {
+            const gameId = store().tables[peer]?.open;
+            if (!gameId) return;
+            sync.current?.challenge(peer, { kind: "accept", game: gameId });
+            startVersus(peer, gameId, false);
+        },
+        playAnyone: () => {
+            const s = store();
+            if (s.mode.kind === "open") {
+                // Nobody came (or you changed your mind).
+                voidSays("closeTable");
+                s.setMode({ kind: "bot" });
+                return clearBoard(restoreOwn);
+            }
+            const waiting = Object.keys(s.tables)
+                .sort()
+                .find((id) => s.tables[id].open);
+            if (waiting) return control.join(waiting);
+            optedOwn.current = true;
+            parkOwn();
+            s.setMode({ kind: "open", game: newKey() });
+            voidSays("openTable");
+            playSound("c4-chip-select");
+            clearBoard(startWaiting);
+        },
     };
 
     // Someone's mid-game and you haven't started one of your own: their
@@ -893,6 +938,8 @@ export const ConnectFourGame: React.FC = () => {
             dropYours(s.hoverCol);
         } else if (s.phase === "watching") {
             control.stopWatching();
+        } else if (s.phase === "waiting") {
+            control.playAnyone();
         } else if (s.phase === "over") {
             const m = s.mode;
             if (m.kind === "versus") {
@@ -942,8 +989,20 @@ export const ConnectFourGame: React.FC = () => {
                     playSound("c4-chip-select");
                 } else if (message.kind === "cancel") {
                     if (st.invites[peer] === message.game) st.setInvite(peer, null);
+                    // We went to join their table, but someone beat us to it.
+                    const m = st.mode;
+                    if (m.kind === "versus" && m.peer === peer && m.game === message.game && !partnerSeen.current) {
+                        voidSays("tableTaken");
+                        st.setMode({ kind: "bot" });
+                        clearBoard(backToOwn);
+                    }
                 } else if (st.outgoing?.peer === peer && st.outgoing.game === message.game) {
                     startVersus(peer, message.game, true);
+                } else if (st.mode.kind === "open" && st.mode.game === message.game) {
+                    // Someone took the open seat.
+                    startVersus(peer, message.game, true);
+                } else {
+                    sync.current?.challenge(peer, { kind: "cancel", game: message.game });
                 }
             },
             // The opponent at the table you're watching, speaking.
@@ -1276,6 +1335,8 @@ export const ConnectFourGame: React.FC = () => {
                 );
             case "watching":
                 return <GemPrompt accent="gold" action="Play your own game" />;
+            case "waiting":
+                return <GemPrompt accent="gold" action="Stop waiting for an opponent" />;
             default:
                 return null;
         }

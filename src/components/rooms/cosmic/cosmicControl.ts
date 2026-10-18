@@ -9,6 +9,9 @@ export interface CosmicControl {
     // Challenge someone, or take back a challenge you sent them.
     challenge: (peer: string) => void;
     accept: (peer: string) => void;
+    // Play a person: join someone's open seat, or open yours (or close it).
+    playAnyone: () => void;
+    join: (peer: string) => void;
 }
 
 export const cosmicControl: { current: CosmicControl | null } = { current: null };
