@@ -22,6 +22,16 @@ import { carrier } from "../../../stores/carrier";
 import { useSceneStore } from "../../../stores/sceneStore";
 import { playSound } from "../../../audio/soundManager";
 import { GemPrompt } from "../../ui/GemPrompt";
+import { remoteVisitors, type Visitor } from "../../../multiplayer/remotePoses";
+
+// Someone else in the column between floors is riding it.
+const others: Visitor[] = [];
+const anyoneElseRiding = () =>
+    remoteVisitors(others).some(
+        (v) =>
+            Math.hypot(v.x - LX, v.z - LZ) < PATH_RADIUS + 0.6 &&
+            !LEVELS.some((level) => Math.abs(v.y - BODY_OFFSET - level) < 0.25)
+    );
 
 // The fairy lift. Opposite the stair, a column of warm air spirals up
 // through the rotunda, thick with petals and motes and wound with ribbons
@@ -410,7 +420,9 @@ export const FairyLift: React.FC<{ materials: AtriumMaterials }> = ({ materials 
         shaders.motes.uniforms.uTime.value = t;
         shaders.pad.uniforms.uTime.value = t;
         shaders.ribbons.forEach((m) => (m.uniforms.uTime.value = t));
-        shaders.column.uniforms.uRide.value += ((ride.current ? 1 : 0) - shaders.column.uniforms.uRide.value) * Math.min(1, delta * 3);
+        // The air brightens while anyone's riding, us or not.
+        const riding = ride.current || anyoneElseRiding();
+        shaders.column.uniforms.uRide.value += ((riding ? 1 : 0) - shaders.column.uniforms.uRide.value) * Math.min(1, delta * 3);
 
         const [px, py, pz] = useSceneStore.getState().playerPosition;
         const feet = py + 0.2;

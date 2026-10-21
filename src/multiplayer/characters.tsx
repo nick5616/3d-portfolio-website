@@ -37,6 +37,8 @@ export interface CharacterDef {
      * color, and what they cost in rupees if you haven't caught one.
      */
     fairy?: { caughtKey: string; color: number; price: number };
+    /** Has feet that touch the ground (others hear them walk). */
+    walks?: boolean;
 }
 
 const ROYAL_PRICE = 100;
@@ -315,7 +317,7 @@ const regals: CharacterDef[] = (["queen", "king"] as const).map((kind) => ({
 }));
 
 export const CHARACTERS: CharacterDef[] = [
-    { name: "Pip", tagline: "Small. Round. Has had three espressos.", height: 0.95, Model: Pip },
+    { name: "Pip", tagline: "Small. Round. Has had three espressos.", height: 0.95, Model: Pip, walks: true },
     { name: "Wisp", tagline: "Doesn't walk so much as drift.", height: 1.45, Model: Wisp },
     ...royals,
     ...regals,
@@ -328,3 +330,14 @@ export const lookFor = (character: number, color: number) => characterAt(charact
 
 /** Avatar colors on offer; chosen to stay readable in both bright and dark rooms. */
 export const PALETTE = [0xff7a7a, 0xffb347, 0xf5e663, 0x7ee08a, 0x5ed3e8, 0x7f9cff, 0xc58cff, 0xff8fd1];
+const COLOR_NAMES = ["coral", "orange", "yellow", "green", "teal", "blue", "violet", "pink"];
+
+/** "a yellow Pip", "the Fairy Queen", "a Rose Royal" - how to mention a visitor. */
+export const describeVisitor = (character: number, look: number, article: "a" | "the" = "a") => {
+    const def = characterAt(character);
+    const regal = def.fairy && (def.fairy.caughtKey === "queen" || def.fairy.caughtKey === "king");
+    if (regal) return `the ${def.name}`;
+    if (def.fairy) return `${article} ${def.name}`;
+    const color = COLOR_NAMES[PALETTE.indexOf(look)];
+    return color ? `${article} ${color} ${def.name}` : `${article} ${def.name}`;
+};

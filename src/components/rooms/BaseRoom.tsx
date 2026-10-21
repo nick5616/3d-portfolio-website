@@ -195,7 +195,6 @@ export const BaseRoom: React.FC<BaseRoomProps> = ({
                 position={config.position}
                 numRupees={getRupeeCountForRoom(config.id)}
                 rupeeScale={0.3}
-                spawnDelay={500}
             />
         </>
     );

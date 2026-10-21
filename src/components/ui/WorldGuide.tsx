@@ -10,6 +10,7 @@ import { playSound } from "../../audio/soundManager";
 import { SettingsPanel } from "./PerformanceControls";
 import { CharacterSelect } from "./CharacterSelect";
 import { useCharacterStore } from "../../stores/characterStore";
+import { useReadiness } from "../../stores/readinessStore";
 
 // The world's onboarding + pause flow, as one small state machine:
 //
@@ -122,6 +123,9 @@ export const WorldGuide: React.FC = () => {
     const { selecting, confirmCharacter, reopenCharacter } = useCharacterStore(
         useShallow((s) => ({ selecting: s.selecting, confirmCharacter: s.confirm, reopenCharacter: s.reopen }))
     );
+    // Nothing to choose or click until the room is really there: the
+    // loading screen stays up until then (stores/readinessStore.ts).
+    const roomReady = useReadiness((s) => s.ready);
 
     // Keys belong to the selector while it's open (A/D pick, not walk).
     useEffect(() => {
@@ -191,7 +195,9 @@ export const WorldGuide: React.FC = () => {
 
     let content: React.ReactNode = null;
 
-    if (selecting) {
+    if (!roomReady) {
+        content = null;
+    } else if (selecting) {
         content = <CharacterSelect onConfirm={confirmChoice} />;
     } else if (welcomeOpen) {
         content = (

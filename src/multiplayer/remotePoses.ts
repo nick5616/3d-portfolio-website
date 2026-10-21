@@ -30,14 +30,27 @@ interface Track {
 
 const tracks = new Map<number, Track>();
 
+// Someone's first pose is the moment they're really here: they've picked
+// who to be and stepped in (Multiplayer.tsx sends nothing before that).
+const arrivals = new Set<(id: number) => void>();
+export const onArrival = (listener: (id: number) => void) => {
+    arrivals.add(listener);
+    return () => {
+        arrivals.delete(listener);
+    };
+};
+export const hasArrived = (id: number) => tracks.has(id);
+
 export function recordPose(id: number, pose: Pose) {
     const now = performance.now();
     let track = tracks.get(id);
     // New peer, or a long silence (hidden tab) longer than the 16-bit
     // timestamp can unambiguously span: start the timeline over.
     if (!track || now - track.lastArrival > 30_000) {
+        const first = !track;
         track = { samples: [], lastT: pose.t, lastWrapped: pose.t, lastArrival: now, offset: now - pose.t };
         tracks.set(id, track);
+        if (first) arrivals.forEach((listener) => listener(id));
     } else {
         const delta = (pose.t - track.lastWrapped) & 0xffff;
         // Older than what we have (reordered or duplicated via both the
@@ -103,6 +116,35 @@ export function samplePose(id: number, out: InterpolatedPose): boolean {
     out.pitch = a.pitch + (b.pitch - a.pitch) * k;
     out.flags = k < 0.5 ? a.flags : b.flags;
     return true;
+}
+
+export interface Visitor {
+    id: number;
+    x: number;
+    y: number;
+    z: number;
+    /** Horizontal speed, m/s, from their last two poses (0 once they go quiet). */
+    speed: number;
+}
+
+/**
+ * Where everyone else is right now (their newest pose, not the smoothed
+ * one drawn), for things in the world that react to people: fairies that
+ * scatter when someone runs at them, whoever else is near the rupee.
+ */
+export function remoteVisitors(out: Visitor[] = []): Visitor[] {
+    out.length = 0;
+    const now = performance.now();
+    tracks.forEach((track, id) => {
+        const s = track.samples;
+        const b = s[s.length - 1];
+        if (!b) return;
+        const a = s[s.length - 2];
+        const quiet = now - track.lastArrival > SEND_INTERVAL * 4;
+        const speed = !quiet && a && b.at > a.at ? Math.hypot(b.x - a.x, b.z - a.z) / ((b.at - a.at) / 1000) : 0;
+        out.push({ id, x: b.x, y: b.y, z: b.z, speed: speed > 30 ? 0 : speed });
+    });
+    return out;
 }
 
 export function forgetPose(id: number) {

@@ -4,13 +4,22 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { onMusicStart } from "../../audio/soundManager";
 import { SOUNDS, SoundDef } from "../../audio/soundManifest";
 import { Announcement, onAnnounce } from "./announce";
+import { useMultiplayerStore, type RemotePeer } from "../../multiplayer/connection";
+import { onArrival } from "../../multiplayer/remotePoses";
+import { describeVisitor } from "../../multiplayer/characters";
+import { useReadiness } from "../../stores/readinessStore";
+import { useCharacterStore } from "../../stores/characterStore";
 
 interface Banner {
     key: number;
-    kind: "achievement" | "music";
+    kind: "achievement" | "music" | "visitor";
     title: string;
     detail: string;
+    /** A visitor's color, for the dot by their name. */
+    color?: number;
 }
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 // Short subtitles under a room's name when you walk in.
 const REGION_SUBTITLES: Record<string, string> = {
@@ -28,7 +37,7 @@ const REGION_SUBTITLES: Record<string, string> = {
     "jam-room": "Everything here makes a sound",
     "bird-dog-studio": "Music by Bird Dog",
     "marble-machine": "Build it, then let go",
-    forest: "A new forest every visit",
+    forest: "Grown fresh for whoever's here",
     observatory: "My work, written in the stars",
 };
 
@@ -42,6 +51,10 @@ export const HudToasts: React.FC = () => {
     const nextKey = useRef(0);
     const room = useSceneStore((s) => s.currentRoom);
     const transitioning = useSceneStore((s) => s.roomTransitionLoading);
+    // The reveal is for when you can see the room: loaded, and stepped into.
+    const roomReady = useReadiness((s) => s.ready);
+    const selecting = useCharacterStore((s) => s.selecting);
+    const arrived = roomReady && !selecting;
 
     const push = (banner: Omit<Banner, "key">) => {
         const key = nextKey.current++;
@@ -55,14 +68,14 @@ export const HudToasts: React.FC = () => {
     // Region reveal once the transition screen has cleared.
     const lastRoom = useRef<string | null>(null);
     useEffect(() => {
-        if (!room || transitioning || room.id === lastRoom.current) return;
+        if (!room || transitioning || !arrived || room.id === lastRoom.current) return;
         lastRoom.current = room.id;
         const key = nextKey.current++;
         const subtitle = REGION_SUBTITLES[room.id];
         setRegion({ key, name: room.name, subtitle: subtitle !== room.name ? subtitle : undefined });
         const timer = setTimeout(() => setRegion((r) => (r?.key === key ? null : r)), 3400);
         return () => clearTimeout(timer);
-    }, [room, transitioning]);
+    }, [room, transitioning, arrived]);
 
     useEffect(
         () =>
@@ -90,6 +103,33 @@ export const HudToasts: React.FC = () => {
             }),
         []
     );
+
+    // Someone stepping into (or out of) the room you're in.
+    useEffect(() => {
+        const here = new Map<number, RemotePeer>();
+        const offArrival = onArrival((id) => {
+            const peer = useMultiplayerStore.getState().peers[id];
+            if (!peer || here.has(id)) return;
+            here.set(id, peer);
+            push({ kind: "visitor", title: `${capitalize(describeVisitor(peer.char, peer.look))} is here`, detail: "", color: peer.look });
+        });
+        const offPeers = useMultiplayerStore.subscribe((state, previous) => {
+            // We're the one who moved: nobody left, we did.
+            if (state.room !== previous.room) {
+                here.clear();
+                return;
+            }
+            here.forEach((peer, id) => {
+                if (state.peers[id]) return;
+                here.delete(id);
+                push({ kind: "visitor", title: `${capitalize(describeVisitor(peer.char, peer.look, "the"))} left`, detail: "", color: peer.look });
+            });
+        });
+        return () => {
+            offArrival();
+            offPeers();
+        };
+    }, []);
 
     useEffect(
         () =>
@@ -138,6 +178,17 @@ export const HudToasts: React.FC = () => {
                             </div>
                             <div className="botw-title text-2xl mt-0.5">{banner.title}</div>
                             <div className="text-sm text-[color:var(--gem-ink-dim)] mt-0.5">{banner.detail}</div>
+                        </div>
+                    ) : banner.kind === "visitor" ? (
+                        <div key={banner.key} className="hud-toast text-sm flex items-center gap-2" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>
+                            <span
+                                className="inline-block w-2.5 h-2.5 rounded-full"
+                                style={{
+                                    background: `#${(banner.color ?? 0xffffff).toString(16).padStart(6, "0")}`,
+                                    boxShadow: `0 0 8px #${(banner.color ?? 0xffffff).toString(16).padStart(6, "0")}`,
+                                }}
+                            />
+                            <span className="gem-display italic">{banner.title}</span>
                         </div>
                     ) : (
                         <div key={banner.key} className="hud-toast text-sm" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>

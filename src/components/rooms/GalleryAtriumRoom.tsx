@@ -10,6 +10,7 @@ import { LightSwitch } from "../ui/LightSwitch";
 import { useSceneStore } from "../../stores/sceneStore";
 import { GodRays, DustMotes } from "../effects/GodRays";
 import { EnhancedMaterialSystem } from "../../configs/enhancedMaterials";
+import { setRoomPart, useRoomPart } from "../../multiplayer/roomSession";
 
 interface GalleryAtriumRoomProps {
   config: RoomConfig;
@@ -37,9 +38,21 @@ export const GalleryAtriumRoom: React.FC<GalleryAtriumRoomProps> = ({
   materials,
 }) => {
   const radius = width / 2;
-  const { galleryWhiteLightMode, toggleGalleryLightMode } = useSceneStore(
-        useShallow((s) => ({ galleryWhiteLightMode: s.galleryWhiteLightMode, toggleGalleryLightMode: s.toggleGalleryLightMode }))
+  const { galleryWhiteLightMode } = useSceneStore(
+        useShallow((s) => ({ galleryWhiteLightMode: s.galleryWhiteLightMode }))
     );
+  // The switch is everyone's: flip it and the lights change for whoever's
+  // in the hub with you, and someone walking in finds them as you left
+  // them (a room part, see multiplayer/roomSession.ts). The halls follow
+  // whatever you last saw here.
+  const [sharedWhite] = useRoomPart<boolean | null>("lights:white", null);
+  useEffect(() => {
+    if (sharedWhite !== null) useSceneStore.setState({ galleryWhiteLightMode: sharedWhite });
+  }, [sharedWhite]);
+  const flipLights = (white: boolean) => {
+    useSceneStore.setState({ galleryWhiteLightMode: white });
+    setRoomPart("lights:white", white);
+  };
 
   // A ring of flat wall segments approximating the circle. A single
   // CylinderGeometry with a "hull"/"trimesh" collider was tried first, but
@@ -310,7 +323,7 @@ export const GalleryAtriumRoom: React.FC<GalleryAtriumRoomProps> = ({
       <LightSwitch
         position={[radius - 0.05, 1.75, radius * 0.3]}
         rotation={[0, Math.PI, 0]}
-        onToggle={toggleGalleryLightMode}
+        onToggle={flipLights}
         isWhiteLight={galleryWhiteLightMode}
       />
     </>

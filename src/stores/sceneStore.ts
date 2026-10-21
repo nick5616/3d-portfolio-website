@@ -10,6 +10,7 @@ import {
 } from "../utils/localStorage";
 import { detectIsMobile } from "../utils/deviceDetection";
 import { useAchievementStore } from "./achievementStore";
+import { useReadiness } from "./readinessStore";
 
 interface MovementState {
     forward: boolean;
@@ -161,6 +162,8 @@ interface SceneState {
     roomTransitionLoading: boolean;
     roomTransitionFrom: string | null;
     roomTransitionTo: string | null;
+    /** The room load (readiness token) that was current when the trip began. */
+    roomTransitionToken: number;
     setRoomTransitionLoading: (
         loading: boolean,
         from?: string | null,
@@ -393,6 +396,7 @@ export const useSceneStore = create<SceneState>((set) => {
                 // spawned at the origin, which in the atrium is the middle
                 // of the fountain.)
                 const { position, rotation } = config.defaultEntrance;
+                useReadiness.getState().begin(roomId);
                 set({
                     currentRoom: config,
                     roomEnvironmentReady: false,
@@ -428,6 +432,7 @@ export const useSceneStore = create<SceneState>((set) => {
                 // floated above the floor sliding around with no friction.
                 const changingRoom =
                     useSceneStore.getState().currentRoom?.id !== roomId;
+                if (changingRoom) useReadiness.getState().begin(roomId);
                 set({
                     currentRoom: config,
                     cameraTarget: new THREE.Vector3(...position),
@@ -492,8 +497,11 @@ export const useSceneStore = create<SceneState>((set) => {
         roomTransitionLoading: false,
         roomTransitionFrom: null,
         roomTransitionTo: null,
+        roomTransitionToken: 0,
         setRoomTransitionLoading: (loading, from, to) => {
             const updates: any = { roomTransitionLoading: loading };
+            // A trip has happened once the next room's load has begun.
+            if (loading) updates.roomTransitionToken = useReadiness.getState().token;
 
             // Only update the room info if provided
             if (from !== undefined) {

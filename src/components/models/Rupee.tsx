@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useUnlockStore } from "../../stores/unlockStore";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -7,6 +7,7 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { createRupeeGeometry } from "../../utils/rupeeGeometry";
 import { playSound } from "../../audio/soundManager";
 import { RUPEE_TYPES } from "../../stores/rupeeStore";
+import { getRoomPart, setRoomPart, useRoomSessionStore } from "../../multiplayer/roomSession";
 
 export interface RupeeData {
     position: THREE.Vector3;
@@ -30,6 +31,9 @@ interface RupeeProps {
         y: number;
         z: number;
     };
+    // Shared with everyone in the room under this key (a room part, see
+    // multiplayer/roomSession.ts): picked up by anyone, it's gone for all.
+    sharedKey?: string;
 }
 
 const POP_DURATION = 0.45; // seconds
@@ -43,14 +47,22 @@ export const Rupee: React.FC<RupeeProps> = ({
     rupee,
     animationType = "floating",
     rotationSpeed,
+    sharedKey,
 }) => {
     const meshRef = useRef<THREE.Mesh>(null);
     const currentRotation = useRef(
         new THREE.Euler().copy(rupee.initialRotation)
     );
-    const [isCollected, setIsCollected] = useState(false);
+    // Already taken by someone before we got here: never shown.
+    const [isCollected, setIsCollected] = useState(() => Boolean(sharedKey && getRoomPart(sharedKey)));
     // Set when picked up; the pop animation plays before the rupee hides.
     const collectedAt = useRef<number | null>(null);
+    // Someone else just picked it up: pop it on the next frame, no reward.
+    const takenElsewhere = useRef(false);
+    const takenByAnyone = useRoomSessionStore((s) => Boolean(sharedKey && s.parts[sharedKey]));
+    useEffect(() => {
+        if (takenByAnyone && collectedAt.current === null) takenElsewhere.current = true;
+    }, [takenByAnyone]);
     const popStartY = useRef(0);
     const addRupee = useRupeeStore((s) => s.addRupee);
     // Read the player position imperatively inside useFrame instead of
@@ -74,6 +86,12 @@ export const Rupee: React.FC<RupeeProps> = ({
         if (!meshRef.current || isCollected) return;
 
         const time = state.clock.getElapsedTime();
+
+        if (takenElsewhere.current && collectedAt.current === null) {
+            takenElsewhere.current = false;
+            collectedAt.current = time;
+            popStartY.current = meshRef.current.position.y;
+        }
 
         // Pickup "pop": rise, spin up, flare bright and shrink away, then hide.
         if (collectedAt.current !== null) {
@@ -119,6 +137,7 @@ export const Rupee: React.FC<RupeeProps> = ({
             // Collection radius
             collectedAt.current = time;
             popStartY.current = meshRef.current.position.y;
+            if (sharedKey) setRoomPart(sharedKey, true);
             addRupee(rupee.type);
             const value =
                 RUPEE_TYPES.find((type) => type.name === rupee.type)?.value ?? 1;

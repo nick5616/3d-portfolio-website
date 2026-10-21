@@ -5,7 +5,8 @@ import * as THREE from "three";
 import { GemPrompt } from "../../ui/GemPrompt";
 import { useAimTargets } from "../../core/useAimTargets";
 import { useAchievementStore } from "../../../stores/achievementStore";
-import { CHILDYLLIC, closeStudioMusic, currentPositionMs, openStudioMusic, playTrack, togglePlayback, useStudioMusic } from "../studio/soundcloud";
+import { CHILDYLLIC, closeStudioMusic, currentPositionMs, openStudioMusic, syncPlayback, useStudioMusic } from "../studio/soundcloud";
+import { getRoomPart, sessionSeconds, setRoomPart, useRoomSessionStore } from "../../../multiplayer/roomSession";
 import { ButterflyFairy, butterflyAssets } from "./forest/butterfly";
 import noteMap from "../../../data/songOfTheForestNotes.json";
 
@@ -16,6 +17,11 @@ import noteMap from "../../../data/songOfTheForestNotes.json";
 // every two seconds (30 BPM) it drifts to another key and settles on it a
 // moment. The music starts when you arrive; press E at the keyboard to
 // stop or start it.
+//
+// Everyone in the forest hears the same song at the same moment: it runs
+// on the room session's clock, from when the forest was grown, and
+// stopping or starting it at the keyboard does so for everyone (the "song"
+// room part, see multiplayer/roomSession.ts).
 
 const PIANO_AT: [number, number, number] = [3.1, 0, 4.7];
 // Keys toward the middle of the glade, where you arrive.
@@ -42,19 +48,55 @@ const [LOW, HIGH] = noteMap.range;
 const keyForMidi = (midi: number) =>
     Math.round(Math.max(0, Math.min(1, (midi - LOW) / Math.max(1, HIGH - LOW))) * (KEYS - 1));
 
+// The song as the room has it: playing from a session time (when it was
+// at 0:00), or stopped at a point. No part yet: playing since the forest grew.
+type Song = { playing: true; from: number } | { playing: false; at: number };
+const SONG_KEY = "song";
+const DRIFT_CHECK_MS = 4000;
+
+const songNow = (): Song => getRoomPart<Song>(SONG_KEY) ?? { playing: true, from: 0 };
+const songPositionMs = (song: Song) => {
+    const length = useStudioMusic.getState().tracks[0]?.duration || 0;
+    const ms = song.playing ? (sessionSeconds() - song.from) * 1000 : song.at;
+    return length ? ((ms % length) + length) % length : Math.max(0, ms);
+};
+const followSong = () => {
+    const track = useStudioMusic.getState().tracks[0];
+    if (!track) return;
+    const song = songNow();
+    syncPlayback(track.id, song.playing, songPositionMs(song));
+};
+const toggleSong = () => {
+    const song = songNow();
+    const at = songPositionMs(song);
+    setRoomPart(SONG_KEY, song.playing ? { playing: false, at } : { playing: true, from: sessionSeconds() - at / 1000 });
+    followSong();
+};
+
 export const ForestPiano: React.FC = () => {
     const playing = useStudioMusic((s) => s.playing);
     const status = useStudioMusic((s) => s.status);
     const aim = useAimTargets();
 
-    // Start the Song of the Forest on arrival; stop it on the way out.
+    // Join the Song of the Forest wherever it's got to; stop it on the way
+    // out. Kept in line with the room's clock (and anyone's stop/start).
     useEffect(() => {
+        let ready = false;
         openStudioMusic(() => {
             window.setTimeout(() => {
-                if (useStudioMusic.getState().current === null) playTrack(0);
+                ready = true;
+                followSong();
             }, 600);
         }, CHILDYLLIC);
-        return () => closeStudioMusic();
+        const drift = window.setInterval(() => ready && followSong(), DRIFT_CHECK_MS);
+        const unsubscribe = useRoomSessionStore.subscribe((st, prev) => {
+            if (ready && st.parts[SONG_KEY] !== prev.parts[SONG_KEY]) followSong();
+        });
+        return () => {
+            window.clearInterval(drift);
+            unsubscribe();
+            closeStudioMusic();
+        };
     }, []);
     useEffect(() => {
         if (playing) useAchievementStore.getState().unlock("forest-childyllic");
@@ -194,7 +236,7 @@ export const ForestPiano: React.FC = () => {
                         ) : (
                             <GemPrompt accent="green" action={playing ? "Let the fairy rest" : "Play the Song of the Forest"} />
                         ),
-                    use: togglePlayback,
+                    use: toggleSong,
                 })}
             >
                 {/* The stump, with a ring of moss on top */}

@@ -32,12 +32,18 @@ interface MultiplayerState {
     selfId: number | null;
     /** Others in the same world room. Changes only on join/leave. */
     peers: Record<number, RemotePeer>;
+    /** The room the server last confirmed we're in (so `peers` is its full list). */
+    room: string | null;
+    /** How many are in each room of the world, us included (empty from servers that don't say). */
+    census: Record<string, number>;
 }
 
 export const useMultiplayerStore = create<MultiplayerState>(() => ({
     status: "off",
     selfId: null,
     peers: {},
+    room: null,
+    census: {},
 }));
 
 interface PeerLink {
@@ -91,7 +97,7 @@ export class MultiplayerClient {
         ws.onclose = () => {
             if (gen !== this.generation) return;
             this.resetPeers();
-            useMultiplayerStore.setState({ status: "off", selfId: null });
+            useMultiplayerStore.setState({ status: "off", selfId: null, room: null, census: {} });
             if (this.destroyed) return;
             this.reconnectTimer = setTimeout(() => this.connect(), this.reconnectDelay);
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30_000);
@@ -106,7 +112,7 @@ export class MultiplayerClient {
         this.ws?.close();
         this.ws = null;
         this.resetPeers();
-        useMultiplayerStore.setState({ status: "off", selfId: null });
+        useMultiplayerStore.setState({ status: "off", selfId: null, room: null });
     }
 
     /** Change how we look to everyone else. */
@@ -159,7 +165,7 @@ export class MultiplayerClient {
                 if (msg.room !== this.room) return; // we've since moved on
                 const peers: Record<number, RemotePeer> = {};
                 for (const p of msg.peers) peers[p.id] = { id: p.id, look: p.look, char: p.char };
-                useMultiplayerStore.setState({ peers });
+                useMultiplayerStore.setState({ peers, room: msg.room });
                 // The newcomer makes the offers; everyone already here answers.
                 if (this.allowDirect) {
                     for (const p of msg.peers.slice(0, MAX_DIRECT_PEERS)) this.openLink(p.id, true);
@@ -184,6 +190,9 @@ export class MultiplayerClient {
                 break;
             case "signal":
                 this.handleSignal(msg.from, msg.data);
+                break;
+            case "census":
+                if (msg.rooms && typeof msg.rooms === "object") useMultiplayerStore.setState({ census: msg.rooms });
                 break;
         }
     }
@@ -294,6 +303,6 @@ export class MultiplayerClient {
         for (const id of [...this.links.keys()]) this.closeLink(id);
         this.direct.clear();
         forgetAllPoses();
-        useMultiplayerStore.setState({ peers: {} });
+        useMultiplayerStore.setState({ peers: {}, room: null });
     }
 }

@@ -23,6 +23,7 @@ import { GemPrompt } from "../ui/GemPrompt";
 import { FairyStonePortal } from "./FairyStonePortal";
 import { CosmicPortal } from "./CosmicPortal";
 import { WoodenDoor } from "./WoodenDoor";
+import { useRoomHeadcount } from "../../multiplayer/presence";
 
 interface DoorProps {
     archway: Archway;
@@ -53,6 +54,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     // In the forest, the way home is a holed fairy stone.
     const fairyStone = archway.appearance === "fairyStone";
     const lock = archway.lock;
+    // Who's on the other side, so a door can say the world isn't empty.
+    const inside = useRoomHeadcount(archway.targetRoomId);
     const isLocked = useUnlockStore(
         (s) => Boolean(lock) && !s.unlocked[lock!.id]
     );
@@ -654,6 +657,28 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                         {`${lock.cost} rupees`}
                     </Text>
                 </group>
+            )}
+
+            {inside > 0 && (
+                // Half a metre into the room: some walls (the atrium's
+                // drum) are thicker than a door is deep, and anything set
+                // flush above the doorway ends up inside the stone.
+                <Text
+                    position={[
+                        doorPosition[0] - outward[0] * 0.5,
+                        doorPosition[1] + archway.height + 0.25,
+                        doorPosition[2] - outward[2] * 0.5,
+                    ]}
+                    rotation={[0, labelRotationY, 0]}
+                    fontSize={0.19}
+                    color="#bfffe0"
+                    outlineWidth={0.014}
+                    outlineColor="#06210f"
+                    anchorX="center"
+                    anchorY="middle"
+                >
+                    {inside === 1 ? "1 traveler inside" : `${inside} travelers inside`}
+                </Text>
             )}
 
             <group position={labelPosition} rotation={[0, labelRotationY, 0]} visible={!customLook}>

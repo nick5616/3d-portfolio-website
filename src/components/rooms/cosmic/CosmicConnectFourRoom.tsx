@@ -61,7 +61,6 @@ export const CosmicConnectFourRoom: React.FC = () => (
             position={[0, 0, 0]}
             numRupees={2}
             rupeeScale={0.3}
-            spawnDelay={500}
             pickPosition={pickRupeeSpot}
         />
     </>
@@ -69,10 +68,10 @@ export const CosmicConnectFourRoom: React.FC = () => (
 
 // Out on the rim of the platform, on your side of the table, clear of the
 // altar and the door.
-const pickRupeeSpot = (): [number, number, number] => {
+const pickRupeeSpot = (_: number, rand: () => number): [number, number, number] => {
     for (let attempt = 0; attempt < 30; attempt++) {
-        const angle = Math.random() * Math.PI * 2;
-        const r = 4.5 + Math.random() * 2.8;
+        const angle = rand() * Math.PI * 2;
+        const r = 4.5 + rand() * 2.8;
         const x = Math.cos(angle) * r;
         const z = Math.sin(angle) * r;
         const nearAltar = [ALTAR_POSITION, OPPONENT_ALTAR_POSITION, TABLES_POSITION].some(

@@ -14,6 +14,7 @@ import { playSound } from "../../../audio/soundManager";
 import { roomConfigs } from "../../../configs/rooms";
 import { Rupee, RupeeData } from "../../models/Rupee";
 import { Course, Island, Shuttle, Spinner, START_LINE_Z, generateCourse } from "./courseGen";
+import { sessionSeconds, useRoomPlace } from "../../../multiplayer/roomSession";
 
 // The Sky Course: what the gym became. Timed runs across islands floating
 // above the clouds, grown procedurally (see courseGen.ts): Course 1, 2, 3...
@@ -135,11 +136,13 @@ const IslandMesh: React.FC<{ island: Island; tint: string }> = ({ island, tint }
     );
 };
 
+// Shuttles and spinners keep the room session's time, so a platform
+// someone's riding is under them on everyone's screen, not just theirs.
 const MovingPlatform: React.FC<{ shuttle: Shuttle }> = ({ shuttle }) => {
     const body = useRef<RapierRigidBody>(null);
     const [x, z] = shuttle.at;
-    useFrame(({ clock }) => {
-        const phase = (clock.elapsedTime / shuttle.period) * Math.PI * 2;
+    useFrame(() => {
+        const phase = (sessionSeconds() / shuttle.period) * Math.PI * 2;
         if (shuttle.axis === "x") {
             body.current?.setNextKinematicTranslation({ x: x + Math.sin(phase) * shuttle.amplitude, y: shuttle.top - 0.2, z });
         } else {
@@ -163,7 +166,7 @@ const SpinningCross: React.FC<{ spinner: Spinner }> = ({ spinner }) => {
     const body = useRef<RapierRigidBody>(null);
     const quat = useMemo(() => new THREE.Quaternion(), []);
     const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-    useFrame(({ clock }) => body.current?.setNextKinematicRotation(quat.setFromAxisAngle(up, clock.elapsedTime * spinner.speed)));
+    useFrame(() => body.current?.setNextKinematicRotation(quat.setFromAxisAngle(up, sessionSeconds() * spinner.speed)));
     return (
         <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spinner.at[0], spinner.top - 0.2, spinner.at[1]]}>
             {[0, Math.PI / 2].map((angle) => (
@@ -321,6 +324,9 @@ export const SkyCourse: React.FC = () => {
     const { scene, camera } = useThree();
     const [level, setLevel] = useState(loadLevel);
     const course = useMemo(() => generateCourse(level), [level]);
+    // Everyone's on a course of their own choosing; you only see the ones
+    // running the same course as you.
+    useRoomPlace(`course-${level}`);
     const [best, setBest] = useState<Best | null>(() => loadBest(level));
     const [hud, setHud] = useState({ time: 0, running: false, finished: null as number | null, message: "" });
     const [reached, setReached] = useState(0); // highest checkpoint index reached this run

@@ -13,6 +13,8 @@
 //   3. Fallback relay - for pairs whose direct channel couldn't connect
 //      (symmetric NATs, no TURN), it forwards their small binary pose
 //      packets, stamping the sender's id on so it can't be spoofed.
+//   4. Census - how many are in each room, sent to everyone whenever it
+//      changes (at most twice a second), so a door can say who's behind it.
 //
 // Keep the binary layout in sync with src/multiplayer/protocol.ts.
 
@@ -38,6 +40,7 @@ const MAX_ROOM_ID = 64;
 const MAX_SIGNAL_BYTES = 8 * 1024; // SDP offers are ~1-3 KB
 const MAX_MSGS_PER_SEC = 60; // poses are 15 Hz; signaling bursts briefly on join
 const MAX_CONNECTIONS = 500;
+const CENSUS_INTERVAL = 500; // ms, at most
 
 /** @type {Map<number, Conn>} */
 const conns = new Map();
@@ -85,6 +88,21 @@ function send(conn, msg) {
     if (conn.ws.readyState === 1) conn.ws.send(JSON.stringify(msg));
 }
 
+// Headcounts per room, to everyone, soon after any change.
+let censusTimer = null;
+function scheduleCensus() {
+    if (censusTimer) return;
+    censusTimer = setTimeout(() => {
+        censusTimer = null;
+        const counts = {};
+        for (const [room, members] of rooms) counts[room] = members.size;
+        const msg = JSON.stringify({ t: "census", rooms: counts });
+        for (const conn of conns.values()) {
+            if (conn.ws.readyState === 1) conn.ws.send(msg);
+        }
+    }, CENSUS_INTERVAL);
+}
+
 /** What others see of a visitor: an id, a color and a character. */
 const profile = (c) => ({ id: c.id, look: c.look, char: c.char });
 
@@ -96,6 +114,7 @@ function leaveRoom(conn) {
     if (!members) return;
     members.delete(conn);
     if (members.size === 0) rooms.delete(room);
+    scheduleCensus();
     for (const other of members) {
         other.direct.delete(conn.id);
         send(other, { t: "leave", id: conn.id });
@@ -118,6 +137,7 @@ function joinRoom(conn, room) {
     for (const other of members) send(other, { t: "join", ...profile(conn) });
     members.add(conn);
     conn.room = room;
+    scheduleCensus();
 }
 
 function overBudget(conn) {

@@ -23,11 +23,18 @@ import {
 } from "./forest/dayCycle";
 import { ForestWater } from "./forest/ForestWater";
 import { ForestFairies } from "./forest/ForestFairies";
+import { sessionSeconds, sessionSeed, useRoomSession } from "../../../multiplayer/roomSession";
 
 // The forest: a procedurally generated Lost-Woods-style forest you can run
 // through, with fog banks, light shafts through the canopy, glowing
 // mushrooms, fairies, rupees on the paths, and a short dawn/day/dusk/night
-// cycle. A new forest is grown every visit.
+// cycle.
+//
+// Everyone in the forest is in the same forest: it's grown from the room
+// session's seed and its day runs on the session's clock (see
+// multiplayer/roomSession.ts), so whoever's here sees the same trees, the
+// same rupees on the same paths, the same time of day. The first one in
+// grows a new forest; it lasts until the last one leaves.
 //
 // Everything repeated is instanced (one draw call per kind of thing), and
 // every per-frame value lives in refs/uniforms - nothing re-renders React
@@ -610,15 +617,16 @@ const Shafts: React.FC<{ layout: ForestLayout; time: { value: number }; intensit
     );
 };
 
-const ForestRupees: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
+const ForestRupees: React.FC<{ layout: ForestLayout; seed: number }> = ({ layout, seed }) => {
     const rupees = useMemo<RupeeData[]>(() => {
+        const rand = mulberry32(seed);
         const total = RUPEE_TYPES.reduce((sum, t) => sum + t.spawnWeight, 0);
         return layout.rupees.map(({ x, z }) => {
-            let roll = Math.random() * total;
+            let roll = rand() * total;
             const type = RUPEE_TYPES.find((t) => (roll -= t.spawnWeight) <= 0) ?? RUPEE_TYPES[0];
             return {
                 position: new THREE.Vector3(x, 0.45, z),
-                initialRotation: new THREE.Euler(0, Math.random() * Math.PI * 2, 0),
+                initialRotation: new THREE.Euler(0, rand() * Math.PI * 2, 0),
                 // The rupee model is 5.2 units tall: 0.12 makes it ~60 cm, a
                 // pickup in the grass rather than a 1.5 m monolith.
                 scale: 0.12,
@@ -627,11 +635,11 @@ const ForestRupees: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
                 type: type.name,
             };
         });
-    }, [layout]);
+    }, [layout, seed]);
     return (
         <>
             {rupees.map((rupee, i) => (
-                <Rupee key={i} rupee={rupee} animationType="rotating" />
+                <Rupee key={i} rupee={rupee} animationType="rotating" sharedKey={`rupee:forest:${i}`} />
             ))}
         </>
     );
@@ -641,8 +649,10 @@ const ForestRupees: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
 export const ForestExperience: React.FC = () => {
     const scene = useThree((state) => state.scene);
     const camera = useThree((state) => state.camera);
-    // A new forest each time the program starts.
-    const layout = useMemo(() => generateForest((Date.now() % 100000) + 1), []);
+    // The forest everyone here is in (waits, behind the loading screen,
+    // until the room's session is settled).
+    const session = useRoomSession();
+    const layout = useMemo(() => generateForest(sessionSeed(session, "forest")), [session]);
 
     // Shared, per-frame uniforms
     const time = useMemo(() => ({ value: 0 }), []);
@@ -699,11 +709,11 @@ export const ForestExperience: React.FC = () => {
         };
     }, [scene]);
 
-    const clock = useRef(START_PHASE * CYCLE_SECONDS);
-    useFrame((_, delta) => {
-        time.value += delta;
-        clock.current += delta;
-        sampleSky(clock.current / CYCLE_SECONDS, sky);
+    useFrame(() => {
+        // Both from the session, so the wind and the hour are everyone's.
+        const now = sessionSeconds();
+        time.value = now;
+        sampleSky(START_PHASE + now / CYCLE_SECONDS, sky);
 
         const fog = scene.fog as THREE.FogExp2 | null;
         if (fog && "density" in fog) {
@@ -773,7 +783,7 @@ export const ForestExperience: React.FC = () => {
             <Shafts layout={layout} time={time} intensity={shaftIntensity} color={shaftColor} />
             <Fairies layout={layout} time={time} bright={fairyBright} />
             <Companions bright={fairyBright} />
-            <ForestRupees layout={layout} />
+            <ForestRupees layout={layout} seed={sessionSeed(session, "forest-rupees")} />
             <ForestWater layout={layout} time={time} />
             <ForestFairies layout={layout} />
         </group>

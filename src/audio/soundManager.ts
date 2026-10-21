@@ -127,7 +127,9 @@ const fileFor = (id: SoundId) => {
 
 export const playSound = (
     id: SoundId,
-    options: { volume?: number; rate?: number } = {}
+    // pan: -1 (left) to 1 (right), for sounds placed in the world (another
+    // visitor's footsteps).
+    options: { volume?: number; rate?: number; pan?: number } = {}
 ) => {
     const ctx = context;
     if (!ctx || ctx.state !== "running" || settings.muted) return;
@@ -140,7 +142,13 @@ export const playSound = (
             options.rate ?? 0.96 + Math.random() * 0.08;
         const gain = context.createGain();
         gain.gain.value = (def.volume ?? 1) * (options.volume ?? 1);
-        source.connect(gain).connect(channels.get(def.channel)!);
+        if (options.pan && context.createStereoPanner) {
+            const panner = context.createStereoPanner();
+            panner.pan.value = Math.max(-1, Math.min(1, options.pan));
+            source.connect(gain).connect(panner).connect(channels.get(def.channel)!);
+        } else {
+            source.connect(gain).connect(channels.get(def.channel)!);
+        }
         source.start();
     });
 };

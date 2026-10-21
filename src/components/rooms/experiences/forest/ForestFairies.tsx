@@ -11,6 +11,8 @@ import { REGAL, RegalFairy, RegalKind } from "./regalFairy";
 import { ForestLayout, SPAWN_CLEARING, distanceToWater, mulberry32 } from "./forestGen";
 import { forestSky } from "./dayCycle";
 import { useFairyStore } from "./fairyStore";
+import { sessionSeconds, sessionSeed, setRoomPart, useRoomSession, useRoomSessionStore } from "../../../../multiplayer/roomSession";
+import { remoteVisitors, type Visitor } from "../../../../multiplayer/remotePoses";
 
 // Royal fairies living wild in the forest: a handful scattered through the
 // woods, more around the ponds and creeks, hovering close to the ground.
@@ -18,13 +20,19 @@ import { useFairyStore } from "./fairyStore";
 // scatter, high and fast. Sneak up (crouch-walking is slow enough) and
 // press E to catch one. Very occasionally the Fairy Queen or the Fairy King
 // is about too - warier, and much harder to catch.
+//
+// Everyone in the forest shares its fairies (multiplayer/roomSession.ts):
+// the same ones in the same places, royalty included, hovering in step;
+// they shy away from whoever comes near, and one caught by anybody is gone
+// for everybody (only the catcher gets it, mind).
 
 const WOODS_FAIRIES = 10;
 const WALK_SPEED = 2.5; // m/s: walking (4) unsettles them; crouching (2) doesn't
 const RUN_SPEED = 6; // sprinting (8) scares them off
 const REACH = 1.9; // how close you have to be to catch one
-const QUEEN_CHANCE = 0.12; // per visit
+const QUEEN_CHANCE = 0.12; // per forest (a session's worth of visits)
 const KING_CHANCE = 0.12;
+const caughtKey = (i: number) => `fairy:${i}`;
 
 type Mood = "idle" | "wary" | "fled";
 type Kind = number | RegalKind; // a colourway index, or royalty
@@ -48,7 +56,7 @@ interface FairyState {
     caughtAt: number; // clock time, or -1
 }
 
-const placeFairies = (layout: ForestLayout): Fairy[] => {
+const placeFairies = (layout: ForestLayout, royalSeed: number): Fairy[] => {
     const rand = mulberry32(layout.trees.length * 13 + 5);
     const fairies: Fairy[] = [];
     const hover = () => 0.25 + rand() * 0.4;
@@ -84,17 +92,28 @@ const placeFairies = (layout: ForestLayout): Fairy[] => {
         const home = dryWoods();
         if (home) fairies.push({ home, kind: Math.floor(rand() * 4), seed: rand() * 100 });
     }
-    // Royalty: rare, and not the same every visit. The Queen keeps to the
+    // Royalty: rare, and not in every forest. The Queen keeps to the
     // water; the King to the deep woods.
-    if (Math.random() < QUEEN_CHANCE && layout.ponds.length) {
-        const pond = layout.ponds[Math.floor(Math.random() * layout.ponds.length)];
-        fairies.push({ home: new THREE.Vector3(pond.x, 0.75, pond.z), kind: "queen", seed: Math.random() * 100 });
+    const royal = mulberry32(royalSeed);
+    if (royal() < QUEEN_CHANCE && layout.ponds.length) {
+        const pond = layout.ponds[Math.floor(royal() * layout.ponds.length)];
+        fairies.push({ home: new THREE.Vector3(pond.x, 0.75, pond.z), kind: "queen", seed: royal() * 100 });
     }
-    if (Math.random() < KING_CHANCE) {
+    if (royal() < KING_CHANCE) {
         const home = dryWoods();
-        if (home) fairies.push({ home: home.setY(0.8), kind: "king", seed: Math.random() * 100 });
+        if (home) fairies.push({ home: home.setY(0.8), kind: "king", seed: royal() * 100 });
     }
     return fairies;
+};
+
+// Everyone near the fairies this frame: us first, then the other visitors.
+const visitors: Visitor[] = [];
+const others: Visitor[] = [];
+const gatherVisitors = () => {
+    const { playerPosition: [x, y, z], playerVelocity: [vx, , vz] } = useSceneStore.getState();
+    remoteVisitors(others);
+    visitors.length = 0;
+    visitors.push({ id: -1, x, y, z, speed: Math.hypot(vx, vz) }, ...others);
 };
 
 const WildFairy: React.FC<{ fairy: Fairy; register: (state: FairyState) => void }> = ({ fairy, register }) => {
@@ -113,13 +132,17 @@ const WildFairy: React.FC<{ fairy: Fairy; register: (state: FairyState) => void 
         }),
         [fairy]
     );
-    useEffect(() => register(state), [register, state]);
+    useEffect(() => {
+        register(state);
+    }, [register, state]);
     const away = useMemo(() => new THREE.Vector3(), []);
     const steer = useMemo(() => new THREE.Vector3(), []);
 
-    useFrame(({ clock }, rawDelta) => {
+    useFrame((_, rawDelta) => {
         const delta = Math.min(rawDelta, 0.05);
-        const now = clock.elapsedTime;
+        // The session's clock, so a fairy idling here idles in step with
+        // the same fairy on everyone else's screen.
+        const now = sessionSeconds();
         const g = group.current;
         const s = state;
 
@@ -135,18 +158,30 @@ const WildFairy: React.FC<{ fairy: Fairy; register: (state: FairyState) => void 
         }
 
         const t = now + fairy.seed;
-        const scene = useSceneStore.getState();
-        const [px, , pz] = scene.playerPosition;
-        const [vx, , vz] = scene.playerVelocity;
-        const speed = Math.hypot(vx, vz);
-        const distance = Math.hypot(s.position.x - px, s.position.z - pz);
-        away.set(s.position.x - px, 0, s.position.z - pz);
-        if (away.lengthSq() < 1e-4) away.set(1, 0, 0);
-        away.normalize();
-
         // Royalty notice you from further off.
         const scareRange = regal ? 13 : 9;
         const waryRange = regal ? 5 : 3.5;
+
+        // Whoever matters most: anyone running at it, else the nearest.
+        let px = 0;
+        let pz = 0;
+        let speed = 0;
+        let distance = Infinity;
+        let runner = false;
+        for (const v of visitors) {
+            const d = Math.hypot(s.position.x - v.x, s.position.z - v.z);
+            const running = v.speed > RUN_SPEED && d < scareRange;
+            if ((running && !runner) || (running === runner && d < distance)) {
+                px = v.x;
+                pz = v.z;
+                speed = v.speed;
+                distance = d;
+                runner = running;
+            }
+        }
+        away.set(s.position.x - px, 0, s.position.z - pz);
+        if (away.lengthSq() < 1e-4) away.set(1, 0, 0);
+        away.normalize();
         if (speed > RUN_SPEED && distance < scareRange && s.mood !== "fled") {
             s.mood = "fled";
             s.moodSince = now;
@@ -211,7 +246,8 @@ const WildFairy: React.FC<{ fairy: Fairy; register: (state: FairyState) => void 
 };
 
 export const ForestFairies: React.FC<{ layout: ForestLayout }> = ({ layout }) => {
-    const fairies = useMemo(() => placeFairies(layout), [layout]);
+    const session = useRoomSession();
+    const fairies = useMemo(() => placeFairies(layout, sessionSeed(session, "royal-fairies")), [layout, session]);
     const states = useRef<(FairyState | null)[]>([]);
     const registers = useMemo(() => fairies.map((_, i) => (state: FairyState) => (states.current[i] = state)), [fairies]);
     const [reachable, setReachable] = useState<number | null>(null);
@@ -221,8 +257,9 @@ export const ForestFairies: React.FC<{ layout: ForestLayout }> = ({ layout }) =>
     const clockRef = useRef(0);
 
     // Fairies glow brighter as the light goes.
-    useFrame(({ clock }) => {
-        clockRef.current = clock.elapsedTime;
+    useFrame(() => {
+        clockRef.current = sessionSeconds();
+        gatherVisitors();
         const brightness = 0.45 + forestSky.fairies * 0.55;
         butterflyAssets().glowMaterials.forEach((m) => (m.opacity = brightness));
 
@@ -256,6 +293,7 @@ export const ForestFairies: React.FC<{ layout: ForestLayout }> = ({ layout }) =>
             const s = states.current[i];
             if (!s || s.caughtAt >= 0) return;
             s.caughtAt = clockRef.current;
+            setRoomPart(caughtKey(i), true);
             const fairy = fairies[i];
             const name = nameOf(fairy.kind);
             const key = isRegal(fairy.kind) ? fairy.kind : FAIRY_KINDS[fairy.kind].name;
@@ -285,6 +323,20 @@ export const ForestFairies: React.FC<{ layout: ForestLayout }> = ({ layout }) =>
             window.removeEventListener("keydown", onKey);
             window.removeEventListener("virtualtap", tryCatch);
         };
+    }, [fairies]);
+
+    // Caught by someone else: it goes the same way, just not into our jar.
+    useEffect(() => {
+        const vanish = (parts: Record<string, unknown>, at: number) => {
+            states.current.forEach((s, i) => {
+                if (s && s.caughtAt < 0 && parts[caughtKey(i)]) s.caughtAt = at;
+            });
+        };
+        // Caught before we got here: long gone already, no flash.
+        vanish(useRoomSessionStore.getState().parts, sessionSeconds() - 60);
+        return useRoomSessionStore.subscribe((st, prev) => {
+            if (st.parts !== prev.parts) vanish(st.parts, sessionSeconds());
+        });
     }, [fairies]);
 
     useEffect(() => {

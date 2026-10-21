@@ -17,6 +17,7 @@ import { ROOM_SOUNDSCAPES } from "../../audio/soundManifest";
 import { soundscapeKeyForRoom } from "../../audio/roomSoundscape";
 import { carrier } from "../../stores/carrier";
 import { useUnlockStore } from "../../stores/unlockStore";
+import { useReadiness } from "../../stores/readinessStore";
 
 const JUMP_FORCE = 4;
 const JUMP_COOLDOWN = 500; // milliseconds
@@ -30,9 +31,19 @@ const STANDING_EYE_HEIGHT = 1.8;
 const CROUCH_EYE_HEIGHT = 1.3;
 const CROUCH_TRANSITION_SPEED = 10; // higher = snappier crouch/stand transition
 
+const STILL = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    running: false,
+    jumping: false,
+    crouching: false,
+};
+
 export const PlayerBody: React.FC = () => {
     const { camera } = useThree();
-    const { movement } = useKeyboardControls();
+    const { movement: keys } = useKeyboardControls();
     const { world, rapier } = useRapier();
     // Probe from the capsule's lower sphere center straight down.
     const groundRay = useMemo(
@@ -158,6 +169,9 @@ export const PlayerBody: React.FC = () => {
 
     useFrame((_, delta) => {
         if (!playerRef.current) return;
+        // Behind the loading screen the body settles onto the floor, but
+        // keys held through a door don't walk you anywhere yet.
+        const movement = useReadiness.getState().ready ? keys : STILL;
 
         // Smoothly transition eye height between standing and crouched, CS2-style
         const targetEyeHeight = movement.crouching

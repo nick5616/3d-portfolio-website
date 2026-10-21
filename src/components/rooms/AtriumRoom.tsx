@@ -65,12 +65,12 @@ const clearOf = (x: number, z: number, level: number) => {
 
 // The first rupee waits upstairs as a reward for the climb; the rest are
 // scattered around the ground floor.
-const pickRupeeSpot = (index: number): [number, number, number] => {
-    const level = index === 0 ? 1 + Math.floor(Math.random() * (LEVELS.length - 1)) : 0;
+const pickRupeeSpot = (index: number, rand: () => number): [number, number, number] => {
+    const level = index === 0 ? 1 + Math.floor(rand() * (LEVELS.length - 1)) : 0;
     const [minR, maxR] = level === 0 ? [4.7, RADIUS - 0.8] : [BALCONY_INNER[level - 1] + 0.9, RADIUS - 0.5];
     for (let attempt = 0; attempt < 40; attempt++) {
-        const r = minR + Math.random() * (maxR - minR);
-        const [x, z] = polar(r, Math.random() * Math.PI * 2);
+        const r = minR + rand() * (maxR - minR);
+        const [x, z] = polar(r, rand() * Math.PI * 2);
         if (clearOf(x, z, level)) return [x, LEVELS[level] + 0.5, z];
     }
     return [0, 0.5, 7];
@@ -97,7 +97,6 @@ export const AtriumRoom: React.FC<AtriumRoomProps> = ({ config }) => {
                 position={config.position}
                 numRupees={3}
                 rupeeScale={0.3}
-                spawnDelay={500}
                 pickPosition={pickRupeeSpot}
             />
         </>

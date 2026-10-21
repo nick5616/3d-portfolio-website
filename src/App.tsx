@@ -2,7 +2,9 @@ import { useShallow } from "zustand/react/shallow";
 import React, { Suspense, useEffect, useState } from "react";
 import { Scene } from "./components/core/Scene";
 import Interface from "./components/ui/Interface";
-import { LoadingScreen } from "./components/ui/LoadingScreen";
+import { WorldLoadingScreen } from "./components/ui/WorldLoadingScreen";
+import { MultiplayerConnection } from "./multiplayer/Multiplayer";
+import { useReadiness } from "./stores/readinessStore";
 import { ArtInspector } from "./components/ui/ArtInspector";
 import { SketchbookHUD } from "./components/sketchbook/SketchbookHUD";
 import { ProjectViewer } from "./components/projects/ProjectViewer";
@@ -30,15 +32,19 @@ export default function App() {
     const [hasInteracted, setHasInteracted] = useState(false);
 
     const currentRoomId = useSceneStore((s) => s.currentRoom?.id);
+    const roomReady = useReadiness((s) => s.ready);
     const djConsoleOpen = useDjConsole((s) => s.open);
     useEffect(() => {
         // Textures for the room you're standing in load right away; rooms
-        // one door away load in the background once the browser is idle.
-        // Painting art stays separately lazy (see artTextureLoader).
+        // one door away load in the background once you've arrived (before
+        // that they'd only hold up this room's loading screen). Painting
+        // art stays separately lazy (see artTextureLoader).
         if (!currentRoomId) return;
         preloadRoomMaterials(currentRoomId);
-        preloadNeighborRoomMaterials(currentRoomId);
     }, [currentRoomId]);
+    useEffect(() => {
+        if (currentRoomId && roomReady) preloadNeighborRoomMaterials(currentRoomId);
+    }, [currentRoomId, roomReady]);
 
     useEffect(() => {
         // Optimize performance for real mobile devices
@@ -215,6 +221,7 @@ export default function App() {
 
     return (
         <Suspense fallback={null}>
+            <MultiplayerConnection />
             <WebGLErrorBoundary>
                 <Scene />
             </WebGLErrorBoundary>
@@ -230,14 +237,11 @@ export default function App() {
                 </Suspense>
             )}
             {/*
-                Rendered unconditionally (not just as the Suspense fallback)
-                because Scene.tsx wraps its own suspending content (models,
-                Environment, etc.) in a local <Suspense fallback={null}>, so
-                nothing ever bubbles up to trigger this boundary's fallback.
-                LoadingScreen tracks useProgress()/DefaultLoadingManager
-                directly and hides/latches itself.
+                Arriving and every trip between rooms. Rendered
+                unconditionally: it follows the room's readiness
+                (stores/readinessStore.ts), not this Suspense boundary.
             */}
-            <LoadingScreen />
+            <WorldLoadingScreen />
         </Suspense>
     );
 }

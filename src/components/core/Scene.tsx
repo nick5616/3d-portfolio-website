@@ -1,6 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useCallback, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Stats, AdaptiveEvents, PerformanceMonitor } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { SceneManager } from "./SceneManager";
@@ -12,31 +12,21 @@ import { useSceneStore } from "../../stores/sceneStore";
 import { useDeviceDetection } from "../../hooks/useDeviceDetection";
 import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { logEdgeDebugInfo } from "../../utils/edgeDebug";
-import { EnhancedLoadingScreen } from "../ui/EnhancedLoadingScreen";
-import { RoomTransitionLoadingScreen } from "../ui/RoomTransitionLoadingScreen";
+import { WorldWarmup } from "./WorldWarmup";
+import { useReadiness } from "../../stores/readinessStore";
 
 export const Scene: React.FC = () => {
-    const {
-        performance,
-        currentRoom,
-        roomTransitionLoading,
-        roomTransitionFrom,
-        roomTransitionTo,
-        setRoomTransitionLoading,
-    } = useSceneStore(
-        useShallow((s) => ({ performance: s.performance, currentRoom: s.currentRoom, roomTransitionLoading: s.roomTransitionLoading, roomTransitionFrom: s.roomTransitionFrom, roomTransitionTo: s.roomTransitionTo, setRoomTransitionLoading: s.setRoomTransitionLoading }))
+    const { performance, currentRoom } = useSceneStore(
+        useShallow((s) => ({ performance: s.performance, currentRoom: s.currentRoom }))
     );
+    // Nothing renders while a room is being put together: a frame drawn
+    // then would compile every shader in the room synchronously, freezing
+    // the page. WorldWarmup compiles them in the background instead, and
+    // rendering starts once it has (see stores/readinessStore.ts).
+    const shadersReady = useReadiness((s) => s.stages.shaders);
     const { isMobile } = useDeviceDetection();
     const { isHardwareAccelerationDisabled, isDetecting } =
         useHardwareAcceleration();
-
-    // Stable callback for room transition completion
-    const handleRoomTransitionComplete = useCallback(() => {
-        console.log(
-            `🏠 Scene: Room transition complete, hiding loading screen`
-        );
-        setRoomTransitionLoading(false);
-    }, [setRoomTransitionLoading]);
 
     // Configure rendering parameters based on quality setting and device
     const glParams = useMemo(() => {
@@ -264,13 +254,6 @@ export const Scene: React.FC = () => {
 
     return (
         <div className="w-full h-full relative">
-            <EnhancedLoadingScreen />
-            <RoomTransitionLoadingScreen
-                isVisible={roomTransitionLoading}
-                fromRoom={roomTransitionFrom || undefined}
-                toRoom={roomTransitionTo || undefined}
-                onComplete={handleRoomTransitionComplete}
-            />
             <Canvas
                 className="main-canvas"
                 gl={glParams}
@@ -289,15 +272,12 @@ export const Scene: React.FC = () => {
                 // darker and more saturated than authored.
                 flat={performance.quality === "low" || isMobile}
                 performance={performanceConfig}
-                // The room-transition overlay fully covers this canvas with
-                // its own separate Canvas + WebGL context on top. Without
-                // this, both render loops (this scene's physics/lighting/etc
-                // AND the transition effect) run in parallel the whole time,
-                // which is the main source of the transition-time jank -
-                // this scene is completely invisible during that window, so
-                // there's nothing lost by pausing it.
-                frameloop={roomTransitionLoading ? "never" : "always"}
+                // Paused while the room loads (above). The loading screen
+                // covers the canvas then anyway, with a Canvas of its own,
+                // so this also keeps the two render loops from competing.
+                frameloop={shadersReady ? "always" : "never"}
             >
+                <WorldWarmup />
                 {/* Data bridge to update store with Three.js data */}
                 <SceneDataBridge />
 

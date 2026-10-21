@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buyCharacter, isCharacterUnlocked, useCharacterStore } from "../../stores/characterStore";
@@ -10,10 +9,14 @@ import { useFairyStore } from "../rooms/experiences/forest/fairyStore";
 import { CHARACTERS, PALETTE, characterAt, lookFor, newMotion } from "../../multiplayer/characters";
 import { RupeeGlyph } from "./RupeeGlyph";
 import { playSound } from "../../audio/soundManager";
+import { useMultiplayerStore } from "../../multiplayer/connection";
+import { MULTIPLAYER_URL, useWorldHeadcount } from "../../multiplayer/presence";
+import { roomConfigs } from "../../configs/rooms";
+import { useSceneStore } from "../../stores/sceneStore";
 
-// Picked before stepping into the world. The world itself is already
-// mounted underneath and loading its starting room the whole time, so by
-// the time someone's chosen, there's usually nothing left to wait for.
+// Picked before stepping into the world, once the starting room is fully
+// ready behind it (WorldGuide only opens this then), so "Step in" always
+// steps straight in.
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 
@@ -39,8 +42,12 @@ export const CharacterSelect: React.FC<{ onConfirm: () => void }> = ({ onConfirm
     const purchased = useUnlockStore((s) => s.unlocked);
     const wallet = useRupeeStore((s) => s.totalValue);
     const unlocked = (i: number) => isCharacterUnlocked(i, caught, purchased);
-    const { progress, active } = useProgress();
-    const ready = !active || progress >= 100;
+    const others = useMultiplayerStore((s) => Object.keys(s.peers).length);
+    // Everyone else, anywhere (servers that take a census; 0 otherwise).
+    const elsewhere = Math.max(0, useWorldHeadcount() - 1 - others);
+    const online = useMultiplayerStore((s) => s.status === "online");
+    const here = useSceneStore((s) => s.currentRoom?.id);
+    const place = here === "atrium" ? "the Central Hub" : here ? roomConfigs[here]?.name ?? "here" : "here";
     const def = characterAt(character);
     const canEnter = unlocked(character);
     const price = def.fairy?.price ?? 0;
@@ -224,11 +231,18 @@ export const CharacterSelect: React.FC<{ onConfirm: () => void }> = ({ onConfirm
 
                         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
                             <div className="text-xs text-[color:var(--gem-ink-dim)] flex items-center gap-2" aria-live="polite">
-                                <span
-                                    className="inline-block w-2 h-2 rounded-full"
-                                    style={{ background: ready ? "#3ee58f" : "#ffd36b" }}
-                                />
-                                {ready ? "World ready" : `World loading… ${Math.round(progress)}%`}
+                                {MULTIPLAYER_URL && online && (
+                                    <>
+                                        <span
+                                            className="inline-block w-2 h-2 rounded-full"
+                                            style={{ background: others || elsewhere ? "#3ee58f" : "rgba(255,255,255,0.35)" }}
+                                        />
+                                        {others === 0
+                                            ? `Nobody else in ${place} right now`
+                                            : `${others === 1 ? "1 traveler" : `${others} travelers`} in ${place}`}
+                                        {elsewhere > 0 && `, ${elsewhere} elsewhere`}
+                                    </>
+                                )}
                             </div>
                             <button
                                 className="gem-btn gem-btn--solid gem--green !text-base !px-6 !py-3"

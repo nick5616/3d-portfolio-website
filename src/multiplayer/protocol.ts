@@ -20,6 +20,32 @@ export const RELAYED_POSE_LEN = POSE_LEN + 2;
 export const FLAG_CROUCH = 1 << 0;
 export const FLAG_FLYING = 1 << 1;
 
+// What someone's doing, in the next three bits of the flags, so it rides
+// along with every pose (and its heartbeat) for free. Older builds ignore
+// these bits; the server never looks at them.
+export const ACTIVITY_SHIFT = 2;
+export const ACTIVITY_MASK = 0b111 << ACTIVITY_SHIFT;
+export const Activity = {
+    none: 0,
+    /** Paused, or switched to another tab. */
+    away: 1,
+    /** Choosing who to be. */
+    choosing: 2,
+    /** Up close with a painting. */
+    art: 3,
+    /** Reading the sketchbook. */
+    reading: 4,
+    /** At a computer or console, typing. */
+    typing: 5,
+    /** At the decks. */
+    djing: 6,
+} as const;
+export type ActivityCode = (typeof Activity)[keyof typeof Activity];
+
+export const activityOf = (flags: number) => ((flags & ACTIVITY_MASK) >> ACTIVITY_SHIFT) as ActivityCode;
+export const withActivity = (flags: number, activity: ActivityCode) =>
+    (flags & ~ACTIVITY_MASK) | ((activity << ACTIVITY_SHIFT) & ACTIVITY_MASK);
+
 export interface Pose {
     /** Sender's clock in ms, wrapped to 16 bits. */
     t: number;
@@ -87,7 +113,9 @@ export type ServerMessage =
     | { t: "room"; room: string; peers: PeerProfile[] }
     | { t: "join" | "profile"; id: number; look: number; char: number }
     | { t: "leave"; id: number }
-    | { t: "signal"; from: number; data: SignalData };
+    | { t: "signal"; from: number; data: SignalData }
+    // How many are in each room (servers from Oct 2026 on; older ones never send it).
+    | { t: "census"; rooms: Record<string, number> };
 
 export type SignalData =
     | { sdp: RTCSessionDescriptionInit }

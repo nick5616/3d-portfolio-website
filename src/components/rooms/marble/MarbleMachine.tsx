@@ -12,6 +12,7 @@ import { useAchievementStore } from "../../../stores/achievementStore";
 import { playSound } from "../../../audio/soundManager";
 import { playInstrument } from "../jam/jamAudio";
 import { COLS, PieceKind, ROWS, cellKey, useMarbleStore } from "./marbleStore";
+import { connectMarbles, type Drop } from "./marbleSync";
 import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
 import {
     BOARD_BOTTOM,
@@ -35,6 +36,9 @@ import {
 // along the top rail and press E to drop a marble from there. Every piece
 // plays a note when a marble lands on it, so every run is a little tune.
 // The marbles are real Rapier bodies, held to the board's plane.
+//
+// The board and the marbles are shared with everyone in the room (see
+// marbleSync.ts): build together, and hear each other's marbles.
 
 const HALF = 7;
 const HEIGHT = 8;
@@ -241,8 +245,15 @@ export const MarbleMachine: React.FC = () => {
         body.setTranslation(parkingSpot(index), false);
     };
 
-    const drop = (x: number) => {
-        const clamped = Math.max(BOARD_LEFT + 0.15, Math.min(BOARD_RIGHT - 0.15, x)) + (Math.random() - 0.5) * 0.04;
+    // Ours goes out to everyone; theirs arrives with its spot and nudge
+    // already chosen, so it falls the same way here as there.
+    const share = useRef<ReturnType<typeof connectMarbles> | null>(null);
+    const drop = (x: number, theirs?: Drop) => {
+        const clamped = theirs
+            ? theirs.x
+            : Math.max(BOARD_LEFT + 0.15, Math.min(BOARD_RIGHT - 0.15, x)) + (Math.random() - 0.5) * 0.04;
+        const vx = theirs ? theirs.vx : (Math.random() - 0.5) * 0.3;
+        if (!theirs) share.current?.drop({ x: clamped, vx });
         dispenserX.current = clamped;
         // A parked marble if there is one, otherwise the one dropped longest ago.
         const slots = live.current;
@@ -252,13 +263,23 @@ export const MarbleMachine: React.FC = () => {
         if (!body) return;
         slots[index] = { active: true, traySince: -1, droppedAt: performance.now() };
         body.setTranslation({ x: clamped, y: BOARD_TOP + 0.25, z: PLANE_Z }, true);
-        body.setLinvel({ x: (Math.random() - 0.5) * 0.3, y: 0, z: 0 }, true);
+        body.setLinvel({ x: vx, y: 0, z: 0 }, true);
         body.setAngvel({ x: 0, y: 0, z: 0 }, true);
         body.setGravityScale(1, true);
         playSound("ui-select", { volume: 0.6 });
+        if (theirs) return;
         dropped.current++;
         if (dropped.current >= 10) useAchievementStore.getState().unlock("marble-machine");
     };
+    const dropRef = useRef(drop);
+    dropRef.current = drop;
+    useEffect(() => {
+        share.current = connectMarbles((theirs) => dropRef.current(theirs.x, theirs));
+        return () => {
+            share.current?.leave();
+            share.current = null;
+        };
+    }, []);
 
     const onHit = (kind: PieceKind, col: number, row: number) => {
         switch (kind) {
