@@ -77,7 +77,9 @@ export const DOOR_ANGLES = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
 export const DOOR_HALF_WIDTH = 0.95;
 export const DOOR_JAMB_HEIGHT = 2.3;
 const [EAST, SOUTH, WEST, NORTH] = DOOR_ANGLES;
-export const OPEN_DOORS: { level: number; angle: number; plaque: string }[] = [
+// `ownFrame`: the door brings its own frame (an image frame, see
+// docs/door-frames.md), so the rotunda leaves its marble surround off.
+export const OPEN_DOORS: { level: number; angle: number; plaque: string; ownFrame?: boolean }[] = [
     // Second floor: games
     { level: 1, angle: EAST, plaque: "COSMIC CONNECT FOUR" },
     { level: 1, angle: SOUTH, plaque: "METEOR MATH" },

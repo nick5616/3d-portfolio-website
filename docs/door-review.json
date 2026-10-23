@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "doors": {
+    "atrium/to-marble-machine": {
+      "status": "needs-work",
+      "note": "too literal and suggests the actual experience is better than it is\nupdate: too abstract and strange. what are the balls? i just feel unsettled by this",
+      "room": "Atrium",
+      "target": "Marble Machine",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"none\"},\"view\":{\"scene\":\"marble\",\"colors\":[\"#e8a85a\",\"#2f8fff\",\"#ff5a36\"],\"rim\":\"#ffd08a\",\"light\":\"#ffd6a0\"},\"size\":[1.9,3.25]}",
+      "at": "2026-10-22T16:28:00.601Z",
+      "history": [
+        {
+          "status": "needs-work",
+          "note": "too literal and suggests the actual experience is better than it is",
+          "at": "2026-10-22T15:28:03.021Z"
+        }
+      ],
+      "reply": "No more literal marbles on rails. It is now abstract: looking into a glass marble, coloured vanes twisting through clear glass, with bubbles and a sliding glint.",
+      "revised": true
+    },
+    "atrium/to-forest": {
+      "status": "needs-work",
+      "note": "Frame is ugly. looks like i whipped it up in procreate in 5 mins. could i just make a better png and have this great effects on it?",
+      "room": "Atrium",
+      "target": "The Forest",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"none\"},\"view\":{\"scene\":\"forest\",\"colors\":[\"#1f5a3a\",\"#7fe0c8\",\"#e8ff8a\"],\"rim\":\"#8ff2d0\",\"light\":\"#8ff2ff\"},\"size\":[1.9,3.25]}",
+      "at": "2026-10-22T15:30:32.509Z",
+      "reply": "The marble surround every upstairs door shares is rebuilt as real moulding: a swept architrave (reveal, stepped fascias, brass bead, curved cyma), plinths, a flared keystone and a two-part cornice. And yes to the PNG: draw over docs/door-frames/template-upstairs.png and see docs/door-frames.md. Your frame gets a sliding glint and the portal glows through its soft edges.",
+      "revised": true
+    },
+    "atrium/to-rupee-shop": {
+      "status": "approved",
+      "room": "Atrium",
+      "target": "Rupee Shop",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"shop\"},\"view\":{\"scene\":\"treasure\",\"colors\":[\"#f2b866\",\"#3ee58f\",\"#ff5d73\"],\"rim\":\"#ffd27a\",\"light\":\"#ffc77a\"},\"size\":[3,4]}",
+      "at": "2026-10-23T17:10:00.938Z",
+      "history": [
+        {
+          "status": "needs-work",
+          "note": "too crowded and not warm enough, also make the actual room feel way more cute zelda ; Too dark; View is ugly; Frame is ugly",
+          "reply": "Warm and airy now: honey lantern light, three faceted rupees (green, blue, red) turning slowly, a heart drifting up, sparkles. The frame is a little shop front: wooden posts, a striped scalloped awning, a sign with the name and rupees, paper lanterns, Zelda pots. The shop itself got bunting, paper lanterns, pots, barrels, crates, an awning over the counter, round windows, and brighter, warmer light.",
+          "at": "2026-10-22T15:32:06.430Z"
+        }
+      ]
+    },
+    "atrium/to-projects": {
+      "status": "approved",
+      "room": "Atrium",
+      "target": "Software Projects",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"terminal\",\"accent\":\"#39ff7a\"},\"view\":{\"scene\":\"terminal\",\"colors\":[\"#000000\",\"#39ff7a\",\"#b4ffd0\"],\"rim\":\"#39ff7a\",\"light\":\"#39ff7a\"},\"size\":[3,4]}",
+      "at": "2026-10-23T17:09:51.615Z",
+      "history": [
+        {
+          "status": "needs-work",
+          "note": "make it a hacker theme. people are going to think i am in biotech or something, which i am not. perhaps goes for the room too.",
+          "reply": "Hacker terminal: green-screen code scrolling up (indented lines, a few highlighted), rain behind, a blinking cursor, scanlines. The frame is a black rack with blinking server LEDs and a cursor, lettered `cd ~/software-projects` in IBM Plex Mono. The way back from the room matches. The room itself is still the DNA concept (question pending).",
+          "at": "2026-10-22T15:33:02.778Z"
+        }
+      ]
+    },
+    "atrium/to-achievements": {
+      "status": "approved",
+      "room": "Atrium",
+      "target": "Hall of Achievements",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"laurel\"},\"view\":{\"scene\":\"trophy\",\"colors\":[\"#e8a93a\",\"#fff2c2\",\"#ffffff\"],\"rim\":\"#ffd36a\",\"light\":\"#ffd36a\"},\"size\":[3,4]}",
+      "at": "2026-10-23T17:10:12.746Z",
+      "history": [
+        {
+          "status": "needs-work",
+          "note": "the star doesnt need to rotate in the frame, and the star in the portal is too much. make it look like light.",
+          "reply": "The star is gone from the view. It is now light: a warm breathing glow, soft rays drifting against each other, a faint lens halo, motes rising. The frame star no longer spins.",
+          "at": "2026-10-22T15:33:57.806Z"
+        }
+      ]
+    },
+    "rupee-shop/to-atrium-from-rupee-shop": {
+      "status": "needs-work",
+      "note": "too basic and also literal and fails to meet the bar for what it attempts to depict",
+      "room": "Rupee Shop",
+      "target": "Atrium",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"crystal\",\"accent\":\"#3ee58f\"},\"view\":{\"scene\":\"sun\",\"colors\":[\"#f0ac55\",\"#fff1d6\",\"#e3d6bd\"],\"rim\":\"#ffc76a\",\"light\":\"#ffd59a\"},\"size\":[3,4]}",
+      "at": "2026-10-22T15:35:38.379Z",
+      "reply": "The atrium view (every door home uses it) is now light instead of literal columns and ferns: caustics off the pool dancing on the floor, sun shafts falling from the dome, out-of-focus motes. This door also wears the new shop-front frame.",
+      "revised": true
+    },
+    "atrium/to-courage": {
+      "status": "needs-work",
+      "note": "it's very very close and love the idea but look at an actual picture of the animation and making it look closer to the animation\nupdate: ewwww it looks worse like it's trying too hard. stick to the detail but keep it a silhouette and know when less is more",
+      "room": "Atrium",
+      "target": "Courage's Farmhouse Attic",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"none\"},\"view\":{\"scene\":\"farm\",\"colors\":[\"#ffcf5a\",\"#3d1a52\",\"#ffe9a0\"],\"rim\":\"#ff9a4a\",\"light\":\"#ffb070\"},\"size\":[1.9,3.25]}",
+      "at": "2026-10-22T16:25:53.613Z",
+      "history": [
+        {
+          "status": "needs-work",
+          "note": "it's very very close and love the idea but look at an actual picture of the animation and making it look closer to the animation",
+          "at": "2026-10-22T15:36:59.065Z"
+        },
+        {
+          "status": "needs-work",
+          "note": "it's very very close and love the idea but look at an actual picture of the animation and making it look closer to the animation",
+          "at": "2026-10-22T16:25:14.265Z"
+        }
+      ],
+      "reply": "Closer to the show: a painted gradient sunset (yellow, red, purple) with cloud streaks, an American windpump (lattice tower, many-bladed fan, tail vane) instead of a Dutch mill, a pink clapboard two-storey house with a porch, gable window, chimney and lamplit windows, a dead tree, dusty ground, and everything inked with dark outlines and drawn a little crooked.",
+      "revised": true
+    },
+    "atrium/to-bird-dog-studio": {
+      "status": "needs-work",
+      "note": "encorporate the theme of like really fucking cool lights and effects",
+      "room": "Atrium",
+      "target": "Bird Dog Studio",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"none\"},\"view\":{\"scene\":\"vinyl\",\"colors\":[\"#7a3cff\",\"#b07bff\",\"#ff5fa8\"],\"rim\":\"#c39bff\",\"light\":\"#b48cff\"},\"size\":[1.9,3.25]}",
+      "at": "2026-10-22T15:38:18.639Z",
+      "reply": "A full light show: laser fans sweeping from the floor corners and the ceiling, wide moving-head beams crossing, an LED wall rippling with the beat, haze that the beams light up, glitter, and a soft strobe every couple of seconds.",
+      "revised": true
+    },
+    "atrium/to-jam-room": {
+      "status": "needs-work",
+      "note": "this just feels generic",
+      "room": "Atrium",
+      "target": "Jam Room",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"none\"},\"view\":{\"scene\":\"wave\",\"colors\":[\"#ff4fd8\",\"#ff8ae8\",\"#7bf1ff\"],\"rim\":\"#ff7ae0\",\"light\":\"#ff8ae8\"},\"size\":[1.9,3.25]}",
+      "at": "2026-10-22T16:26:52.696Z"
+    },
+    "atrium/to-gallery": {
+      "status": "approved",
+      "room": "Atrium",
+      "target": "Art Gallery",
+      "look": "{\"appearance\":\"portal\",\"frame\":{\"style\":\"gilded\"},\"view\":{\"scene\":\"gallery\",\"colors\":[\"#f1e2c6\",\"#b8453a\",\"#2f6d8f\"],\"rim\":\"#ffd88a\",\"light\":\"#ffe2b0\"},\"size\":[3,4]}",
+      "at": "2026-10-22T16:28:59.181Z"
+    }
+  }
+}

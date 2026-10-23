@@ -13,10 +13,12 @@ import { useAchievementStore } from "../../../stores/achievementStore";
 import { playSound } from "../../../audio/soundManager";
 import { SHOP_ITEMS, ShopItem, ShopItemId } from "./shopItems";
 import { getEnhancedRoomMaterials } from "../../../configs/enhancedMaterials";
+import { LANTERN_SPOTS, ShopDressing } from "./ShopDressing";
 
-// The Rupee Shop, where the holodeck used to be. A cosy wooden shop kept by
-// Pip, a round little owl behind the counter. Four upgrades under glass;
-// everything you buy works in every room.
+// The Rupee Shop, where the holodeck used to be. A cosy little village shop
+// kept by Pip, a round owl behind the counter: warm lantern light, bunting,
+// pots and barrels (ShopDressing). Four upgrades under glass; everything
+// you buy works in every room.
 
 const HALF_X = 6;
 const HALF_Z = 5;
@@ -252,21 +254,13 @@ export const RupeeShop: React.FC = () => {
     return (
         <>
             <RoomEnvironmentReady />
-            <ambientLight intensity={0.35} color="#ffe6c8" />
-            <hemisphereLight intensity={0.45} color="#fff1d6" groundColor="#3a2414" />
-            {[-3.5, 0, 3.5].map((z) => (
-                <group key={z} position={[0, HEIGHT - 1.3, z]}>
-                    <mesh>
-                        <sphereGeometry args={[0.2, 16, 12]} />
-                        <meshBasicMaterial color="#ffd9a0" toneMapped={false} />
-                    </mesh>
-                    <mesh position={[0, 0.6, 0]}>
-                        <cylinderGeometry args={[0.01, 0.01, 1.2, 4]} />
-                        <meshStandardMaterial color="#2a1a10" />
-                    </mesh>
-                    <pointLight intensity={4} distance={8} decay={1.8} color="#ffcf8a" />
-                </group>
+            {/* Warm and bright: lantern light, honey-coloured fill */}
+            <ambientLight intensity={0.55} color="#ffe2bf" />
+            <hemisphereLight intensity={0.65} color="#fff1d6" groundColor="#5a3418" />
+            {LANTERN_SPOTS.slice(0, 3).map(([x, y, z]) => (
+                <pointLight key={z} position={[x, y - 1.15, z]} intensity={5} distance={9} decay={1.8} color="#ffb86b" />
             ))}
+            <ShopDressing />
 
             <RigidBody type="fixed" colliders={false}>
                 <CuboidCollider args={[HALF_X, 0.25, HALF_Z]} position={[0, -0.25, 0]} />

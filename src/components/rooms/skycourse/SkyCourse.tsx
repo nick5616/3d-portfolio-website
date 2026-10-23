@@ -5,7 +5,8 @@ import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 import { RoomEnvironmentReady } from "../../core/RoomEnvironmentReady";
-import { CosmicPortal } from "../../core/CosmicPortal";
+import { Portal } from "../../core/portal/Portal";
+import { PORTAL_VIEWS, portalFrame } from "../../../configs/portalLooks";
 import { useSceneStore } from "../../../stores/sceneStore";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { RUPEE_TYPES } from "../../../stores/rupeeStore";
@@ -273,11 +274,12 @@ const CourseBody: React.FC<{ course: Course; reached: number; squash: React.Muta
 // --- Exit portals ----------------------------------------------------------------
 
 type PortalAction = "again" | "next" | "leave";
-const PORTALS: { action: PortalAction; label: string; offset: number }[] = [
-    { action: "again", label: "Again", offset: -2.4 },
-    { action: "next", label: "Next course", offset: 0 },
-    { action: "leave", label: "Atrium", offset: 2.4 },
+const PORTALS: { action: PortalAction; label: string; offset: number; view: string }[] = [
+    { action: "again", label: "Again", offset: -2.4, view: "sky-course" },
+    { action: "next", label: "Next course", offset: 0, view: "sky-course" },
+    { action: "leave", label: "Atrium", offset: 2.4, view: "atrium" },
 ];
+const EXIT_FRAME = portalFrame("cloud");
 
 // They rise out of the goal deck after you ring the bell; walk into one.
 const ExitPortals: React.FC<{ course: Course; onEnter: (action: PortalAction) => void }> = ({ course, onEnter }) => {
@@ -303,14 +305,15 @@ const ExitPortals: React.FC<{ course: Course; onEnter: (action: PortalAction) =>
     return (
         <group ref={group} position={[0, goal.top - 3.6, 0]}>
             {PORTALS.map((p) => (
-                <CosmicPortal
+                <Portal
                     key={p.action}
                     position={[goal.at[0] + p.offset, 0, backZ]}
                     rotationY={0}
                     width={1.6}
                     height={2.9}
+                    view={PORTAL_VIEWS[p.view]}
                     hovering={p.action === "next"}
-                    frame
+                    frame={EXIT_FRAME}
                     label={p.label}
                 />
             ))}

@@ -11,6 +11,8 @@ import { useHardwareAcceleration } from "../../hooks/useHardwareAcceleration";
 import { Archway } from "../../types/scene.types";
 import { ConsoleInputManager } from "./ConsoleInputManager";
 import { HudToasts } from "./HudToasts";
+import { DoorReviewOverlay } from "./DoorReviewOverlay";
+import { DOOR_REVIEW_AVAILABLE } from "../../debug/doorReview";
 import { useArtInspectStore } from "../../stores/artInspectStore";
 import { useSketchbookStore } from "../sketchbook/sketchbookStore";
 
@@ -145,6 +147,9 @@ export default function Interface() {
 
             {/* Debug info */}
             <DebugInfo />
+
+            {/* Door review: Q approve / X needs work (localhost only) */}
+            {DOOR_REVIEW_AVAILABLE && <DoorReviewOverlay />}
 
             {/* Temporary Position Debug */}
             {/* <PositionDebug /> */}

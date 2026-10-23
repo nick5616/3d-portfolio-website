@@ -1,10 +1,52 @@
-import { defineConfig } from "vite";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import fs from "fs";
 import path from "path";
 import { seo } from "./seo";
 
+// Door review (src/debug/doorReview.ts): the dev server keeps the verdicts
+// in docs/door-review.json. Only this machine may read or write it.
+const doorReview = (): Plugin => ({
+    name: "door-review",
+    apply: "serve",
+    configureServer(server) {
+        const file = path.resolve(__dirname, "docs/door-review.json");
+        server.middlewares.use("/__door-review", (req, res) => {
+            const from = req.socket.remoteAddress ?? "";
+            if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(from)) {
+                res.statusCode = 403;
+                res.end();
+                return;
+            }
+            if (req.method === "GET") {
+                res.setHeader("Content-Type", "application/json");
+                res.end(fs.existsSync(file) ? fs.readFileSync(file, "utf8") : '{"version":1,"doors":{}}');
+                return;
+            }
+            if (req.method === "POST") {
+                let body = "";
+                req.on("data", (chunk) => (body += chunk));
+                req.on("end", () => {
+                    try {
+                        const data = JSON.parse(body);
+                        fs.mkdirSync(path.dirname(file), { recursive: true });
+                        fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
+                        res.statusCode = 204;
+                    } catch {
+                        res.statusCode = 400;
+                    }
+                    res.end();
+                });
+                return;
+            }
+            res.statusCode = 405;
+            res.end();
+        });
+    },
+});
+
 export default defineConfig({
-    plugins: [react(), seo()],
+    plugins: [react(), seo(), doorReview()],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),

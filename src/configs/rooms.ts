@@ -1,5 +1,6 @@
 // src/configs/rooms.ts
 import { Archway, RoomConfig } from "../types/scene.types";
+import { PortalFrameSpec, portalFrame } from "./portalLooks";
 
 // The atrium is a three-tier rotunda; this is the drum's height, where the
 // glass dome springs (see components/rooms/atrium/atriumLayout.ts).
@@ -24,8 +25,16 @@ const NORTH = Math.PI * 1.5;
 type Vec3 = [number, number, number];
 const facing = (angle: number): Vec3 => [0, Math.atan2(Math.cos(angle), Math.sin(angle)), 0];
 
-// An upstairs portal in the atrium leading to `roomId`.
-const upstairsDoor = (roomId: string, level: number, angle: number, arriveAt: Vec3): Archway => ({
+// An upstairs portal in the atrium leading to `roomId`. The rotunda builds
+// its marble surround, unless it has a frame of its own (then also set
+// ownFrame in atriumLayout.ts's OPEN_DOORS).
+const upstairsDoor = (
+    roomId: string,
+    level: number,
+    angle: number,
+    arriveAt: Vec3,
+    frame: PortalFrameSpec = portalFrame("none")
+): Archway => ({
     id: `to-${roomId}`,
     targetRoomId: roomId,
     position: [Math.cos(angle) * RADIUS_AT_UPPER_DOORS, ATRIUM_LEVELS[level], Math.sin(angle) * RADIUS_AT_UPPER_DOORS],
@@ -33,6 +42,7 @@ const upstairsDoor = (roomId: string, level: number, angle: number, arriveAt: Ve
     width: 1.9,
     height: 3.25,
     appearance: "portal",
+    frame,
     entrancePoint: { position: arriveAt, rotation: [0, 0, 0] },
 });
 
@@ -150,6 +160,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery",
+                frame: portalFrame("gilded"),
                 targetRoomId: "gallery",
                 position: [-ATRIUM_DOOR_RADIUS, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
@@ -164,6 +175,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-projects",
+                frame: portalFrame("terminal", "#39ff7a"),
                 targetRoomId: "projects",
                 position: [0, 0, -ATRIUM_DOOR_RADIUS] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -177,6 +189,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             {
                 // Where the holodeck's door used to be.
                 id: "to-rupee-shop",
+                frame: portalFrame("shop"),
                 targetRoomId: "rupee-shop",
                 position: [ATRIUM_DOOR_RADIUS, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
@@ -203,6 +216,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 // The atrium's one remaining bare wall - a hall of
                 // plaques celebrating everything there is to find/do here.
                 id: "to-achievements",
+                frame: portalFrame("laurel"),
                 targetRoomId: "achievements",
                 position: [0, 0, ATRIUM_DOOR_RADIUS] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -251,7 +265,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             rotation: [0, 0, 0] as [number, number, number],
         },
         interactiveElements: [],
-        archways: [backToAtrium("cosmic", 1, EAST, [0, 0, 7.6], { appearance: "portal" })],
+        archways: [backToAtrium("cosmic", 1, EAST, [0, 0, 7.6], { frame: portalFrame("none") })],
     },
 
     // Second floor, south: the old holodeck's Meteor Multiplication, now
@@ -265,7 +279,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#9fb4ff"),
         defaultEntrance: { position: [0, 1.5, 6], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("meteor-math", 1, SOUTH, [0, 0, 7.6], { appearance: "portal", frame: true })],
+        archways: [backToAtrium("meteor-math", 1, SOUTH, [0, 0, 7.6], { frame: portalFrame("airlock") })],
     },
 
     // Second floor, west: Muriel and Eustace's computer room.
@@ -290,7 +304,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#cfe6ff"),
         defaultEntrance: { position: [0, 1.5, 2.5], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("sky-course", 1, NORTH, [0, 0, 4.4], { appearance: "portal", frame: true })],
+        archways: [backToAtrium("sky-course", 1, NORTH, [0, 0, 4.4], { frame: portalFrame("cloud") })],
     },
 
     // Third floor, east: the old holodeck classroom easel.
@@ -302,7 +316,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#fffaf0"),
         defaultEntrance: { position: [-0.5, 1.5, 2.6], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("art-studio", 2, EAST, [-0.5, 0, 3.95], { width: 1.2, height: 2.4, appearance: "wood" })],
+        archways: [backToAtrium("art-studio", 2, EAST, [-0.5, 0, 3.95], { width: 1.2, height: 2.4, appearance: "woodStudio" })],
     },
 
     // Third floor, south: make music by walking around.
@@ -314,7 +328,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#ffd6f5"),
         defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("jam-room", 2, SOUTH, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+        archways: [backToAtrium("jam-room", 2, SOUTH, [0, 0, 6.95], { width: 1.6, height: 2.8, frame: portalFrame("neon", "#ff4fd8") })],
     },
 
     // Third floor, west: Bird Dog's studio and DJ booth.
@@ -326,7 +340,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#b48cff"),
         defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("bird-dog-studio", 2, WEST, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+        archways: [backToAtrium("bird-dog-studio", 2, WEST, [0, 0, 6.95], { width: 1.6, height: 2.8, frame: portalFrame("onair", "#b07bff") })],
     },
 
     // Third floor, north: a marble run you build yourself.
@@ -338,7 +352,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#fff1d6"),
         defaultEntrance: { position: [0, 1.5, 5.2], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("marble-machine", 2, NORTH, [0, 0, 6.95], { width: 1.6, height: 2.8 })],
+        archways: [backToAtrium("marble-machine", 2, NORTH, [0, 0, 6.95], { width: 1.6, height: 2.8, frame: portalFrame("brass") })],
     },
 
     // Fourth floor, east: the holodeck's Lost-Woods forest, a new one each
@@ -365,7 +379,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         lightPreset: selfLit("#8fa8ff"),
         defaultEntrance: { position: [0, 1.5, 8.2], rotation: [0, 0, 0] },
         interactiveElements: [],
-        archways: [backToAtrium("observatory", 3, SOUTH, [0, 0, 9.8], { appearance: "portal", frame: true })],
+        archways: [backToAtrium("observatory", 3, SOUTH, [0, 0, 9.8], { frame: portalFrame("starstone") })],
     },
 
     // Ground floor, east, where the holodeck used to be.
@@ -380,6 +394,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-atrium-from-rupee-shop",
+                frame: portalFrame("shop"),
                 targetRoomId: "atrium",
                 position: [-5.9, 0, 0],
                 rotation: [0, Math.PI / 2, 0],
@@ -419,6 +434,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-atrium-from-gallery",
+                frame: portalFrame("marble", "#ffc76a"),
                 targetRoomId: "atrium",
                 position: [-9.9, 0, 0] as [number, number, number],
                 rotation: [0, Math.PI / 2, 0] as [number, number, number],
@@ -431,6 +447,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-gallery-hall-digitalart",
+                frame: portalFrame("marble", "#4ff0ff"),
                 targetRoomId: "gallery-hall-digitalart",
                 position: [9.9, 0, 0] as [number, number, number],
                 rotation: [0, -Math.PI / 2, 0] as [number, number, number],
@@ -443,6 +460,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-gallery-hall-paintings",
+                frame: portalFrame("marble", "#d9a441"),
                 targetRoomId: "gallery-hall-paintings",
                 position: [0, 0, 9.9] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -455,6 +473,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-gallery-hall-sketches",
+                frame: portalFrame("marble", "#9a9aa2"),
                 targetRoomId: "gallery-hall-sketches",
                 position: [0, 0, -9.9] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -486,6 +505,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-from-digitalart",
+                frame: portalFrame("neon", "#4ff0ff"),
                 targetRoomId: "gallery",
                 position: [0, 0, 9.7] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -514,6 +534,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-from-paintings",
+                frame: portalFrame("gilded"),
                 targetRoomId: "gallery",
                 position: [0, 0, 9.7] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -527,6 +548,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-gallery-hall-lefthanded",
+                frame: portalFrame("gilded"),
                 targetRoomId: "gallery-hall-lefthanded",
                 position: [0, 0, -9.7] as [number, number, number],
                 rotation: [0, Math.PI, 0] as [number, number, number],
@@ -567,6 +589,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-from-sketches",
+                frame: portalFrame("marble", "#ffc76a"),
                 targetRoomId: "gallery",
                 position: [0, 0, 5.85] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -580,6 +603,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
             },
             {
                 id: "to-gallery-hall-miscellaneous",
+                frame: portalFrame("marble", "#ff6b6b"),
                 targetRoomId: "gallery-hall-miscellaneous",
                 position: [0, 0, -5.85] as [number, number, number],
                 rotation: [0, Math.PI, 0] as [number, number, number],
@@ -619,6 +643,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-hall-paintings-from-lefthanded",
+                frame: portalFrame("marble", "#d9a441"),
                 targetRoomId: "gallery-hall-paintings",
                 position: [0, 0, 5.85] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -647,6 +672,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-hall-sketches-from-miscellaneous",
+                frame: portalFrame("marble", "#9a9aa2"),
                 targetRoomId: "gallery-hall-sketches",
                 position: [0, 0, 9.7] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -662,6 +688,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
                 // leads to the notesappart room, worth finding if you go deep
                 // enough.
                 id: "to-gallery-hall-notesappart",
+                frame: portalFrame("ink"),
                 targetRoomId: "gallery-hall-notesappart",
                 position: [0, 0, -9.7] as [number, number, number],
                 rotation: [0, Math.PI, 0] as [number, number, number],
@@ -694,6 +721,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-gallery-hall-miscellaneous-from-notesappart",
+                frame: portalFrame("ink"),
                 targetRoomId: "gallery-hall-miscellaneous",
                 position: [0, 0, 7.7] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -730,6 +758,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-atrium-from-projects",
+                frame: portalFrame("terminal", "#39ff7a"),
                 targetRoomId: "atrium",
                 position: [0, 0, 9.77] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -792,6 +821,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-atrium-from-relaxation",
+                frame: portalFrame("marble", "#ffc76a"),
                 targetRoomId: "atrium",
                 position: [0, 0, -6] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],
@@ -841,6 +871,7 @@ export const roomConfigs: { [key: string]: RoomConfig } = {
         archways: [
             {
                 id: "to-atrium-from-achievements",
+                frame: portalFrame("laurel"),
                 targetRoomId: "atrium",
                 position: [0, 0, 9.77] as [number, number, number],
                 rotation: [0, 0, 0] as [number, number, number],

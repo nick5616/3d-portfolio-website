@@ -1,5 +1,6 @@
 // src/types/scene.types.ts
 import { ArtCategoryId } from "../configs/gcsConfig";
+import type { PortalFrameSpec } from "../configs/portalLooks";
 
 export type GalleryRoomKind =
     | { kind: "atrium" }
@@ -94,11 +95,13 @@ export interface Archway {
     };
     // A door that costs rupees to open the first time (stays open after).
     lock?: { id: string; cost: number };
-    // "portal": a swirling starfield inside an arch instead of the usual
-    // panel, frame and sign (the room builds the arch, unless `frame`).
+    // Every door is a portal (configs/portalLooks.ts): an arch you see
+    // straight through into where it leads, in a `frame` that suits the
+    // room it stands in (none: the room builds the doorway itself). A few
+    // rooms call for something of their own instead:
     // "fairyStone": a standing stone with a hole in it (the forest).
-    // "wood": a panelled wooden door with a brass plate (the farmhouse).
-    appearance?: "portal" | "fairyStone" | "wood";
-    // For portals in open spaces: the door brings its own stone arch.
-    frame?: boolean;
+    // "wood": a panelled wooden door, ajar, hiding the portal (the
+    // farmhouse attic; "woodStudio" is the art studio's painted one).
+    appearance?: "portal" | "fairyStone" | "wood" | "woodStudio";
+    frame?: PortalFrameSpec;
 }

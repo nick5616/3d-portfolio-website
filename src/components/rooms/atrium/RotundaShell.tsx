@@ -88,26 +88,90 @@ const columnParts = () => {
     return { shaft, marble, brass };
 };
 
+// A moulding profile swept round a doorway: up the left jamb, over the
+// arch, down the right. `profile` is [out, z] pairs from the opening
+// outward (out = metres beyond the opening's edge, z toward the viewer);
+// repeat a point to make a sharp edge there.
+const sweptMoulding = (half: number, jamb: number, profile: [number, number][], arcSteps = 40) => {
+    const path: { x: number; y: number; nx: number; ny: number }[] = [
+        { x: -half, y: 0, nx: -1, ny: 0 },
+        { x: -half, y: jamb, nx: -1, ny: 0 },
+    ];
+    for (let i = 1; i < arcSteps; i++) {
+        const t = Math.PI - (i / arcSteps) * Math.PI;
+        path.push({ x: Math.cos(t) * half, y: jamb + Math.sin(t) * half, nx: Math.cos(t), ny: Math.sin(t) });
+    }
+    path.push({ x: half, y: jamb, nx: 1, ny: 0 }, { x: half, y: 0, nx: 1, ny: 0 });
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+    let along = 0;
+    path.forEach((p, i) => {
+        if (i > 0) along += Math.hypot(p.x - path[i - 1].x, p.y - path[i - 1].y);
+        profile.forEach(([out, z], j) => {
+            positions.push(p.x + p.nx * out, p.y + p.ny * out, z);
+            uvs.push(along, j / (profile.length - 1));
+        });
+    });
+    const n = profile.length;
+    for (let i = 0; i < path.length - 1; i++) {
+        for (let j = 0; j < n - 1; j++) {
+            const a = i * n + j;
+            const b = (i + 1) * n + j;
+            indices.push(a, b, a + 1, b, b + 1, a + 1);
+        }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+};
+
+// A classical architrave: a reveal, two stepped fascias, a band, and a
+// cyma curving back to the wall. The brass bead sits between fascia and band.
+const ARCHITRAVE: [number, number][] = [
+    [0, -0.05], [0, 0.08],
+    [0, 0.08], [0.025, 0.105],
+    [0.025, 0.105], [0.1, 0.105],
+    [0.1, 0.105], [0.1, 0.13],
+    [0.1, 0.13], [0.24, 0.13],
+    [0.24, 0.13], [0.24, 0.16],
+    [0.24, 0.16], [0.3, 0.16],
+    [0.31, 0.155], [0.325, 0.13], [0.34, 0.09], [0.36, 0.05], [0.38, 0.03],
+    [0.38, 0.03], [0.38, -0.05],
+];
+const BEAD: [number, number][] = Array.from({ length: 9 }, (_, i) => {
+    const a = Math.PI - (i / 8) * Math.PI;
+    return [0.215 + Math.cos(a) * 0.026, 0.13 + Math.sin(a) * 0.026];
+});
+
 // A sealed arched door, built facing local +Z, threshold at y = 0.
 const sealedDoorParts = () => {
     const half = DOOR_HALF_WIDTH;
     const jambHeight = DOOR_JAMB_HEIGHT;
-    const frame: THREE.BufferGeometry[] = [];
+    const top = jambHeight + half;
+    const frame: THREE.BufferGeometry[] = [sweptMoulding(half, jambHeight, ARCHITRAVE)];
     [-1, 1].forEach((side) => {
-        const jamb = new THREE.BoxGeometry(0.22, jambHeight, 0.16);
-        jamb.translate(side * (half + 0.11), jambHeight / 2, 0.02);
-        frame.push(jamb);
+        const plinth = new THREE.BoxGeometry(0.42, 0.34, 0.25);
+        plinth.translate(side * (half + 0.2), 0.17, 0.075);
+        frame.push(plinth);
     });
-    const arch = new THREE.TorusGeometry(half + 0.11, 0.11, 8, 32, Math.PI);
-    arch.translate(0, jambHeight, 0.02);
-    frame.push(arch);
-    const keystone = new THREE.BoxGeometry(0.26, 0.38, 0.22);
-    keystone.translate(0, jambHeight + half + 0.12, 0.03);
+    // A keystone that widens as it rises, proud of the moulding
+    const keystone = new THREE.BoxGeometry(0.24, 0.44, 0.26);
+    const kp = keystone.attributes.position;
+    for (let i = 0; i < kp.count; i++) if (kp.getY(i) > 0) kp.setX(i, kp.getX(i) * 1.35);
+    keystone.computeVertexNormals();
+    keystone.translate(0, top + 0.22, 0.07);
     const threshold = new THREE.BoxGeometry(2.5, 0.06, 0.45);
     threshold.translate(0, 0.03, 0.15);
-    const cornice = new THREE.BoxGeometry(2.8, 0.14, 0.26);
-    cornice.translate(0, jambHeight + half + 0.42, 0.05);
-    frame.push(keystone, threshold, cornice);
+    const bed = new THREE.BoxGeometry(2.7, 0.06, 0.24);
+    bed.translate(0, top + 0.45, 0.06);
+    const crown = new THREE.BoxGeometry(3.0, 0.1, 0.32);
+    crown.translate(0, top + 0.52, 0.08);
+    frame.push(keystone, threshold, bed, crown);
+    const frameBrass = sweptMoulding(half, jambHeight, BEAD);
 
     const leaf = new THREE.BoxGeometry(half * 2, jambHeight, 0.08);
     leaf.translate(0, jambHeight / 2, -0.02);
@@ -139,6 +203,7 @@ const sealedDoorParts = () => {
     };
     return {
         frame: merge(frame),
+        frameBrass,
         bronze: merge(bronze),
         trim: merge(trim),
         glow,
@@ -300,8 +365,10 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
                 const level = LEVELS[tier];
                 const [x, z] = polar(RADIUS - 0.04, a);
                 const matrix = place(x, level, z, faceCenter(a));
-                doorMatrices.push(matrix);
                 const open = OPEN_DOORS.find((d) => d.level === tier && d.angle === a);
+                // a door with a frame of its own (a painted one) skips ours
+                if (open?.ownFrame) return;
+                doorMatrices.push(matrix);
                 if (!open) leafMatrices.push(matrix);
                 const [px, pz] = polar(RADIUS - 0.2, a);
                 plaques.push({
@@ -313,11 +380,12 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
         });
         const doors = {
             frame: own(replicate(door.frame, doorMatrices)),
+            frameBrass: own(replicate(door.frameBrass, doorMatrices)),
             bronze: own(replicate(door.bronze, leafMatrices)),
             trim: own(replicate(door.trim, leafMatrices)),
             glow: own(replicate(door.glow, leafMatrices)),
         };
-        [door.frame, door.bronze, door.trim, door.glow].forEach((g) => g.dispose());
+        [door.frame, door.frameBrass, door.bronze, door.trim, door.glow].forEach((g) => g.dispose());
         const bulbMaterial = new THREE.MeshBasicMaterial({ color: "#ffe2b0", toneMapped: false });
 
         return {
@@ -442,6 +510,7 @@ export const RotundaShell: React.FC<{ materials: AtriumMaterials }> = ({ materia
             <primitive object={shell.pools} />
 
             <mesh geometry={shell.doors.frame} material={materials.trim} />
+            <mesh geometry={shell.doors.frameBrass} material={materials.brass} />
             <mesh geometry={shell.doors.bronze} material={materials.bronze} />
             <mesh geometry={shell.doors.trim} material={materials.brass} />
             <mesh geometry={shell.doors.glow}>

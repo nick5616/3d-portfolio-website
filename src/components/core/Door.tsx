@@ -1,11 +1,10 @@
 import { useShallow } from "zustand/react/shallow";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useThree } from "@react-three/fiber";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Text } from "@react-three/drei";
 import { useSceneStore } from "../../stores/sceneStore";
 import { Archway } from "../../types/scene.types";
 import { roomConfigs } from "../../configs/rooms";
-import { galleryDoorStyles } from "../../configs/galleryDoorStyles";
+import { viewFor } from "../../configs/portalLooks";
 import {
     RigidBody,
     CuboidCollider,
@@ -13,7 +12,6 @@ import {
 } from "@react-three/rapier";
 import * as THREE from "three";
 import { InteractionRaycaster } from "./InteractionRaycaster";
-import { GalleryDoorAccent } from "./GalleryDoorAccent";
 import { playSound } from "../../audio/soundManager";
 import { useUnlockStore } from "../../stores/unlockStore";
 import { useRupeeStore } from "../../stores/rupeeStore";
@@ -21,9 +19,12 @@ import { useAchievementStore } from "../../stores/achievementStore";
 import { RupeeIcon } from "../models/RupeeIcon";
 import { GemPrompt } from "../ui/GemPrompt";
 import { FairyStonePortal } from "./FairyStonePortal";
-import { CosmicPortal } from "./CosmicPortal";
+import { Portal } from "./portal/Portal";
+import { labelLift as frameLabelLift } from "./portal/PortalFrames";
 import { WoodenDoor } from "./WoodenDoor";
 import { useRoomHeadcount } from "../../multiplayer/presence";
+import { DOOR_REVIEW_AVAILABLE, useDoorReview } from "../../debug/doorReview";
+import { DoorReviewMarker } from "./DoorReviewMarker";
 
 interface DoorProps {
     archway: Archway;
@@ -51,8 +52,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
             }))
         );
     const [isInTrigger, setIsInTrigger] = useState(false);
-    // In the forest, the way home is a holed fairy stone.
-    const fairyStone = archway.appearance === "fairyStone";
     const lock = archway.lock;
     // Who's on the other side, so a door can say the world isn't empty.
     const inside = useRoomHeadcount(archway.targetRoomId);
@@ -66,82 +65,14 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     const lastTransitionTime = useRef<number>(0);
     const doorMeshRef = useRef<THREE.Object3D>(null);
 
-    // Get room-specific theming. Colors are picked per known room id; the
-    // label always comes from the room's actual config name, never a
-    // hardcoded/stale string, so every door (including the gallery wing's
-    // many halls) shows the real destination.
-    const getRoomTheme = (roomId: string) => {
-        const roomName = roomConfigs[roomId]?.name || "Unknown Room";
-        const isGalleryWing = Boolean(roomConfigs[roomId]?.galleryRoomKind);
-
-        switch (roomId) {
-            case "atrium":
-                return {
-                    color: "#F4E4BC", // Warm gold
-                    frameColor: "#DAA520", // Golden
-                    label: roomName,
-                    description: "Central Hub",
-                    glowColor: "#FFD700",
-                    isArched: false, // Keep it simple
-                    roughness: 0.6,
-                    metalness: 0.1,
-                    accent: undefined,
-                };
-            case "projects":
-                return {
-                    color: "#1E3A8A", // Tech blue
-                    frameColor: "#00FFFF", // Cyan
-                    label: roomName,
-                    glowColor: "#00BFFF",
-                    isArched: false, // Sleek rectangular
-                    roughness: 0.1,
-                    metalness: 0.8,
-                    accent: undefined,
-                };
-            default:
-                if (isGalleryWing) {
-                    // Every gallery-wing door is colored/styled per its
-                    // destination's own category (or the hub, for doors
-                    // back to "gallery"), reusing the exact same colors the
-                    // minimap uses for that room - and a distinct decorative
-                    // accent (see GalleryDoorAccent) so each hall's door is
-                    // recognizable at a glance instead of all six + the hub
-                    // sharing one generic "gallery white" look.
-                    const kind = roomConfigs[roomId]?.galleryRoomKind;
-                    const styleKey =
-                        kind?.kind === "hall" || kind?.kind === "sketchbook"
-                            ? kind.category
-                            : "gallery";
-                    const style = galleryDoorStyles[styleKey];
-                    return {
-                        color: style.color,
-                        frameColor: style.frameColor,
-                        label: roomName,
-                        description:
-                            kind?.kind === "hall" || kind?.kind === "sketchbook"
-                                ? "Art Collection"
-                                : "Central Hub",
-                        glowColor: style.glowColor,
-                        isArched: false,
-                        roughness: style.roughness,
-                        metalness: style.metalness,
-                        accent: style.accent,
-                    };
-                }
-                return {
-                    color: "#8B4513",
-                    frameColor: "#654321",
-                    label: roomName,
-                    glowColor: "#FFFFFF",
-                    isArched: false,
-                    roughness: 0.8,
-                    metalness: 0.2,
-                    accent: undefined,
-                };
-        }
-    };
-
-    const theme = getRoomTheme(archway.targetRoomId);
+    // The label always comes from the destination's own config name, never
+    // a hardcoded string, so every door shows the real destination. What
+    // you see through the door is the destination too (PORTAL_VIEWS); the
+    // frame is the room's own (archway.frame).
+    const label = roomConfigs[archway.targetRoomId]?.name || "Unknown Room";
+    const view = viewFor(archway.targetRoomId);
+    const appearance = archway.appearance ?? "portal";
+    const frame = archway.frame ?? { style: "none" as const };
 
     // Snap the door to the room's ACTUAL wall surface instead of trusting
     // each archway's hand-tuned position, which drifted inconsistently
@@ -155,11 +86,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
     // flat "surface" this math applies to - their doors are placed on the
     // curve directly.
     const isCircularRoom = Boolean(currentRoom?.circular);
-    // Portals and the forest's fairy stone stand in for the usual panel,
-    // frame and sign; the panel stays as an invisible aim target.
-    const portal = archway.appearance === "portal";
-    const wooden = archway.appearance === "wood";
-    const customLook = fairyStone || portal || wooden;
     const doorPosition: [number, number, number] = (() => {
         const dimensions = currentRoom?.dimensions;
         if (!dimensions || isCircularRoom) return archway.position;
@@ -180,21 +106,15 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         return [archX, archway.position[1], snappedZ];
     })();
 
-    // The frame and label are meant to sit a hair in front of / behind the
-    // door panel, offset toward/away from the room's center. This used to be
-    // derived from archway.rotation (sin/cos of rotationY), but rotation
-    // does NOT reliably encode which way a door faces in this codebase -
-    // e.g. north-wall archways are authored with rotation [0,0,0] in some
-    // rooms and [0,Math.PI,0] in others (both are "correct" for the wall itself,
-    // since BaseRoom's north/south walls share one rotation and only the
-    // interaction code's `Math.abs(dot(...))` check ever cared about it,
-    // which ignores sign). Every archway sits on its room's outer wall, and
-    // every room is centered at local (0,0,0), so the door's own position
-    // vector reliably points "outward" (from center, through the door)
-    // regardless of rotation - use it directly instead of trusting rotation.
-    // In a rectangular room that's the wall's own normal, though: a door
-    // that isn't centred on its wall would otherwise turn a few degrees off
-    // it.
+    // Which way is "out" (from the room's center, through the door). This
+    // used to be derived from archway.rotation, but rotation does NOT
+    // reliably encode which way a door faces in this codebase - north-wall
+    // archways are authored with rotation [0,0,0] in some rooms and
+    // [0,Math.PI,0] in others. Every archway sits on its room's outer wall,
+    // and every room is centered at local (0,0,0), so the door's own
+    // position vector reliably points outward regardless of rotation. In a
+    // rectangular room that's the wall's own normal, though: a door that
+    // isn't centred on its wall would otherwise turn a few degrees off it.
     const [doorX, , doorZ] = doorPosition;
     const distFromCenter = Math.hypot(doorX, doorZ) || 1;
     const outward: [number, number, number] = isCircularRoom
@@ -202,20 +122,9 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         : Math.abs(doorX) > Math.abs(doorZ)
         ? [Math.sign(doorX), 0, 0]
         : [0, 0, Math.sign(doorZ) || 1];
-    const FRAME_OFFSET = 0.08;
-    const framePosition: [number, number, number] = [
-        doorPosition[0] + outward[0] * FRAME_OFFSET,
-        doorPosition[1] + archway.height / 2,
-        doorPosition[2] + outward[2] * FRAME_OFFSET,
-    ];
-    const labelPosition: [number, number, number] = [
-        doorPosition[0] - outward[0] * FRAME_OFFSET,
-        doorPosition[1] + archway.height * 1.2,
-        doorPosition[2] - outward[2] * FRAME_OFFSET,
-    ];
 
     // Mesh-facing convention: local +Z ends up pointing at world
-    // (sin(rotY), 0, cos(rotY)), so this makes the door/frame's local +Z
+    // (sin(rotY), 0, cos(rotY)), so this makes the aim target's local +Z
     // point outward (away from room center, through the doorway).
     const outwardMeshRotationY = Math.atan2(outward[0], outward[2]);
     const doorMeshRotation: [number, number, number] = [
@@ -224,16 +133,28 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         0,
     ];
 
-    // The label's <Text> (troika, via drei) renders DOUBLE-sided by default -
-    // the back is not culled, it's a mirrored view of the glyphs, and the
-    // plain yellow background <mesh> behind it IS single-sided (default
-    // meshStandardMaterial), so getting this rotation wrong doesn't just
-    // look mirrored, the background plane vanishes too (only the mirrored
-    // text renders, floating with nothing behind it). The label needs its
-    // local +Z - the readable, non-mirrored face - pointing back at the
-    // player standing inside the room, i.e. inward, which is the opposite
-    // of the outward-facing rotation the door/frame use above.
-    const labelRotationY = outwardMeshRotationY + Math.PI;
+    // Everything the player reads or looks into (portals, signs, text)
+    // needs its local +Z pointing back at the player standing inside the
+    // room, i.e. inward, the opposite of the outward-facing rotation above.
+    // drei's <Text> renders double-sided, so getting this wrong shows
+    // mirrored glyphs rather than nothing.
+    const inwardRotationY = outwardMeshRotationY + Math.PI;
+
+    // Door review (localhost): this door's identity and current look, so a
+    // verdict can tell when the door has been changed since.
+    const reviewKey = `${currentRoom?.id ?? "?"}/${archway.id}`;
+    const look = useMemo(
+        () =>
+            JSON.stringify({
+                appearance,
+                frame,
+                view,
+                size: [archway.width, archway.height],
+            }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [appearance, frame.style, frame.accent, view, archway.width, archway.height]
+    );
+    const reviewNoteOpen = useDoorReview((s) => s.noting !== null);
 
     // Helper function to check if player is moving toward the door
     const isMovingTowardDoor = useCallback(() => {
@@ -318,17 +239,12 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
 
         // Compute arrival facing from the entrance position itself (face
         // toward the target room's center, i.e. away from whichever wall you
-        // just walked in through) instead of trusting entrancePoint.rotation.
-        // Hand-authored rotation values turned out to be inconsistent room to
-        // room (the same issue found in archway.rotation - see the frame/
-        // label fix above), so any door landing you facing the "wrong" way
-        // depended on which convention that specific entrancePoint happened
-        // to be written with. Note this uses the CAMERA's own forward
-        // convention (forward = (-sin, 0, -cos) at rotation.y, since
-        // THREE.Camera looks down -Z by default), which is the exact
-        // opposite sign from the mesh-facing formula used for door
-        // frames/labels (where the visible face is local +Z) - mixing the
-        // two up is what caused the "backwards" spawns.
+        // just walked in through) instead of trusting entrancePoint.rotation,
+        // whose hand-authored values were inconsistent room to room. This
+        // uses the CAMERA's forward convention (forward = (-sin, 0, -cos) at
+        // rotation.y, since THREE.Camera looks down -Z), the exact opposite
+        // sign from the mesh-facing formula above - mixing the two up is
+        // what caused the "backwards" spawns.
         const [entranceX, , entranceZ] = entrancePosition;
         const entranceRotation: [number, number, number] = [
             0,
@@ -356,21 +272,6 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
         lock,
         tryUnlock,
     ]);
-
-    // // Handle collision events
-    // const handleCollisionEnter = () => {
-    //     if (!isTransitioning) {
-    //         setIsInTrigger(true);
-    //     }
-    // };
-
-    // const handleCollisionExit = (event: any) => {
-    //     console.log(
-    //         `🔴 COLLISION EXIT: Door ${archway.id} (${archway.targetRoomId}) - Green trigger area deactivated`,
-    //         event
-    //     );
-    //     setIsInTrigger(false);
-    // };
 
     useEffect(() => {
         if (!isInTrigger || isTransitioning) return;
@@ -421,18 +322,28 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     detail: { hovering: false },
                 })
             );
+            if (DOOR_REVIEW_AVAILABLE) useDoorReview.getState().unaim(reviewKey);
         };
-    }, []);
+    }, [reviewKey]);
+
+    const portalFloor: [number, number, number] =
+        appearance === "fairyStone" ? [doorPosition[0], 0, doorPosition[2]] : doorPosition;
+    // Room for the frame's lettering (or, unframed, the room's own plaque)
+    // above the doorway.
+    const lettered = appearance === "portal" && frame.style !== "none";
+    const labelLift = lettered ? frameLabelLift(frame, archway.height) + 0.3 : 0.25;
+    const markerLift = lettered ? labelLift + 0.45 : 1.1;
 
     return (
         <group>
-            {/* Themed Door - VISIBLE DOOR MESH. Deliberately has no onClick:
-            under pointer lock the cursor sits pinned at screen center, so an
-            R3F onClick here would fire on ANY click as long as the crosshair
-            merely rests on a visible-but-distant door, teleporting the
-            player from across the room. InteractionRaycaster below is the
-            only click/keypress path, and it's gated by maxDistance so the
-            door only responds once the player has actually walked up to it. */}
+            {/* The aim target: an invisible panel filling the doorway.
+            Deliberately has no onClick: under pointer lock the cursor sits
+            pinned at screen center, so an R3F onClick here would fire on ANY
+            click as long as the crosshair merely rests on a distant door,
+            teleporting the player from across the room. InteractionRaycaster
+            below is the only click/keypress path, and it's gated by
+            maxDistance so the door only responds once the player has
+            actually walked up to it. */}
             <mesh
                 ref={doorMeshRef as any}
                 position={[
@@ -441,24 +352,15 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     doorPosition[2],
                 ]}
                 rotation={doorMeshRotation}
-                // Hidden (but still the aim target) when the fairy stone
-                // or a portal stands in for the door.
-                visible={!customLook}
+                visible={false}
             >
                 <boxGeometry args={[archway.width, archway.height, 0.15]} />
-                <meshStandardMaterial
-                    color={isHoveringFromCenter ? theme.glowColor : theme.color}
-                    roughness={theme.roughness}
-                    metalness={theme.metalness}
-                    emissive={
-                        isHoveringFromCenter ? theme.glowColor : "#000000"
-                    }
-                    emissiveIntensity={isHoveringFromCenter ? 0.2 : 0}
-                />
+                <meshBasicMaterial />
             </mesh>
 
             <InteractionRaycaster
                 target={doorMeshRef}
+                enabled={!reviewNoteOpen}
                 config={{
                     maxDistance: 6,
                     includeChildren: true,
@@ -472,6 +374,14 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 callbacks={{
                     onRayEnter: () => {
                         setIsHoveringFromCenter(true);
+                        if (DOOR_REVIEW_AVAILABLE) {
+                            useDoorReview.getState().aim({
+                                key: reviewKey,
+                                room: currentRoom?.name ?? "?",
+                                target: label,
+                                look,
+                            });
+                        }
                         // Dispatch doorHover event for UI components
                         window.dispatchEvent(
                             new CustomEvent("doorHover", {
@@ -488,6 +398,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                     },
                     onRayExit: () => {
                         setIsHoveringFromCenter(false);
+                        if (DOOR_REVIEW_AVAILABLE) useDoorReview.getState().unaim(reviewKey);
                         // Dispatch doorHover event for UI components
                         window.dispatchEvent(
                             new CustomEvent("doorHover", {
@@ -509,7 +420,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 }}
                 visual={{
                     cursorStyle: "pointer",
-                    highlightColor: theme.glowColor,
+                    highlightColor: view.light,
                     highlightIntensity: 0.2,
                     prompt: {
                         content: (
@@ -517,7 +428,7 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                                 wallet >= (lock?.cost ?? 0) ? (
                                     <InteractionPrompt
                                         accent="gold"
-                                        action={`Pay ${lock?.cost} rupees to unlock ${theme.label}`}
+                                        action={`Pay ${lock?.cost} rupees to unlock ${label}`}
                                     />
                                 ) : (
                                     <InteractionPrompt
@@ -530,8 +441,8 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                                 <InteractionPrompt
                                     action={
                                         justUnlocked
-                                            ? `Unlocked! Enter ${theme.label}`
-                                            : `Enter ${theme.label}`
+                                            ? `Unlocked! Enter ${label}`
+                                            : `Enter ${label}`
                                     }
                                 />
                             )
@@ -546,29 +457,12 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 }}
             />
 
-            <mesh
-                position={[
-                    doorPosition[0],
-                    doorPosition[1] + archway.height / 2,
-                    doorPosition[2],
-                ]}
-                rotation={doorMeshRotation}
-                visible={true}
-            >
-                <boxGeometry
-                    args={[archway.width * 2, archway.height * 1.5, 1]}
-                />
-                <meshBasicMaterial color="#ff00ff" transparent opacity={0} />
-            </mesh>
-
             <RigidBody
                 type="fixed"
                 position={doorPosition}
                 rotation={doorMeshRotation}
                 sensor
                 collisionGroups={interactionGroups(1, [0])}
-                // onIntersectionEnter={handleCollisionEnter}
-                // onIntersectionExit={handleCollisionExit}
             >
                 <CuboidCollider
                     args={[archway.width / 2, archway.height / 2, 1]}
@@ -576,69 +470,50 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 />
             </RigidBody>
 
-            {fairyStone && (
+            {appearance === "fairyStone" && (
                 <FairyStonePortal
-                    position={[doorPosition[0], 0, doorPosition[2]]}
-                    rotationY={doorMeshRotation[1]}
-                    label={theme.label}
+                    position={portalFloor}
+                    rotationY={outwardMeshRotationY}
+                    label={label}
                     hovering={isHoveringFromCenter}
                 />
             )}
 
-            {wooden && (
+            {(appearance === "wood" || appearance === "woodStudio") && (
                 <WoodenDoor
                     position={doorPosition}
-                    rotationY={labelRotationY}
+                    rotationY={inwardRotationY}
                     width={archway.width}
                     height={archway.height}
-                    label={theme.label}
+                    label={label}
                     hovering={isHoveringFromCenter}
+                    view={view}
+                    variant={appearance === "woodStudio" ? "studio" : "farmhouse"}
                 />
             )}
 
-            {portal && (
-                <CosmicPortal
+            {appearance === "portal" && (
+                <Portal
                     position={doorPosition}
-                    rotationY={labelRotationY}
+                    rotationY={inwardRotationY}
                     width={archway.width}
                     height={archway.height}
+                    view={view}
                     hovering={isHoveringFromCenter}
-                    frame={archway.frame}
-                    label={archway.frame ? theme.label : undefined}
+                    frame={frame}
+                    label={label}
+                    sealed={isLocked}
                 />
             )}
-
-            <group position={framePosition} rotation={doorMeshRotation} visible={!customLook}>
-                <mesh>
-                    <boxGeometry
-                        args={[archway.width + 0.4, archway.height + 0.4, 0.06]}
-                    />
-                    <meshStandardMaterial
-                        color={theme.frameColor}
-                        roughness={theme.roughness}
-                        metalness={theme.metalness}
-                    />
-                </mesh>
-                {theme.accent && (
-                    <GalleryDoorAccent
-                        accent={theme.accent}
-                        width={archway.width}
-                        height={archway.height}
-                        color={theme.color}
-                        glowColor={theme.glowColor}
-                        frameColor={theme.frameColor}
-                    />
-                )}
-            </group>
 
             {isLocked && lock && (
                 <group
                     position={[
-                        doorPosition[0] - outward[0] * 0.1,
+                        doorPosition[0] - outward[0] * 0.25,
                         doorPosition[1] + archway.height * 0.55,
-                        doorPosition[2] - outward[2] * 0.1,
+                        doorPosition[2] - outward[2] * 0.25,
                     ]}
-                    rotation={[0, labelRotationY, 0]}
+                    rotation={[0, inwardRotationY, 0]}
                 >
                     <RupeeIcon
                         color="#3ee58f"
@@ -666,10 +541,10 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 <Text
                     position={[
                         doorPosition[0] - outward[0] * 0.5,
-                        doorPosition[1] + archway.height + 0.25,
+                        doorPosition[1] + archway.height + labelLift,
                         doorPosition[2] - outward[2] * 0.5,
                     ]}
-                    rotation={[0, labelRotationY, 0]}
+                    rotation={[0, inwardRotationY, 0]}
                     fontSize={0.19}
                     color="#bfffe0"
                     outlineWidth={0.014}
@@ -681,32 +556,18 @@ export const Door: React.FC<DoorProps> = ({ archway }) => {
                 </Text>
             )}
 
-            <group position={labelPosition} rotation={[0, labelRotationY, 0]} visible={!customLook}>
-                {/* Label Background */}
-                <mesh position={[0, 0, 0]}>
-                    <planeGeometry
-                        args={[Math.max(archway.width + 0.2, 2.2), 0.6]}
-                    />
-                    <meshStandardMaterial
-                        color="#ffff00"
-                        transparent
-                        opacity={0.9}
-                    />
-                </mesh>
-
-                {/* Room Label Text */}
-                <Text
-                    position={[0, 0, 0.01]}
-                    fontSize={0.25}
-                    color="black"
-                    anchorX="center"
-                    anchorY="middle"
-                    maxWidth={Math.max(archway.width, 2)}
-                    fontWeight="bold"
-                >
-                    {theme.label}
-                </Text>
-            </group>
+            {DOOR_REVIEW_AVAILABLE && (
+                <DoorReviewMarker
+                    reviewKey={reviewKey}
+                    look={look}
+                    position={[
+                        doorPosition[0] - outward[0] * 0.55,
+                        doorPosition[1] + archway.height + markerLift,
+                        doorPosition[2] - outward[2] * 0.55,
+                    ]}
+                    rotationY={inwardRotationY}
+                />
+            )}
         </group>
     );
 };
