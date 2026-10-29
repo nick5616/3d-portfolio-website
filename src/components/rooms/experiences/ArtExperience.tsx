@@ -4,7 +4,7 @@ import { Text } from "@react-three/drei";
 import { InteractiveEasel } from "../../models/InteractiveEasel";
 import { useAchievementStore } from "../../../stores/achievementStore";
 
-const API_BASE = "https://holodeck-art-api-24500868376.us-central1.run.app";
+const API_BASE = "https://holodeck-art-api-159024237736.us-central1.run.app";
 
 interface FavoritePiece {
     id: string;
