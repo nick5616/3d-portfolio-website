@@ -15,20 +15,19 @@ export type ArtCategoryId =
     | "notesappart";
 
 interface ArtCategoryConfig {
+    // The hall's slug in Canon's holodeck-art-room view (the old bucket
+    // folder name). Which pieces it shows, and which get plaques, is set in
+    // Canon.
     folder: string;
-    // Only "digitalart" has curated `art-name` metadata on its GCS objects.
-    // Every other category is a raw camera dump, so pieces are included
-    // without requiring a title, and plaques are skipped for them.
-    requiresTitle: boolean;
 }
 
 export const artCategories: Record<ArtCategoryId, ArtCategoryConfig> = {
-    digitalart: { folder: "digitalart", requiresTitle: true },
-    paintings: { folder: "paintings", requiresTitle: false },
-    sketches: { folder: "sketches", requiresTitle: false },
-    lefthanded: { folder: "lefthanded", requiresTitle: false },
-    miscellaneous: { folder: "miscellaneous", requiresTitle: false },
-    notesappart: { folder: "notesappart", requiresTitle: false },
+    digitalart: { folder: "digitalart" },
+    paintings: { folder: "paintings" },
+    sketches: { folder: "sketches" },
+    lefthanded: { folder: "lefthanded" },
+    miscellaneous: { folder: "miscellaneous" },
+    notesappart: { folder: "notesappart" },
 };
 
 export const getArtPieceUrl = (

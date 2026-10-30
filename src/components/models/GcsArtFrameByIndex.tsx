@@ -13,7 +13,7 @@ import {
 import {
     ART_PREVIEW_WIDTH,
     ART_WALL_WIDTH,
-    hasImageCdn,
+    hasImageSizes,
     resizedImageUrl,
 } from "../../utils/artImages";
 import { artTargets, useArtInspectStore } from "../../stores/artInspectStore";
@@ -113,7 +113,7 @@ export const GcsArtFrameByIndex: React.FC<GcsArtFrameByIndexProps> = ({
         };
 
         const requests: ArtTextureRequest[] = [];
-        if (hasImageCdn) {
+        if (hasImageSizes) {
             const preview = requestArtTexture(
                 resizedImageUrl(artPieceMetadata.url, ART_PREVIEW_WIDTH, 60),
                 // Every preview in the room goes before any full image.
