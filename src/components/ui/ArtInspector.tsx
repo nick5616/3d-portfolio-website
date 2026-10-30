@@ -8,7 +8,7 @@ import { ArtCategoryId } from "../../configs/gcsConfig";
 import {
     ART_INSPECT_WIDTH,
     ART_WALL_WIDTH,
-    hasImageCdn,
+    hasImageSizes,
     resizedImageUrl,
 } from "../../utils/artImages";
 import { playSound } from "../../audio/soundManager";
@@ -181,7 +181,7 @@ export const ArtInspector: React.FC = () => {
 
     const wallSrc = piece ? resizedImageUrl(piece.url, ART_WALL_WIDTH, 82) : "";
     const sharpSrc = piece
-        ? hasImageCdn
+        ? hasImageSizes
             ? resizedImageUrl(piece.url, ART_INSPECT_WIDTH, 90)
             : piece.url
         : "";

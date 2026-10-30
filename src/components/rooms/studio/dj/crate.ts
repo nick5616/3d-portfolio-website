@@ -1,21 +1,19 @@
 import { create } from "zustand";
+import { DjRoomView, loadView } from "../../../../data/canon";
 
-// The records the decks play: Bird Dog's masters, encoded and analysed by
-// scripts/build-dj-crate.mjs. Dev serves them from public/dj-crate; the live
-// site reads them from the art bucket (CORS is open to the site's origins).
-// Every visitor uses the same pre-computed beat grid, so their decks agree
-// on where the beats are.
-
-export const CRATE_URL: string =
-    (import.meta.env.VITE_DJ_CRATE_URL as string | undefined) ??
-    (import.meta.env.DEV ? "/dj-crate" : "https://storage.googleapis.com/artandmedia/dj-crate");
+// The records the decks play: Bird Dog's tracks, from Canon's
+// holodeck-dj-room view (src/data/canon.ts), with the beat grid and
+// three-band waveform Canon computes (djgrid, a port of
+// scripts/build-dj-crate.mjs). Every visitor uses the same pre-computed
+// grid, so their decks agree on where the beats are. Audio and analysis
+// are absolute URLs in the public bucket.
 
 export interface CrateTrack {
     id: string;
     title: string;
     artist: string;
-    audio: string;
-    analysis: string;
+    audio: string; // URL
+    analysis: string; // URL
     duration: number; // s
     bpm: number;
     firstBeat: number; // s, a downbeat at or after the first sound
@@ -46,10 +44,11 @@ export const loadCrate = () => {
     cratePromise ??= (async () => {
         useCrate.setState({ status: "loading" });
         try {
-            const response = await fetch(`${CRATE_URL}/crate.json`, { cache: "no-cache" });
-            if (!response.ok) throw new Error(String(response.status));
-            const crate = (await response.json()) as { tracks?: CrateTrack[] };
-            const tracks = (crate.tracks ?? []).filter((t) => t.id && t.audio && t.bpm > 0);
+            const view = await loadView<DjRoomView>("holodeck-dj-room");
+            // Track ids stay the slugs the crate always used.
+            const tracks: CrateTrack[] = view.tracks
+                .map(({ slug, id: _id, ...t }) => ({ ...t, id: slug }))
+                .filter((t) => t.id && t.audio && t.bpm > 0);
             if (!tracks.length) throw new Error("empty crate");
             tracks.forEach((t) => byId.set(t.id, t));
             useCrate.setState({ status: "ready", tracks });
@@ -75,7 +74,7 @@ export const loadTrackAudio = (id: string, context: BaseAudioContext) => {
         buffers.set(id, promise);
         return promise;
     }
-    promise = fetch(`${CRATE_URL}/${meta.audio}`)
+    promise = fetch(meta.audio)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
         .then((data) => context.decodeAudioData(data))
         .catch(() => {
@@ -93,7 +92,7 @@ export const loadWaveform = (id: string) => {
     if (!meta) return Promise.resolve(null);
     let promise = waveforms.get(id);
     if (!promise) {
-        promise = fetch(`${CRATE_URL}/${meta.analysis}`)
+        promise = fetch(meta.analysis)
             .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
             .then((json: { fps: number; waveform: string }) => {
                 const bytes = Uint8Array.from(atob(json.waveform), (c) => c.charCodeAt(0));

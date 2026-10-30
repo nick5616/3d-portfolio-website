@@ -3,11 +3,6 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# Netlify Image CDN may resize/re-encode art straight from the public GCS
-# bucket (see src/utils/artImages.ts). Only this bucket is allowed.
-[images]
-  remote_images = ["https://storage.googleapis.com/artandmedia/.*"]
-
 # Hashed build output never changes under the same name.
 [[headers]]
   for = "/assets/*"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArtPiece } from "../configs/artMetadata";
-import { ArtCategoryId, getArtPieceUrl } from "../configs/gcsConfig";
+import { ArtCategoryId } from "../configs/gcsConfig";
 import { ArtPieceMapper } from "../utils/artPieceMapper";
 
 /**
@@ -72,7 +72,7 @@ export const useGcsArtByIndex = (
             return;
         }
 
-        setImageUrl(getArtPieceUrl(category, artPieceMetadata.fileName));
+        setImageUrl(artPieceMetadata.url);
         setIsLoading(false);
     }, [enabled, artPieceExists, useGcsStorage, artPieceMetadata, category]);
 
