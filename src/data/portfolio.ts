@@ -1,7 +1,8 @@
-// Typed access to portfolio.generated.json - synced from nickel-tools'
-// content.ts by scripts/sync-portfolio-content.mjs. Don't edit the JSON by
-// hand; change content.ts there and re-run the script.
-import data from "./portfolio.generated.json";
+// The showroom's projects and profile, from Canon's holodeck-showroom view
+// (github.com/nick5616/content-pipeline), baked in at build time by
+// scripts/fetch-canon-views.mjs. Content is edited in Canon, not here.
+// The view is mapped onto the shapes the site has always used.
+import views from "./canon-views.generated.json";
 import { WORLD_ONLY } from "../utils/site";
 
 export interface PortfolioProject {
@@ -21,12 +22,83 @@ export interface PortfolioProject {
     preview: "none" | { mobileScreens: string[] } | null;
 }
 
-export const PROFILE = data.profile as {
-    name: string;
-    headline: string;
+interface Term {
+    slug: string;
+    label: string;
+}
+
+interface ShowroomEntry {
+    slug: string;
+    title: string;
     summary: string;
-    links: { github: string; linkedin: string; email: string };
+    why: string;
+    status: string | null;
+    category: Term | null;
+    date: { value: string; label: string | null } | null;
+    tech: string[];
+    tags: string[];
+    mediums: string[];
+    links: { rel: string; url: string }[];
+    thumbnail: { url: string } | null;
+    preview: { kind: string; urls: string[] };
+}
+
+interface CanonViews {
+    showroom: {
+        profile: { name: string; headline?: string; summary?: string; links?: Record<string, string> };
+        taxonomy: { tech: Term[]; tags: Term[]; mediums: Term[] };
+        entries: ShowroomEntry[];
+    };
+    artRoom: {
+        taxonomy: { mediums: Term[] };
+        entries: { slug: string; title: string; summary: string; why: string; mediums: string[] }[];
+    };
+}
+
+const { showroom, artRoom } = views as unknown as CanonViews;
+
+const labels = (terms: Term[]) => new Map(terms.map((t) => [t.slug, t.label]));
+const techLabel = labels(showroom.taxonomy.tech);
+const tagLabel = labels(showroom.taxonomy.tags);
+const link = (e: ShowroomEntry, rel: string) => e.links.find((l) => l.rel === rel)?.url ?? null;
+
+const toProject = (e: ShowroomEntry): PortfolioProject => ({
+    id: e.slug,
+    title: e.title,
+    description: e.summary,
+    why: e.why || null,
+    category: e.category?.label ?? "",
+    status: e.status ?? "operational",
+    // Free-text dates keep their wording; formatDate turns 2025-10 into "Oct 2025".
+    date: e.date ? e.date.label ?? e.date.value : null,
+    tech: e.tech.map((s) => techLabel.get(s) ?? s),
+    tags: e.tags.map((s) => tagLabel.get(s) ?? s),
+    url: link(e, "live") ?? link(e, "source"),
+    // A repo that is the project's only link is both its url and its source.
+    source: link(e, "source") ?? (link(e, "live")?.startsWith("https://github.com/") ? link(e, "live") : null),
+    backendSource: link(e, "backend-source"),
+    thumbnail: e.thumbnail?.url ?? null,
+    preview:
+        e.preview.kind === "none"
+            ? "none"
+            : e.preview.kind === "phones"
+              ? { mobileScreens: e.preview.urls }
+              : null, // desktop and laser-room frame the live link, as before
+});
+
+export const PROFILE = {
+    name: showroom.profile.name,
+    headline: showroom.profile.headline ?? "",
+    summary: showroom.profile.summary ?? "",
+    links: {
+        github: showroom.profile.links?.github ?? "",
+        linkedin: showroom.profile.links?.linkedin ?? "",
+        email: showroom.profile.links?.email ?? "",
+    },
 };
+
+// Newest first: the view is already sorted that way.
+const projects = showroom.entries.map(toProject);
 
 const HOME = "https://nicolebelovoskey.com";
 
@@ -38,9 +110,7 @@ const nameless = (project: PortfolioProject): PortfolioProject => ({
     url: project.url?.startsWith(HOME) ? project.url.slice(HOME.length) || "/" : project.url,
 });
 
-export const PROJECTS = WORLD_ONLY
-    ? (data.projects as PortfolioProject[]).map(nameless)
-    : (data.projects as PortfolioProject[]);
+export const PROJECTS = WORLD_ONLY ? projects.map(nameless) : projects;
 
 // Experience/education as stated on software.nicolebelovoskey.com's bio.
 // Only what that bio states - no invented titles or dates.
@@ -77,7 +147,12 @@ export interface ArtCollection {
     mediums: string[];
 }
 
-// Art collection copy (same as the art portfolio), keyed by gallery
-// category id: digitalart, paintings, sketches, lefthanded, ...
-export const ART_COLLECTIONS = (data as { artCollections?: Record<string, ArtCollection> })
-    .artCollections ?? {};
+// The halls' wall text (what the art portfolio says about each
+// collection), keyed by gallery category id: digitalart, paintings, ...
+const mediumLabel = labels(artRoom.taxonomy.mediums);
+export const ART_COLLECTIONS: Record<string, ArtCollection> = Object.fromEntries(
+    artRoom.entries.map((e) => [
+        e.slug,
+        { title: e.title, description: e.summary, why: e.why || null, mediums: e.mediums.map((s) => mediumLabel.get(s) ?? s) },
+    ])
+);
